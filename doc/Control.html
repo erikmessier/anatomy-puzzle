@@ -1,0 +1,118 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module Control</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>Control</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:///C:/users/jascha/google%20drive/spring15/msd%20ii/svn/web/public/software/development/control.py">c:\users\jascha\google drive\spring15\msd ii\svn\web\public\software\development\control.py</a></font></td></tr></table>
+    <p></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="viz.html">viz</a><br>
+</td><td width="25%" valign=top><a href="vizact.html">vizact</a><br>
+</td><td width="25%" valign=top><a href="vizshape.html">vizshape</a><br>
+</td><td width="25%" valign=top><a href="viztask.html">viztask</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="viz.html#EventClass">viz.EventClass</a>(<a href="__builtin__.html#object">__builtin__.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="Control.html#Control">Control</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="Control">class <strong>Control</strong></a>(<a href="viz.html#EventClass">viz.EventClass</a>)</font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="Control.html#Control">Control</a></dd>
+<dd><a href="viz.html#EventClass">viz.EventClass</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="Control-__init__"><strong>__init__</strong></a>(self, controlScheme)</dt></dl>
+
+<dl><dt><a name="Control-getCamcenter"><strong>getCamcenter</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Control-getPointer"><strong>getPointer</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Control-init3dMouse"><strong>init3dMouse</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Control-initCamera"><strong>initCamera</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Control-initMouse"><strong>initMouse</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Control-initPointer"><strong>initPointer</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Control-initializeScheme"><strong>initializeScheme</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="Control-onMouseDown"><strong>onMouseDown</strong></a>(self, button)</dt></dl>
+
+<dl><dt><a name="Control-setCamcenter"><strong>setCamcenter</strong></a>(self, cam)</dt></dl>
+
+<dl><dt><a name="Control-setpointer"><strong>setpointer</strong></a>(self, pointer)</dt></dl>
+
+<hr>
+Methods inherited from <a href="viz.html#EventClass">viz.EventClass</a>:<br>
+<dl><dt><a name="Control-addWindowMessage"><strong>addWindowMessage</strong></a>(self, msg)</dt><dd><tt>Add&nbsp;a&nbsp;window&nbsp;message&nbsp;to&nbsp;handle</tt></dd></dl>
+
+<dl><dt><a name="Control-callback"><strong>callback</strong></a>(self, event, function, priority<font color="#909090">=0</font>)</dt><dd><tt>Register&nbsp;the&nbsp;<a href="viz.html#EventClass">EventClass</a>&nbsp;with&nbsp;the&nbsp;event&nbsp;type</tt></dd></dl>
+
+<dl><dt><a name="Control-clearWindowMessages"><strong>clearWindowMessages</strong></a>(self)</dt><dd><tt>Remove&nbsp;a&nbsp;window&nbsp;message&nbsp;to&nbsp;handle</tt></dd></dl>
+
+<dl><dt><a name="Control-getEnabled"><strong>getEnabled</strong></a>(self)</dt><dd><tt>Get&nbsp;whether&nbsp;the&nbsp;event&nbsp;class&nbsp;is&nbsp;enabled</tt></dd></dl>
+
+<dl><dt><a name="Control-killtimer"><strong>killtimer</strong></a>(self, timerNum)</dt><dd><tt>Kill&nbsp;a&nbsp;timer&nbsp;that&nbsp;was&nbsp;started&nbsp;for&nbsp;the&nbsp;<a href="viz.html#EventClass">EventClass</a></tt></dd></dl>
+
+<dl><dt><a name="Control-removeWindowMessage"><strong>removeWindowMessage</strong></a>(self, msg)</dt><dd><tt>Remove&nbsp;a&nbsp;window&nbsp;message&nbsp;to&nbsp;handle</tt></dd></dl>
+
+<dl><dt><a name="Control-setEnabled"><strong>setEnabled</strong></a>(self, mode)</dt><dd><tt>Enable/disable&nbsp;event&nbsp;class</tt></dd></dl>
+
+<dl><dt><a name="Control-starttimer"><strong>starttimer</strong></a>(self, timerNum<font color="#909090">=1</font>, timeSec<font color="#909090">=0.0</font>, repeat<font color="#909090">=0</font>)</dt><dd><tt>Start&nbsp;a&nbsp;timer&nbsp;that&nbsp;will&nbsp;only&nbsp;expire&nbsp;for&nbsp;the&nbsp;<a href="viz.html#EventClass">EventClass</a></tt></dd></dl>
+
+<dl><dt><a name="Control-stopeventclass"><strong>stopeventclass</strong></a> = _fn(*args, **kw)</dt></dl>
+
+<dl><dt><a name="Control-unregister"><strong>unregister</strong></a>(self)</dt><dd><tt>Unregister&nbsp;the&nbsp;<a href="viz.html#EventClass">EventClass</a>&nbsp;with&nbsp;ALL&nbsp;events</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="viz.html#EventClass">viz.EventClass</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-getCoords"><strong>getCoords</strong></a>(source, destination)</dt><dd><tt>source&nbsp;should&nbsp;be&nbsp;a&nbsp;3D&nbsp;connection&nbsp;device,&nbsp;and&nbsp;<br>
+the&nbsp;destination&nbsp;should&nbsp;be&nbsp;a&nbsp;3d&nbsp;node&nbsp;type</tt></dd></dl>
+ <dl><dt><a name="-scalarMult"><strong>scalarMult</strong></a>(lst1, lst2)</dt><dd><tt>takes&nbsp;2&nbsp;lists,&nbsp;and&nbsp;returns&nbsp;the&nbsp;scalar&nbsp;<br>
+multiplication&nbsp;of&nbsp;the&nbsp;lists<br>
+*lists&nbsp;must&nbsp;be&nbsp;the&nbsp;same&nbsp;length</tt></dd></dl>
+</td></tr></table>
+</body></html>

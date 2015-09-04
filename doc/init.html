@@ -1,0 +1,160 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module init</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>init</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:///C:/users/jascha/google%20drive/spring15/msd%20ii/svn/web/public/software/development/init.py">c:\users\jascha\google drive\spring15\msd ii\svn\web\public\software\development\init.py</a></font></td></tr></table>
+    <p><tt>init.py<br>
+&nbsp;<br>
+The&nbsp;purpose&nbsp;of&nbsp;this&nbsp;file&nbsp;is&nbsp;to&nbsp;organize&nbsp;all&nbsp;of&nbsp;the&nbsp;input&nbsp;and<br>
+output&nbsp;initilization&nbsp;code&nbsp;onto&nbsp;one&nbsp;place&nbsp;so&nbsp;that&nbsp;IO&nbsp;parameters&nbsp;<br>
+can&nbsp;be&nbsp;changed&nbsp;efficiently.&nbsp;<br>
+&nbsp;<br>
+Different&nbsp;IO&nbsp;options&nbsp;include:&nbsp;<br>
+&nbsp;<br>
+Input:<br>
+-keyboard&nbsp;only<br>
+-3d&nbsp;mouse<br>
+-wiimote&nbsp;(to&nbsp;be&nbsp;implemented)<br>
+&nbsp;<br>
+output:&nbsp;<br>
+-monitor<br>
+-Oculus&nbsp;SDK&nbsp;1<br>
+-Oculus&nbsp;SDk&nbsp;2<br>
+-3D&nbsp;TV<br>
+-3D&nbsp;TV&nbsp;w/&nbsp;Wii&nbsp;Motion&nbsp;capture&nbsp;support&nbsp;(to&nbsp;be&nbsp;implemented)<br>
+-combinations&nbsp;of&nbsp;the&nbsp;above&nbsp;if&nbsp;possible.</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="puzzle.html">puzzle</a><br>
+<a href="viz.html">viz</a><br>
+</td><td width="25%" valign=top><a href="vizact.html">vizact</a><br>
+<a href="vizproximity.html">vizproximity</a><br>
+</td><td width="25%" valign=top><a href="vizshape.html">vizshape</a><br>
+<a href="viztask.html">viztask</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="init.html#DisplayInstance">DisplayInstance</a>
+</font></dt><dt><font face="helvetica, arial"><a href="viz.html#EventClass">viz.EventClass</a>(<a href="__builtin__.html#object">__builtin__.object</a>)
+</font></dt><dd>
+<dl>
+<dt><font face="helvetica, arial"><a href="init.html#CameraKeyboardControl">CameraKeyboardControl</a>
+</font></dt></dl>
+</dd>
+</dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="CameraKeyboardControl">class <strong>CameraKeyboardControl</strong></a>(<a href="viz.html#EventClass">viz.EventClass</a>)</font></td></tr>
+    
+<tr bgcolor="#ffc8d8"><td rowspan=2><tt>&nbsp;&nbsp;&nbsp;</tt></td>
+<td colspan=2><tt>This&nbsp;class&nbsp;handles&nbsp;the&nbsp;overloading&nbsp;of&nbsp;the&nbsp;arrow&nbsp;control&nbsp;<br>
+system&nbsp;so&nbsp;that&nbsp;control&nbsp;of&nbsp;the&nbsp;camera&nbsp;can&nbsp;be&nbsp;handeled&nbsp;with&nbsp;<br>
+only&nbsp;one&nbsp;hand<br>&nbsp;</tt></td></tr>
+<tr><td>&nbsp;</td>
+<td width="100%"><dl><dt>Method resolution order:</dt>
+<dd><a href="init.html#CameraKeyboardControl">CameraKeyboardControl</a></dd>
+<dd><a href="viz.html#EventClass">viz.EventClass</a></dd>
+<dd><a href="__builtin__.html#object">__builtin__.object</a></dd>
+</dl>
+<hr>
+Methods defined here:<br>
+<dl><dt><a name="CameraKeyboardControl-__init__"><strong>__init__</strong></a>(self)</dt></dl>
+
+<dl><dt><a name="CameraKeyboardControl-cameraFocus"><strong>cameraFocus</strong></a>(self, camcenter, camlink)</dt></dl>
+
+<dl><dt><a name="CameraKeyboardControl-onKeyDown"><strong>onKeyDown</strong></a>(self, key)</dt><dd><tt>handles&nbsp;what&nbsp;happens&nbsp;when&nbsp;each&nbsp;key&nbsp;is&nbsp;pressed</tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-onKeyUp"><strong>onKeyUp</strong></a>(self, key)</dt><dd><tt>handles&nbsp;all&nbsp;key&nbsp;up&nbsp;events</tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-performKeyMovements"><strong>performKeyMovements</strong></a>(self, camcenter, camlink)</dt><dd><tt>the&nbsp;loop&nbsp;that&nbsp;is&nbsp;submitted&nbsp;to&nbsp;the&nbsp;scheduler&nbsp;<br>
+to&nbsp;act&nbsp;and&nbsp;move&nbsp;the&nbsp;camera,&nbsp;or&nbsp;change&nbsp;the&nbsp;camera&nbsp;center<br>
+&nbsp;<br>
+camcenter&nbsp;object&nbsp;is&nbsp;a&nbsp;3d&nbsp;node&nbsp;object&nbsp;that&nbsp;is&nbsp;supplied&nbsp;to&nbsp;the&nbsp;<br>
+camera&nbsp;keyboard&nbsp;control&nbsp;&nbsp;object,&nbsp;that&nbsp;is&nbsp;the&nbsp;parent&nbsp;of&nbsp;the<br>
+camera&nbsp;to&nbsp;be&nbsp;manipulated</tt></dd></dl>
+
+<hr>
+Methods inherited from <a href="viz.html#EventClass">viz.EventClass</a>:<br>
+<dl><dt><a name="CameraKeyboardControl-addWindowMessage"><strong>addWindowMessage</strong></a>(self, msg)</dt><dd><tt>Add&nbsp;a&nbsp;window&nbsp;message&nbsp;to&nbsp;handle</tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-callback"><strong>callback</strong></a>(self, event, function, priority<font color="#909090">=0</font>)</dt><dd><tt>Register&nbsp;the&nbsp;<a href="viz.html#EventClass">EventClass</a>&nbsp;with&nbsp;the&nbsp;event&nbsp;type</tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-clearWindowMessages"><strong>clearWindowMessages</strong></a>(self)</dt><dd><tt>Remove&nbsp;a&nbsp;window&nbsp;message&nbsp;to&nbsp;handle</tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-getEnabled"><strong>getEnabled</strong></a>(self)</dt><dd><tt>Get&nbsp;whether&nbsp;the&nbsp;event&nbsp;class&nbsp;is&nbsp;enabled</tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-killtimer"><strong>killtimer</strong></a>(self, timerNum)</dt><dd><tt>Kill&nbsp;a&nbsp;timer&nbsp;that&nbsp;was&nbsp;started&nbsp;for&nbsp;the&nbsp;<a href="viz.html#EventClass">EventClass</a></tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-removeWindowMessage"><strong>removeWindowMessage</strong></a>(self, msg)</dt><dd><tt>Remove&nbsp;a&nbsp;window&nbsp;message&nbsp;to&nbsp;handle</tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-setEnabled"><strong>setEnabled</strong></a>(self, mode)</dt><dd><tt>Enable/disable&nbsp;event&nbsp;class</tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-starttimer"><strong>starttimer</strong></a>(self, timerNum<font color="#909090">=1</font>, timeSec<font color="#909090">=0.0</font>, repeat<font color="#909090">=0</font>)</dt><dd><tt>Start&nbsp;a&nbsp;timer&nbsp;that&nbsp;will&nbsp;only&nbsp;expire&nbsp;for&nbsp;the&nbsp;<a href="viz.html#EventClass">EventClass</a></tt></dd></dl>
+
+<dl><dt><a name="CameraKeyboardControl-stopeventclass"><strong>stopeventclass</strong></a> = _fn(*args, **kw)</dt></dl>
+
+<dl><dt><a name="CameraKeyboardControl-unregister"><strong>unregister</strong></a>(self)</dt><dd><tt>Unregister&nbsp;the&nbsp;<a href="viz.html#EventClass">EventClass</a>&nbsp;with&nbsp;ALL&nbsp;events</tt></dd></dl>
+
+<hr>
+Data descriptors inherited from <a href="viz.html#EventClass">viz.EventClass</a>:<br>
+<dl><dt><strong>__dict__</strong></dt>
+<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+<dl><dt><strong>__weakref__</strong></dt>
+<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+</dl>
+</td></tr></table> <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="DisplayInstance">class <strong>DisplayInstance</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="DisplayInstance-__init__"><strong>__init__</strong></a>(self, displayMode, camMode, device, pointer)</dt></dl>
+
+<dl><dt><a name="DisplayInstance-cameraInput"><strong>cameraInput</strong></a>(self)</dt><dd><tt>Initialize&nbsp;the&nbsp;camera&nbsp;movement&nbsp;controls<br>
+&nbsp;<br>
+Mode&nbsp;selection:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;-&nbsp;Arrow&nbsp;keys&nbsp;circular&nbsp;movement<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;-&nbsp;Spacemouse&nbsp;(WARNING:&nbsp;potential&nbsp;conflict&nbsp;with&nbsp;pointer&nbsp;mode&nbsp;1)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2&nbsp;-&nbsp;Wiimote&nbsp;(Not&nbsp;implemented)</tt></dd></dl>
+
+<dl><dt><a name="DisplayInstance-display"><strong>display</strong></a>(self)</dt><dd><tt>Initialize&nbsp;the&nbsp;display<br>
+&nbsp;<br>
+Mode&nbsp;selection:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;-&nbsp;Regular&nbsp;computer<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;-&nbsp;3D&nbsp;TV<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2&nbsp;-&nbsp;Oculus&nbsp;rift</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-loadColiseum"><strong>loadColiseum</strong></a>()</dt><dd><tt>loads&nbsp;colosseum&nbsp;enviornment</tt></dd></dl>
+ <dl><dt><a name="-loadTemple"><strong>loadTemple</strong></a>()</dt><dd><tt>loads&nbsp;temple&nbsp;enviornment</tt></dd></dl>
+ <dl><dt><a name="-onCollide"><strong>onCollide</strong></a>(e)</dt></dl>
+ <dl><dt><a name="-pointerInput"><strong>pointerInput</strong></a>(mode, pointer, arena)</dt></dl>
+</td></tr></table>
+</body></html>
