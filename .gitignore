@@ -50,6 +50,10 @@ pip-log.txt
 ############
 ## Specific to game
 
-dataset/
 logs/
 log/
+
+*.obj
+*.wav
+*.osgb
+*.mp3

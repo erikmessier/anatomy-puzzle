@@ -19,4 +19,4 @@ camMode = 0
 # Pointer control mode options:
 #  0 - X/Y/Z jog (tb/fh/vy)  keyboard control
 #  1 - SpaceMouse control
-pointerMode = 0
+pointerMode = 1

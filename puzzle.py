@@ -151,7 +151,7 @@ class Bone(viz.VizNode):
 				self.info += bd + ' '
 		
 		# We are using a 'center' viznode to make manipulation easy
-		self.center = vizshape.addCube(0.1) #A cube was arbitrarily chosen
+		self.center = vizshape.addCube(0.1) # An arbitrary placeholder cube
 		viz.VizNode.__init__(self, self.center.id)
 		
 		# This is the actual mesh we will see
@@ -228,7 +228,7 @@ class Bone(viz.VizNode):
 		"""used to determine how long the glove is close to a bone. 
 			helps with debouncing for sound output
 		"""
-		self.proxCounter = self.proxCounter + 1
+		self.proxCounter += 1
 	
 	def clearProxCounter(self):
 		"""resets the counter for how long glove is close to bone"""
@@ -639,7 +639,7 @@ def end():
 			bind.remove()
 		RUNNING = False
 	
-def loadBones(animate = True):
+def loadBones(animate = False):
 	"""Load all of the bones from the dataset into puzzle.bone instances"""
 	for i, n in enumerate(names):
 		# This is the actual mesh we will see
@@ -658,7 +658,7 @@ def loadBones(animate = True):
 			targetPosition = [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
 			targetEuler = [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
 			
-			if (False):	
+			if (animate):
 				move = vizact.moveTo(targetPosition, time = 2)
 				spin = vizact.spinTo(euler = targetEuler, time = 2)
 				transition = vizact.parallel(spin, move)
