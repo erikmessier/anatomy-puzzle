@@ -1,5 +1,8 @@
-﻿import csv
+﻿# Written for BodyParts3D v4.0
+
+import csv
 import re
+import os
 import json
 
 DATASET_PATH = '..\\dataset\\full\\'
@@ -20,27 +23,31 @@ def getCenterOfMass(file):
 	cm = [v/verts for v in cm]
 	return cm
 
-#csv = csv.writer(DATASET_PATH + csvName)
-#csv.writerow(['filename','name','description','x','z','y'])
-
 metadata = {}
 knownFiles, unknownFiles = 0, 0
 
-with open(DATASET_PATH + 'parts_list_e.txt', 'rb') as f:
-	for line in f:
-		if not re.search(r'FMA|BP',line): continue
-		filename, name = line.split()[0], ' '.join(line.split()[1:])
-		metadata[filename] = {'name':name}
+filenames = os.listdir(DATASET_PATH)
 
-for k in metadata.keys():
-	try:
-		with open(DATASET_PATH + k + '.obj', 'rb') as f:
-			metadata[k].update(zip(['x','z','y'], getCenterOfMass(f)))
-			knownFiles += 1
-	except IOError:
-		metadata.pop(k)
-		unknownFiles += 1
-	
+for i, name in enumerate(filenames):
+	if '.obj' not in name: continue
+	with open(DATASET_PATH + name, 'rb') as f:
+		header = f.read(5000)
+		f.seek(0)
+		thisData = {}
+		try:
+			thisData['concept'] = re.search(r'FMA[0123456789]+',header).group(0)
+			thisData['representation'] = re.search(r'BP[0123456789]+',header).group(0)
+			thisData['name'] = re.search(r'(?:English name : )[a-zA-Z ]+',header).group(0)[15:]
+			thisData['filename'] = name.strip('.obj')
+		except (AttributeError, KeyError):
+			print "File " + name + ' is missing metadata.'
+			continue
+			
+		thisData['centerPoint'] = getCenterOfMass(f)
+		
+		metadata[thisData['concept']] = thisData
+		knownFiles += 1
+
 
 print str(knownFiles) + ' files were parsed.'
 print str(unknownFiles) + ' files were not found. Possibly assembly names.'
