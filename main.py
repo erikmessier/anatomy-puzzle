@@ -21,56 +21,60 @@ import puzzle
 import config
 #import overHeadMenu
 
+def main():
+	### Configuration parameters
+	# moved to config.py
 
-### Configuration parameters
-# moved to config.py
-
-### Game startup
-#overwrite escape key
-viz.setOption('viz.default_key.quit','0')
-
-
-# Physics
-viz.phys.enable()
-#viz.phys.setGravity(0,0,0)
+	### Game startup
+	#overwrite escape key
+	viz.setOption('viz.default_key.quit','0')
 
 
-# Initialize pointer tool
-glove = viz.addChild('glove.cfg')
-glove.disable([viz.PHYSICS, viz.DYNAMICS])
+	# Physics
+	viz.phys.enable()
+	#viz.phys.setGravity(0,0,0)
 
-glovePhys = glove.collideSphere()
-glove.setPosition([0,1,0])
-glove.setScale([2,2,2])
 
-# Initialize environment this will load the coliseum and sky
-sky = viz.addChild('sky_day.osgb')
-sky.collideMesh()
-sky.disable(viz.DYNAMICS)
-init.loadTemple()
+	# Initialize pointer tool
+	# Unused?
+	glove = viz.addChild('glove.cfg')
+	glove.disable([viz.PHYSICS, viz.DYNAMICS])
 
-# Initialize pointer controls
-device = init.pointerInput(config.pointerMode, glove, sky)
+	glovePhys = glove.collideSphere()
+	glove.setPosition([0,1,0])
+	glove.setScale([2,2,2])
 
-# Initialize display
-display = init.DisplayInstance(config.dispMode,config.camMode,device,glove)
-#init.display(config.dispMode)
+	# Initialize environment this will load the coliseum and sky
+	sky = viz.addChild('sky_day.osgb')
+	sky.collideMesh()
+	sky.disable(viz.DYNAMICS)
+	init.loadTemple()
 
-# Initialize camera controls
-#init.cameraInput(config.camMode,config.dispMode, device, glove)
+	# Initialize pointer controls
+	device = init.pointerInput(config.pointerMode, glove, sky)
 
-# Launch menu system
-menu.init()
-puzzle.setPointer(glove)
-puzzle.init()
-puzzle.setDisplay(display)
+	# Initialize display
+	display = init.DisplayInstance(config.dispMode,config.camMode,device,glove)
+	#init.display(config.dispMode)
 
-# Escape Key calls main menu
-vizact.onkeydown(viz.KEY_ESCAPE, menu.toggle)
+	# Initialize camera controls
+	#init.cameraInput(config.camMode,config.dispMode, device, glove)
 
-# Stuff to run on program termination
-vizact.onexit(puzzle.end)
+	# Launch menu system
+	menu.init()
+	puzzle.setPointer(glove)
+	puzzle.init()
+	puzzle.setDisplay(display)
 
-# Will move this out of main and where it belongs
-viewcube = puzzle.viewCube()
-vizact.onkeydown('65460', viewcube.toggleModes) # '4' key
+	# Escape Key calls main menu
+	vizact.onkeydown(viz.KEY_ESCAPE, menu.toggle)
+
+	# Stuff to run on program termination
+	vizact.onexit(puzzle.end)
+
+	# Will move this out of main and where it belongs
+	viewcube = puzzle.viewCube()
+	vizact.onkeydown('65460', viewcube.toggleModes) # '4' key
+
+if __name__ == '__main__':
+	main()

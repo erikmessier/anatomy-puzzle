@@ -18,6 +18,7 @@ import csv
 import time
 import datetime
 import init
+import menu
 
 ### Constants
 
@@ -43,11 +44,9 @@ a SpaceMouse, see the code to enable wx/ad/ze control of the glove instead.
 '''
 
 glove = None
-#closestBoneIdx = 0
 
 def init():
 	"""Flush global variables"""
-	pass
 	global RUNNING
 	global bones
 	global names
@@ -120,7 +119,7 @@ class BoneGroup():
 		"""Merge group members into this group and delete"""
 		self.members += source.group.members
 		#del source.group
-		for b in self.members:
+		for b in source.group.members:
 			b.setGroup(self)
 
 class Bone(viz.VizNode):
@@ -156,15 +155,13 @@ class Bone(viz.VizNode):
 		
 		# This is the actual mesh we will see
 		self.mesh = viz.addChild(filePath)
-		viz.VizNode.__init__(self.mesh, self.mesh.id)
 		self.mesh.setScale([SF,SF,SF])
 		
 		# This is the viznode that will be moved around to check distances for snapping
 		self.checker = vizshape.addCube(10.0)
-		viz.VizNode.__init__(self.checker, self.checker.id)
 		
 		# Tooltip
-		self.tooltip = viz.addText(self.nameFormatted) 
+		self.tooltip = viz.addText(self.nameFormatted)
 		self.tooltip.billboard(viz.BILLBOARD_VIEW)
 		self.tooltip.setScale(0.001,0.001,0.001) #small scale for bounding box calc
 		
@@ -244,9 +241,8 @@ class Bone(viz.VizNode):
 		When manipulating a group of bones, the grabbed bone must move all
 		of the other group members
 		"""
-		if self.group:
-			self.group.setParent(self)
-			
+		self.group.setParent(self)
+
 	def setGroup(self, group):
 		"""Set bone group"""
 		self.group = group
@@ -261,7 +257,7 @@ class Bone(viz.VizNode):
 		targetEuler = target.checker.getEuler(viz.ABS_GLOBAL)		
 		# WARNING the full setMatrix cannot be assigned because scale is different.
 		
-		if (animate):				
+		if (animate):
 			move = vizact.moveTo(targetPosition, time = 0.3)
 			spin = vizact.spinTo(euler = targetEuler, time = 0.3)
 			transition = vizact.parallel(spin, move)
@@ -290,13 +286,11 @@ class Bone(viz.VizNode):
 		"""
 		self.tooltip.disable([viz.RENDERING])
 		
-	def setNameAudioFlag(self, val):
+	def setNameAudioFlag(self, flag):
 		"""
-		val can be 0 or 1. 
-		0= stop playback of Bone Name
-		1= allow bone name to be played
+		True to allow bone name playback
 		"""
-		self.nameAudioFlag = val
+		self.nameAudioFlag = flag
 	
 	def getNameAudioFlag(self):
 		"""
@@ -310,17 +304,16 @@ class Bone(viz.VizNode):
 		"""
 		return self.grabbedFlag
 		
-	def setGrabbedFlag(self,val):
+	def setGrabbedFlag(self,flag):
 		"""
 		used for determining if a bone was grabbed or not
-		val = 0 or 1
-		0 = bone was not grabbed
-		1 = bone was grabbing
+		True if bone was grabbed
 		"""
-		self.grabbedFlag = val
+		self.grabbedFlag = flag
 
-	
 	def textRemove(self):
+		"""
+		"""
 		self.tooltip.remove()
 		self.dialogue.remove()
 		self.checker.remove()
@@ -704,7 +697,7 @@ def snap(sourceChild):
 	if they are in fact correctly placed.
 	"""
 	SNAP_THRESHOLD = 0.5;
-	DISTANCE_THRESHOLD = 1.0;
+	DISTANCE_THRESHOLD = 1.5;
 	ANGLE_THRESHOLD = 45;
 	source = getBone(sourceChild.id)
 	moveCheckers(sourceChild)
@@ -728,6 +721,10 @@ def snap(sourceChild):
 			score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
 			viz.playSound(".\\dataset\\snap.wav")
 			source.snap(bone)
+			if len(bones) == len(source.group.members):
+				print "Assembly completed!"
+				end()
+				menu.ingame.endButton()
 			break
 	else:
 		score.event(event = 'release', source = source.name)
@@ -746,16 +743,6 @@ def getBone(value):
 		return bonesById[value]
 	elif type(value) == str:
 		return bonesByName[value]
-
-def calculateAngle(euler1, euler2):
-	"""Determine sum of angle differences, used for alignment checking"""
-	angles = []
-	for i, n in enumerate(euler1):
-		diff = abs(euler1[i] - euler2[i]) % 360
-		if diff > 180:
-			diff = 360 - diff
-		angles.append(diff)
-	return sum(angles)
 
 def setPointer(pointer):
 	"""Set puzzle module global pointer"""
@@ -776,32 +763,6 @@ def csvToList(location):
 		print "Unknown error opening CSV file at:", location
 	return raw
 
-def gloveBox():
-	"""
-	Attempt to create a bounding box that the glove cannot excape,
-	did not work
-	"""
-	box1 = viz.add('box.wrl',pos=[30,15,0])
-	box1.setScale(30,30,30)
-	shape = box1.collideBox(bounce=0)
-	box2 = viz.add('box.wrl',pos=[-30,15,0])
-	box2.setScale(30,30,30)
-	box2.collideCopy(box1)
-	box3 = viz.add('box.wrl',pos=[0,15,30])
-	box3.setScale(30,30,30)
-	box3.collideCopy(box1)
-	box4 = viz.add('box.wrl',pos=[0,15,-30])
-	box4.setScale(30,30,30)
-	box4.collideCopy(box1)
-	box5 = viz.add('box.wrl',pos=[0,35,0])
-	box5.setScale(30,30,30)
-	box5.collideCopy(box1)
-	box1.disable(viz.RENDERING)
-	box2.disable(viz.RENDERING)
-	box3.disable(viz.RENDERING)
-	box4.disable(viz.RENDERING)
-	box5.disable(viz.RENDERING)
-
 def grab(inRange):
 	"""Grab in-range objects with the pointer"""
 	global gloveLink
@@ -810,10 +771,9 @@ def grab(inRange):
 	global glove
 	grabList = [b for b in proximityList if not b.group.grounded] # Needed for disabling grab of grounded bones
 	if len(grabList) > 0 and not grabFlag:
-		print "gonna calculate bone distance"
 		calcClosestBone(glove,grabList)
 		target = grabList[0]
-		#only play bone description sound once, so set it if it hasnt been
+		# only play bone description sound once, so set it if it hasnt been
 		if grabList[0].grabbedFlag == 0:
 			playBoneDesc(grabList[0])
 			grabList[0].setGrabbedFlag(1)
@@ -870,7 +830,7 @@ def removeBoneInfo(boneObj):
 def calcClosestBone(pointer, proxList):
 	"""
 	looks through proximity list and searches for the closest bone to the glove and puts it at
-		the beginning of the list
+	the beginning of the list
 	"""
 	if(len(proxList) >0):
 		bonePos = proxList[0].getPosition(viz.ABS_GLOBAL)
@@ -894,7 +854,6 @@ def soundTask(pointer):
 		looks through proximity list and searches for the closest bone to the glove and puts it at
 		the beginning of the list, allows the bone name and bone description to be played
 	"""
-	"""???"""
 	global proximityList
 	while True:
 		yield viztask.waitTime(0.25)

@@ -28,9 +28,6 @@ def init():
 	main = MainMenu(canvas)
 	game = GameMenu(canvas)
 	ingame = InGameMenu(canvas)
-		
-	
-
 
 class MainMenu(): # Y U NO INHERET vizinfo.InfoPanel (ง •̀_•́)ง
 	"""Main game menu"""
@@ -237,14 +234,11 @@ class InGameMenu():
 #	def ExittoDesktop(self):
 #		viz.quit()
 
-def setVisibility(visibility = viz.TOGGLE):
-	if not puzzle.RUNNING:
-		if(main.active == True):
-			main.toggle()
-		elif(game.active == True):
-			game.toggle()
+def toggle(visibility = viz.TOGGLE):
+	print "toggling menu"
+	if(main.active == True):
+		main.toggle()
+	elif(game.active == True):
+		game.toggle()
 	else:
 		ingame.toggle()
-
-def toggle():
-	setVisibility()
