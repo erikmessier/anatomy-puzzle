@@ -22,6 +22,8 @@ def init():
 	global canvas
 	
 	canvas = viz.addGUICanvas()
+	canvas.setRenderWorldOverlay([2000,2000],60,1)
+	# Compatibility for all display types
 	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
 	canvas.setCursorPosition([0,0])	
 	
@@ -29,57 +31,52 @@ def init():
 	game = GameMenu(canvas)
 	ingame = InGameMenu(canvas)
 
-class MainMenu(): # Y U NO INHERET vizinfo.InfoPanel (ง •̀_•́)ง
+class MainMenu(vizinfo.InfoPanel):
 	"""Main game menu"""
-	
 	def __init__(self,canvas):
 		"""initialize the Main menu"""
-		#self.dispMode = dispMode;
-		print "creating main menu"
-
-		viz.mouse.setVisible(False)
+		vizinfo.InfoPanel.__init__(self, '', title='Main Menu', fontSize = 100, \
+			align=viz.ALIGN_CENTER_CENTER, icon=False, parent=canvas)
 		
+		# Since we are using the vizard pointer, hide system mouse
+		viz.mouse.setVisible(False)
+		viz.mouse.setTrap(True)
 		self.menuVisible = True
 		self.canvas = canvas
 		self.active = True
 		
-		#Creates a virtual mouse if you are in Oculus.
-		#if dispMode == 2:
-		
-		#vizinfo.InfoPanel.__init__(self)
-		self.menu = vizinfo.InfoPanel('',title='Main Menu',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent=self.canvas)
-		self.menu.getPanel().fontSize(50)
+		self.getPanel().fontSize(50)
 
-		self.Play = self.menu.addItem(viz.addButtonLabel('Play'))
-		self.Scores = self.menu.addItem(viz.addButtonLabel('Scores'))
-		self.Options = self.menu.addItem(viz.addButtonLabel('Options'))
-		self.Exit = self.menu.addItem(viz.addButtonLabel('Exit'))
+		self.Play = self.addItem(viz.addButtonLabel('Play'))
+		self.Scores = self.addItem(viz.addButtonLabel('Scores'))
+		self.Options = self.addItem(viz.addButtonLabel('Options'))
+		self.Exit = self.addItem(viz.addButtonLabel('Exit'))
 
 		vizact.onbuttondown(self.Exit,self.exitFunc)
 		vizact.onbuttondown(self.Play,self.playFunc)
 		vizact.onbuttondown(self.Scores, self.scoresFunc)
 		vizact.onbuttondown(self.Options, self.optionsFunc)
 
-		bb = self.menu.getBoundingBox()
+		bb = self.getBoundingBox()
 		self.canvas.setRenderWorldOverlay([bb.width, bb.height], fov=bb.height*.1, distance=3.0)
 		
 		
 
 	def toggle(self):
 		if(self.menuVisible == True):
-			self.menu.setPanelVisible(False)
+			self.setPanelVisible(False)
 			self.canvas.setCursorVisible(False)
 			self.menuVisible = False
 		else:
-			self.menu.setPanelVisible(True)
+			self.setPanelVisible(True)
 			self.canvas.setCursorVisible(True)
 			self.menuVisible = True
 		
 			
 	def playFunc(self):
 		print 'Play button was pressed'
-		self.menu.setPanelVisible(viz.OFF, animate = False)
-		game.menu.setPanelVisible(viz.ON, animate = True)
+		self.setPanelVisible(viz.OFF, animate = False)
+		game.setPanelVisible(viz.ON, animate = True)
 		self.active = False
 		game.active = True
 		
@@ -95,27 +92,27 @@ class MainMenu(): # Y U NO INHERET vizinfo.InfoPanel (ง •̀_•́)ง
 	def optionsFunc(self):
 		print 'Options button was pressed'
 
-class GameMenu():
+class GameMenu(vizinfo.InfoPanel):
 	"""Game selection submenu"""
 	def __init__(self,canvas):
+		vizinfo.InfoPanel.__init__(self, 'Select Dataset',title='Game Menu',fontSize = 50,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
 		self.dataset = 'Skull'
 	
 		self.canvas = canvas
 		self.active = False
 		
 		print "creating Game Menu"
-		self.menu = vizinfo.InfoPanel('Select Dataset',title='Game Menu',fontSize = 50,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
-		self.menu.getPanel().fontSize(50)
-		self.menu.setPanelVisible(viz.OFF, animate = False)
+		self.getPanel().fontSize(50)
+		self.setPanelVisible(viz.OFF, animate = False)
 		self.menuVisible = False;		
 		
 		#Add radio buttons
-		self.skullRadio = self.menu.addLabelItem('Skull', viz.addRadioButton('dataset'))
-		self.armRadio = self.menu.addLabelItem('Arm', viz.addRadioButton('dataset'))
-		self.pelvisRadio = self.menu.addLabelItem('Pelvis', viz.addRadioButton('dataset'))
+		self.skullRadio = self.addLabelItem('Skull', viz.addRadioButton('dataset'))
+		self.armRadio = self.addLabelItem('Arm', viz.addRadioButton('dataset'))
+		self.pelvisRadio = self.addLabelItem('Pelvis', viz.addRadioButton('dataset'))
 
 		#Add puzzle start button
-		self.Puzzle = self.menu.addItem(viz.addButtonLabel('Start Puzzle Game'))
+		self.Puzzle = self.addItem(viz.addButtonLabel('Start Puzzle Game'))
 
 		#Set callbacks
 		vizact.onbuttondown(self.skullRadio, self.setDataset, 'Skull')
@@ -125,7 +122,7 @@ class GameMenu():
 
 	def puzzleFunc(self):
 		print 'Puzzle game button was pressed'
-		self.menu.setPanelVisible(viz.OFF)
+		self.setPanelVisible(viz.OFF)
 		self.canvas.setCursorVisible(viz.OFF)
 		self.active = False
 		ingame.active = True
@@ -137,29 +134,29 @@ class GameMenu():
 
 	def toggle(self):
 		if(self.menuVisible == True):
-			self.menu.setPanelVisible(False)
+			self.setPanelVisible(False)
 			self.canvas.setCursorVisible(False)
 			self.menuVisible = False
 		else:
-			self.menu.setPanelVisible(True)
+			self.setPanelVisible(True)
 			self.canvas.setCursorVisible(True)
 			self.menuVisible = True
 		
 
-class InGameMenu():
+class InGameMenu(vizinfo.InfoPanel):
 	"""In-game menu to be shown when games are running"""
 	def __init__(self,canvas):
+		vizinfo.InfoPanel.__init__(self, '',title='In Game',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent=canvas)
 		
 		self.canvas = canvas
 		self.active = False
-		self.menu = vizinfo.InfoPanel('',title='In Game',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent=self.canvas)
-		self.menu.getPanel().fontSize(50)
-		self.menu.setPanelVisible(viz.OFF, animate = False)
+		self.getPanel().fontSize(50)
+		self.setPanelVisible(viz.OFF, animate = False)
 		self.menuVisible = False
 		
-		self.options = self.menu.addItem(viz.addButtonLabel('Options'))
-		self.restart = self.menu.addItem(viz.addButtonLabel('Restart'))
-		self.end = self.menu.addItem(viz.addButtonLabel('End game'))
+		self.options = self.addItem(viz.addButtonLabel('Options'))
+		self.restart = self.addItem(viz.addButtonLabel('Restart'))
+		self.end = self.addItem(viz.addButtonLabel('End game'))
 		
 		#Callbacks
 #		vizact.onbuttondown(self.options, self.optionsButton)
@@ -179,60 +176,18 @@ class InGameMenu():
 		self.active = False
 		main.active = True
 		main.menuVisible = True
-		main.menu.setPanelVisible(True)
+		main.setPanelVisible(True)
 		main.canvas.setCursorVisible(True)
 
 	def toggle(self):
 		if(self.menuVisible == True):
-			self.menu.setPanelVisible(False)
+			self.setPanelVisible(False)
 			self.canvas.setCursorVisible(False)
 			self.menuVisible = False
 		else:
-			self.menu.setPanelVisible(True)
+			self.setPanelVisible(True)
 			self.canvas.setCursorVisible(True)
 			self.menuVisible = True
-#		
-#class OverHeadMenu(viz.VizNode):
-#	def __init__(self):
-#		self.menuBoxes = []
-#		self.ExtoMM = vizshape.addBox()
-#		self.ExtoMM.setScale(2.0, 0.5, 0.5)
-#		self.ExtoMM.billboard(viz.BILLBOARD_VIEW)
-#		self.ExtoMM.setPosition([0.0,2.0, 3.0])
-#		self.textEMM = viz.addText('Exit to Main Menu', self.ExtoMM)
-#		self.textEMM.setParent(self.ExtoMM)
-#		self.textEMM.setScale(0.1,0.3,0.3)
-#		self.textEMM.alignment(viz.TEXT_CENTER_CENTER)
-#		self.textEMM.color(viz.RED)
-#		self.textEMM.setPosition(0,0,-0.505)
-#		
-#		self.menuBoxes.append(self.ExtoMM)
-#		#sensor1 = vizproximity.addBoundingSphereSensor(self.ExtoMM,scale=2)
-#		#manager.addSensor(sensor1)
-#		
-#		self.ExtoDesktop = vizshape.addBox()
-#		self.ExtoDesktop.setParent(self.ExtoMM)
-#		self.ExtoDesktop.setScale(1.0,1.0,1.0)
-#		self.ExtoDesktop.billboard(viz.BILLBOARD_VIEW)
-#		self.ExtoDesktop.setPosition([0.0,-1.25,0.0])
-#		self.textED = viz.addText('Exit to Desktop', self.ExtoDesktop)
-#		self.textED.setParent(self.ExtoDesktop)
-#		self.textED.setScale(0.1,0.3,0.3)
-#		self.textED.alignment(viz.TEXT_CENTER_CENTER)
-#		self.textED.color(viz.RED)
-#		self.textED.setPosition(0,0,-0.505)
-#		
-#		self.menuBoxes.append(self.ExtoDesktop)
-#		#sensor2 = vizproximity.addBoundingSphereSensor(self.ExtoDesktop,scale=2)
-#		#manager.addSensor(sensor2)
-#		
-#	def ExitToMainMenu(self):
-#		for menu in self.menuBoxes:
-#			menu.remove()
-#		mainMenu = MainMenu()
-#		
-#	def ExittoDesktop(self):
-#		viz.quit()
 
 def toggle(visibility = viz.TOGGLE):
 	print "toggling menu"
