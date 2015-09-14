@@ -5,6 +5,7 @@ This file provides all methods and objects necessary to
 run the anatomy puzzle game.
 """
 
+# Vizard modules
 import viz
 import vizact
 import vizmat
@@ -12,11 +13,15 @@ import vizshape
 import vizproximity
 import viztask
 
+# Python built-in modules
 import random
+import json
 import math
 import csv
 import time
 import datetime
+
+# Custom modules
 import init
 import menu
 
@@ -30,6 +35,7 @@ SF = 1.0/200
 # Point to the main dataset folder for convenience
 datasets = {'Skull':'.\\dataset\\Skull\\','Arm':'.\\dataset\\Arm\\','Pelvis':'.\\dataset\\Pelvis\\'}
 path = datasets['Skull']
+PATH = '.\\dataset\\full\\'
 extension = '.obj'
 
 INSTRUCTIONS = '''
@@ -632,9 +638,9 @@ def end():
 			bind.remove()
 		RUNNING = False
 	
-def loadBones(animate = False):
+def loadMeshes(meshes = [], animate = False):
 	"""Load all of the bones from the dataset into puzzle.bone instances"""
-	for i, n in enumerate(names):
+	for i, n in enumerate(meshes):
 		# This is the actual mesh we will see
 		b = Bone(path + n + '.obj', boneExcelData[n], boneInfo[n],display,SF)
 		
@@ -906,8 +912,12 @@ def ExitProximity(e):
 	proximityList.remove(source)
 	removeBoneInfo(getBone(source.id))
 
-def load(dataset = 'Skull'):
-	"""Setup proximity manager"""
+def load(dataset = 'aorta'):
+	"""
+	Load datasets and initialize everything necessary to commence
+	the puzzle game.
+	"""
+	
 	global RUNNING
 	global path
 	global manager
@@ -916,10 +926,16 @@ def load(dataset = 'Skull'):
 		init() # Flush everything
 		
 		RUNNING = True
-		path = datasets[dataset]
 		
+		# Dataset
+		FMAPartOfElement = parseOntology()
+		
+		global boneMetaData
+		with open(PATH + 'metadata.json','rb') as f:
+			boneMetaData = json.load(f)
+		
+		# Proximity management
 		manager = vizproximity.Manager()
-		
 		target = vizproximity.Target(glove)
 		manager.addTarget(target)
 
@@ -927,7 +943,7 @@ def load(dataset = 'Skull'):
 		manager.onExit(None, ExitProximity)
 
 	
-		#selection commands 
+		# Selection commands 
 		global keyBindings
 		keyBindings.append(vizact.onkeydown('o',manager.setDebug,viz.TOGGLE)) #debug shapes
 		keyBindings.append(vizact.onkeydown(' ',grab,proximityList)) #space select
@@ -966,5 +982,18 @@ def load(dataset = 'Skull'):
 		
 		viztask.schedule(soundTask(glove))
 		
-		loadBones()
-		snapGroup(smallBoneGroups)
+		loadMeshes(FMAPartOfElement[dataset])
+		#snapGroup(smallBoneGroups)
+
+def parseOntology():
+	FMAPartOfElement = {}
+	with open(PATH + 'partof_element_parts.txt', 'rb') as f:
+		reader = csv.reader(f, delimiter = '\t')
+		reader.next()
+		for line in reader:
+			if not FMAPartOfElement.has_key(line[1]):
+				FMAPartOfElement[line[1]] = []
+			else:
+				FMAPartOfElement[line[1]].append(line[2])
+
+	return FMAPartOfElement
