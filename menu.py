@@ -44,7 +44,7 @@ class MainMenu(vizinfo.InfoPanel):
 		
 		# add options button row
 		self.options = self.addItem(viz.addButtonLabel('Options'), fontSize = 50)
-		vizact.onbuttondown(self.options, self.helpButton)
+		vizact.onbuttondown(self.options, self.optionsButton)
 		
 		# add help button row
 		self.exit = self.addItem(viz.addButtonLabel('Exit'), fontSize = 50)
@@ -74,15 +74,14 @@ class MainMenu(vizinfo.InfoPanel):
 		viz.quit()
 		print 'Visual Anatomy Trainer has closed'
 	
-	def helpButton(self):
+	def optionsButton(self):
 		print 'Options button was pressed'
 
 class GameMenu(vizinfo.InfoPanel):
 	"""Game selection submenu"""
 	def __init__(self,canvas, layers):
-		vizinfo.InfoPanel.__init__(self, 'Choose Which Parts of the Skeletal System You Would Like To Puzzle',title= None,fontSize = 25,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
+		vizinfo.InfoPanel.__init__(self, '',title= None,fontSize = 25,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
 		self.layers = config.layers
-		self.layerSuper = list(enumerate(self.layers))
 		
 		self.canvas = canvas
 		self.active = False
@@ -91,34 +90,86 @@ class GameMenu(vizinfo.InfoPanel):
 		self.getPanel().fontSize(50)
 		self.setPanelVisible(viz.OFF, animate = False)
 		self.menuVisible = False	
-		
-		#creating grid panel to add menu selections to
-		setGrid = vizdlg.GridPanel(parent = canvas)
-		
+	
 		#creating tab panel tp 
 		tp = vizdlg.TabPanel(align = viz.ALIGN_LEFT_TOP, parent = canvas)
 		
-		#adding sub panels to tab panel(all layer data is stored in config.layers)
+		#creating dict space for checkboxes
+		self.checkBox = {}
 		
-		for i in range(len(self.layers)):
-			tp.addPanel(self.layerSuper[i][i])
+		for cb in [cb for l in self.layers.values() for cb in l]:
+			self.checkBox[cb] = viz.addCheckbox()
 		
+		#creating sub panels for tab panels(all layer data is stored in config.layers) storing sub panels in laypan
+		layPan = {}
 		
-		#adding back button
+		for i, l in enumerate(self.layers):
+			layPan[l] = vizdlg.GridPanel(parent = canvas)
+
+		#add items to sub panels of tab panels
+		for i in self.layers:
+			for j in self.layers[i]:
+				layPan[i].addRow([viz.addText(j), self.checkBox[j]])
+			tp.addPanel(i, layPan[i], align = viz.ALIGN_LEFT_TOP)
 		
+		#add directions above menu items
+		self.addItem(viz.addText('Select the Following Parts of the Skeletal System That You Wish to Puzzle', parent = canvas), fontSize = 30)
 		
+		#add tab panel to info panel
+		self.addItem(tp, align = viz.ALIGN_CENTER_TOP)
+		tp.setCellPadding(10)
+
+		#creating grid panel to add back and start buttons to
+		setGrid = vizdlg.GridPanel(parent = canvas)
+		
+		#create back and start buttons
+		backButton = viz.addButtonLabel('Back')
+		startButton = viz.addButtonLabel('Start')
+		setGrid.addRow([backButton, startButton])
+		self.addItem(setGrid, align = viz.ALIGN_RIGHT_TOP)
+		
+		#add button event callback
+		self.checkState = {}
+		for cb in [cb for l in self.layers.values() for cb in l]:
+			self.checkState[cb] = False
+		viz.callback(viz.BUTTON_EVENT, self.checkBoxState)
+		
+		#add back and state button actions
+		vizact.onbuttondown(backButton, self.back)
+		vizact.onbuttondown(startButton, self.start)
+
 	def start(self):
-		print 'Puzzle game button was pressed'
-		self.setPanelVisible(viz.OFF)
-		self.canvas.setCursorVisible(viz.OFF)
-		self.active = False
-		ingame.active = True
-		puzzle.load(self.dataset)
+		loadLayers = []
+		print 'Puzzle game has been started!'
+		for i in self.checkState:
+			if self.checkState[i] == True:
+				loadLayers.append(i)
+		if len(loadLayers) != 0:
+			print loadLayers
+		else: 
+			print 'No Layer Was Selected!'
+		
+#		self.setPanelVisible(viz.OFF)
+#		self.canvas.setCursorVisible(viz.OFF)
+#		self.active = False
+#		ingame.active = True
 	
 	def setDataset(self, name):
 		self.dataset = name
 		
-
+	def checkBoxState(self, obj, state):
+		for l in self.checkBox:
+			if obj == self.checkBox[l]:
+				if state == viz.DOWN:
+					self.checkState[l] = True
+				else:
+					self.checkState[l] = False
+	def back(self):
+		print "Goi'n Back!"
+		self.setPanelVisible(viz.OFF, animate = False)
+		main.setPanelVisible(viz.ON, animate = True)
+		self.active = False
+		main.active = True
 	def toggle(self):
 		if(self.menuVisible == True):
 			self.setPanelVisible(False)
@@ -128,11 +179,6 @@ class GameMenu(vizinfo.InfoPanel):
 			self.setPanelVisible(True)
 			self.canvas.setCursorVisible(True)
 			self.menuVisible = True
-	def imageOfSet(self,layerName):
-		datasetImage = '.\\img\\' + layerName + '.png'
-		return datasetImage
-		print imageOfSet('Skull')
-		
 
 class InGameMenu(vizinfo.InfoPanel):
 	"""In-game menu to be shown when games are running"""
