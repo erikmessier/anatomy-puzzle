@@ -127,12 +127,12 @@ class Bone(viz.VizNode):
 	Bone object is a customized version of VizNode that is design to accomodate
 	obj files from the BodyParts3D database.
 	"""
-	def __init__(self, filePath, metaData, boneDesc, display, SF = 1.0/50):
+	def __init__(self, filePath, metaData, boneDesc, SF = 1.0/50):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""		
 		self.centerPoint = metaData['coordinates']
 		self.centerPointScaled = [a*SF for a in self.centerPoint]
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
-		self.display = display
+#		self.display = display
 		self.name = metaData['name']
 		self.nameFormatted = ''
 		for i, w in enumerate(metaData['name'].split()):
@@ -166,7 +166,7 @@ class Bone(viz.VizNode):
 		self.tooltip.setScale(0.001,0.001,0.001) #small scale for bounding box calc
 		
 		#Description
-		if display.displayMode == 2:
+		if True:
 			self.dialogue = viz.addText(self.info,pos = [0,3,0],parent=viz.WORLD)
 			self.dialogue.billboard(viz.BILLBOARD_VIEW)
 			self.dialogue.setBackdrop(viz.BACKDROP_CENTER_TOP)
@@ -252,7 +252,8 @@ class Bone(viz.VizNode):
 		self.mesh.alpha(level)
 	
 	def snap(self, target, animate = True):
-		"""Invoked by the puzzle.snap method to handle local business"""		
+		"""Invoked by the puzzle.snap method to handle local business"""
+		moveCheckers(self)
 		targetPosition = target.checker.getPosition(viz.ABS_GLOBAL)
 		targetEuler = target.checker.getEuler(viz.ABS_GLOBAL)		
 		# WARNING the full setMatrix cannot be assigned because scale is different.
@@ -632,17 +633,18 @@ def end():
 			bind.remove()
 		RUNNING = False
 	
-def loadBones(animate = False):
+def loadBones(animate = False, randomize = True):
 	"""Load all of the bones from the dataset into puzzle.bone instances"""
 	for i, n in enumerate(names):
 		# This is the actual mesh we will see
-		b = Bone(path + n + '.obj', boneExcelData[n], boneInfo[n],display,SF)
+		b = Bone(path + n + '.obj', boneExcelData[n], boneInfo[n],SF)
 		
-		if (i == 0):
+		if (not randomize or i == 0):
 			#Hardcoded keystone
 			b.setPosition([0.0,1.0,0.0])
 			b.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical
-			b.group.grounded = True
+			if (i == 0):
+				b.group.grounded = True
 		else:		
 			# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
 			angle = random.random() * 2 * math.pi
@@ -779,10 +781,10 @@ def grab(inRange):
 			grabList[0].setGrabbedFlag(1)
 		target.setGroupParent()
 		gloveLink = viz.grab(glove, target, viz.ABS_GLOBAL)
-		score.event(event = 'grab', source = target.name)
+#		score.event(event = 'grab', source = target.name)
 		transparency(target, 0.7)
-	elif not grabFlag:
-		score.event(event = 'grab')
+#	elif not grabFlag:
+#		score.event(event = 'grab')
 	grabFlag = True
 
 def release():
@@ -848,46 +850,46 @@ def calcClosestBone(pointer, proxList):
 				proxList[i] = proxList[0]
 				proxList[0] = tempBone
 
-def soundTask(pointer):
-	"""
-	Function to be placed in Vizard's task scheduler
-		looks through proximity list and searches for the closest bone to the glove and puts it at
-		the beginning of the list, allows the bone name and bone description to be played
-	"""
-	global proximityList
-	while True:
-		yield viztask.waitTime(0.25)
-		if(len(proximityList) >0):
-			bonePos = proximityList[0].getPosition(viz.ABS_GLOBAL)
-			pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
-			shortestDist = vizmat.Distance(bonePos, pointerPos)
-			
-			for i,x in enumerate(proximityList):
-				proximityList[i].incProxCounter()  #increase count for how long glove is near bone
-				bonePos = proximityList[i].getPosition(viz.ABS_GLOBAL)
-				pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
-				tempDist = vizmat.Distance(bonePos,pointerPos)
-				#displayBoneInfo(proximityList[0])
-
-				if(tempDist < shortestDist):
-					removeBoneInfo(proximityList[0])
-					shortestDist = tempDist
-					tempBone = proximityList[i]
-					proximityList[i] = proximityList[0]
-					proximityList[0] = tempBone
-			#tempBone = proximityList[0]
-			displayBoneInfo(proximityList[0])
-			
-			if proximityList[0].proxCounter > 2 and proximityList[0].getNameAudioFlag() == 1:
-				#yield viztask.waitTime(3.0)
-				vizact.ontimer2(0,0,playName,proximityList[0])
-				proximityList[0].clearProxCounter()
-				proximityList[0].setNameAudioFlag(0)
-#			if tempBone.proxCounter > 2 and tempBone.getDescAudioFlag() == 1:
-#				yield viztask.waitTime(1.5)
-#				#playBoneDesc(proximityList[0])
-#				vizact.ontimer2(0,0, playBoneDesc,tempBone)
-#				tempBone.setDescAudioFlag(0)
+#def soundTask(pointer):
+#	"""
+#	Function to be placed in Vizard's task scheduler
+#		looks through proximity list and searches for the closest bone to the glove and puts it at
+#		the beginning of the list, allows the bone name and bone description to be played
+#	"""
+#	global proximityList
+#	while True:
+#		yield viztask.waitTime(0.25)
+#		if(len(proximityList) >0):
+#			bonePos = proximityList[0].getPosition(viz.ABS_GLOBAL)
+# 			pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
+#			shortestDist = vizmat.Distance(bonePos, pointerPos)
+#			
+#			for i,x in enumerate(proximityList):
+#				proximityList[i].incProxCounter()  #increase count for how long glove is near bone
+#				bonePos = proximityList[i].getPosition(viz.ABS_GLOBAL)
+#				pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
+#				tempDist = vizmat.Distance(bonePos,pointerPos)
+#				#displayBoneInfo(proximityList[0])
+#
+#				if(tempDist < shortestDist):
+#					removeBoneInfo(proximityList[0])
+#					shortestDist = tempDist
+#					tempBone = proximityList[i]
+#					proximityList[i] = proximityList[0]
+#					proximityList[0] = tempBone
+#			#tempBone = proximityList[0]
+#			displayBoneInfo(proximityList[0])
+#			
+#			if proximityList[0].proxCounter > 2 and proximityList[0].getNameAudioFlag() == 1:
+#				#yield viztask.waitTime(3.0)
+#				vizact.ontimer2(0,0,playName,proximityList[0])
+#				proximityList[0].clearProxCounter()
+#				proximityList[0].setNameAudioFlag(0)
+##			if tempBone.proxCounter > 2 and tempBone.getDescAudioFlag() == 1:
+##				yield viztask.waitTime(1.5)
+##				#playBoneDesc(proximityList[0])
+##				vizact.ontimer2(0,0, playBoneDesc,tempBone)
+##				tempBone.setDescAudioFlag(0)
 
 	
 
@@ -961,10 +963,10 @@ def load(dataset = 'Skull'):
 		# start the clock
 		time.clock()
 		
-		global score
-		score = PuzzleScore()
+#		global score
+#		score = PuzzleScore()
 		
-		viztask.schedule(soundTask(glove))
+#		viztask.schedule(soundTask(glove))
 		
-		loadBones()
+		loadBones(randomize = False)
 		snapGroup(smallBoneGroups)

@@ -20,4 +20,5 @@ camMode = 0
 #  0 - X/Y/Z jog (tb/fh/vy)  keyboard control
 #  1 - SpaceMouse control
 #  2 - Mouse plane selection?
-pointerMode = 1
+pointerMode = 0
+layers = {'Axial':['Skull', 'Thorax'], 'Upper Appen.': ['Right Arm', 'Left Arm', 'Right Shoulder', 'Left Shoulder'], 'Lower Appen.': ['Right Leg', 'Left Leg', 'Pelvic Girdle']}
