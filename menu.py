@@ -32,7 +32,8 @@ def init():
 	
 	# Compatibility for all display types
 	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
-	canvas.setCursorPosition([0,0])	
+	canvas.setCursorSize([50,50])
+	canvas.setCursorPosition([0,0])
 
 class MainMenu(vizinfo.InfoPanel):
 	"""Main game menu"""
@@ -47,6 +48,7 @@ class MainMenu(vizinfo.InfoPanel):
 		self.menuVisible = True
 		self.canvas = canvas
 		self.active = True
+		self.setScale(1.5,1.5)
 		
 		# add play button, play button action, and scroll over animation
 		self.play = self.addItem(viz.addButtonLabel('Play'), fontSize = 50)
@@ -62,7 +64,7 @@ class MainMenu(vizinfo.InfoPanel):
 		
 		#rendering
 		bb = self.getBoundingBox()
-		self.canvas.setRenderWorldOverlay([bb.width*2, bb.height*2], fov = bb.height*.1, distance = 3)
+		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 3)
 
 	def toggle(self):
 		if(self.menuVisible == True):
