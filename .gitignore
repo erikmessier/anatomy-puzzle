@@ -58,3 +58,5 @@ log/
 *.osgb
 *.mp3
 *.png
+
+tmp*
