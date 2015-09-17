@@ -31,4 +31,4 @@ Dictionary of lists:
 - format in dictionary: {superset: [subset, subset, etc.]}
 - format in menu: superset is label for tab panel, subsets can be selected using check boxes from the tab panel.
 """
-layers = {'Axial':['Skull', 'Thorax'], 'Upper Appen.': ['Right Arm', 'Left Arm', 'Right Shoulder', 'Left Shoulder'], 'Lower Appen.': ['Right Leg', 'Left Leg', 'Pelvic Girdle']}
+layers = {'Axial':['skull', 'skeletal system of thorax'], 'Upper Appen.': ['right free upper limb', 'left free upper limb'], 'Lower Appen.': ['right free lower limb', 'left free lower limb', 'pelvic girdle']}

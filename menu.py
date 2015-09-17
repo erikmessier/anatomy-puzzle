@@ -19,10 +19,9 @@ def init():
 	"""Create global menu instance"""
 canvas = viz.addGUICanvas()
 canvas.setRenderWorldOverlay([2000,2000],60,1)
-#main = MainMenu(canvas)
-#game = GameMenu(canvas, config.layers)
-#ingame = InGameMenu(canvas)
-#vizact.onkeydown('l', ingame.toggle)
+main = MainMenu(canvas)
+game = GameMenu(canvas, config.layers)
+ingame = InGameMenu(canvas)
 # Compatibility for all display types
 canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
 canvas.setCursorPosition([0,0])	
@@ -200,16 +199,16 @@ class InGameMenu(vizinfo.InfoPanel):
 		self.end = self.addItem(viz.addButtonLabel('End game'))
 		
 		#Callbacks
-#		vizact.onbuttondown(self.options, self.optionsButton)
-#		vizact.onbuttondown(self.restart, self.restartButton)
+		vizact.onbuttondown(self.options, self.optionsButton)
+		vizact.onbuttondown(self.restart, self.restartButton)
 		vizact.onbuttondown(self.end, self.endButton)
 		
 		
 
-#	def restartButton(self):
-#		puzzle.end()
-#		puzzle.load(game.loadLayers)
-#		self.toggle()
+	def restartButton(self):
+		puzzle.end()
+		puzzle.load(game.loadLayers)
+		self.toggle()
 	
 	def endButton(self):
 		puzzle.end()
@@ -251,7 +250,3 @@ def toggle(visibility = viz.TOGGLE):
 #
 #
 #vizact.onkeydown('l', ingame.toggle)
-main = MainMenu(canvas)
-game = GameMenu(canvas, config.layers)
-ingame = InGameMenu(canvas)
-vizact.onkeydown('l', ingame.toggle)
