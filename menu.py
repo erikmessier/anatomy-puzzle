@@ -4,7 +4,6 @@ menu.py
 This is where all of the menu handling will go
 """
 import viz
-viz.go()
 import vizact
 import sys
 import abc
@@ -17,14 +16,16 @@ import config
 
 def init():
 	"""Create global menu instance"""
-canvas = viz.addGUICanvas()
-canvas.setRenderWorldOverlay([2000,2000],60,1)
-main = MainMenu(canvas)
-game = GameMenu(canvas, config.layers)
-ingame = InGameMenu(canvas)
-# Compatibility for all display types
-canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
-canvas.setCursorPosition([0,0])	
+	canvas = viz.addGUICanvas()
+	canvas.setRenderWorldOverlay([2000,2000],60,1)
+	
+	main = MainMenu(canvas)
+	game = GameMenu(canvas, config.layers)
+	ingame = InGameMenu(canvas)
+	
+	# Compatibility for all display types
+	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
+	canvas.setCursorPosition([0,0])	
 
 class MainMenu(vizinfo.InfoPanel):
 	"""Main game menu"""
