@@ -17,7 +17,6 @@ import config
 
 def init():
 	"""Create global menu instance"""
-
 canvas = viz.addGUICanvas()
 canvas.setRenderWorldOverlay([2000,2000],60,1)
 #main = MainMenu(canvas)
@@ -27,20 +26,6 @@ canvas.setRenderWorldOverlay([2000,2000],60,1)
 # Compatibility for all display types
 canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
 canvas.setCursorPosition([0,0])	
-
-class OptionsPrompt(vizinfo.InfoPanel):
-	def __init__(self, canvas):
-		vizinfo.InfoPanel.__init__(self,'', parent = canvas, title = 'Select Options', fontSize = 100, \
-			icon = False, align = viz.ALIGN_CENTER_CENTER)
-		
-		#Using vizard pointer, hide system mouse
-		viz.mouse.setVisible(False)
-		viz.mouse.setTrap(True)
-		self.menuVisible = True
-		self.canvas = canvas
-		self.active = True
-		
-		
 
 class MainMenu(vizinfo.InfoPanel):
 	"""Main game menu"""
@@ -98,13 +83,11 @@ class MainMenu(vizinfo.InfoPanel):
 class GameMenu(vizinfo.InfoPanel):
 	"""Game selection submenu"""
 	def __init__(self,canvas, layers):
-		vizinfo.InfoPanel.__init__(self, '',title = None,fontSize = 25,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
+		vizinfo.InfoPanel.__init__(self, '',title = 'Game Menu',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
 		self.layers = config.layers
 		
 		self.canvas = canvas
 		self.active = False
-		
-		print "creating Game Menu"
 		self.getPanel().fontSize(50)
 		self.setPanelVisible(viz.OFF, animate = False)
 		self.menuVisible = False	
@@ -159,6 +142,7 @@ class GameMenu(vizinfo.InfoPanel):
 	def start(self):
 		self.loadLayers = []
 		print 'Puzzle game has been started!'
+		'''Which subsets were selected'''
 		for i in self.checkState:
 			if self.checkState[i] == True:
 				self.loadLayers.append(i)
@@ -175,6 +159,9 @@ class GameMenu(vizinfo.InfoPanel):
 		self.dataset = name
 		
 	def checkBoxState(self, obj, state):
+		"""on button event checks what type of button was selected and
+		if the button is a checkbox then the state of the check boxes
+		and associates selected checkboxes with their label"""
 		for l in self.checkBox:
 			if obj == self.checkBox[l]:
 				if state == viz.DOWN:
