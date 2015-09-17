@@ -32,11 +32,18 @@ class Dataset():
 		metaData = {}
 		if concept:
 			try:
-				return self.allMetaData[concept]
+				thisMD = self.allMetaData[concept]
 			except KeyError:
 				print 'Unknown FMA concept id ' + concept
+				return
+			# silly vizard uses XZY coordinates instead of XYZ coordinates
+			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
+			return thisMD
 		elif file:
-			return self.allMetaData[self.getConceptByFile(file)]
+			thisMD = self.allMetaData[self.getConceptByFile(file)]
+			# silly vizard uses XZY coordinates instead of XYZ coordinates
+			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
+			return thisMD
 		else:
 			print 'No search criteria specified'
 		
@@ -58,3 +65,7 @@ class Dataset():
 
 class Ontology():
 	partOfElement = 0
+	
+def rightToLeft(center):
+	"""Convert from right handed coordinate system to left handed"""
+	return [center[0], center[1], center[2]*-1]

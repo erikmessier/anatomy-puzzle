@@ -139,8 +139,10 @@ class Mesh(viz.VizNode):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
 		self.metaData = ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
-		self.centerPointScaled = [a*SF for a in self.metaData['centerPoint']]
-		self.centerPointScaledFlipped = [a*SF*-1 for a in self.metaData['centerPoint']]
+		print self.centerPoint
+		self.centerPointScaled = [a*SF for a in self.centerPoint]
+		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
+		print self.centerPointScaledFlipped
 		
 		self.name = self.metaData['name']
 		self.nameFormatted = ''
@@ -209,7 +211,8 @@ class Mesh(viz.VizNode):
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
 		
 		# Turn off visibility of center and checker viznodes
-		self.disable([viz.RENDERING])
+#		self.disable([viz.RENDERING])
+		self.color([0.3,0,0])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 		self.tooltip.disable([viz.RENDERING])
 		#self.dialogueBox.disable([viz.RENDERING])
@@ -324,7 +327,7 @@ class Mesh(viz.VizNode):
 		"""
 		"""
 		self.tooltip.remove()
-		self.dialogue.remove()
+#		self.dialogue.remove()
 		self.checker.remove()
 	
 	def displayBoneInfo(self):
