@@ -115,9 +115,9 @@ class GameMenu(vizinfo.InfoPanel):
 		self.Puzzle = self.addItem(viz.addButtonLabel('Start Puzzle Game'))
 
 		#Set callbacks
-		vizact.onbuttondown(self.skullRadio, self.setDataset, 'Skull')
-		vizact.onbuttondown(self.armRadio, self.setDataset, 'Arm')
-		vizact.onbuttondown(self.pelvisRadio, self.setDataset, 'Pelvis')
+		vizact.onbuttondown(self.skullRadio, self.setDataset, 'heart')
+		vizact.onbuttondown(self.armRadio, self.setDataset, 'axial skeleton')
+		vizact.onbuttondown(self.pelvisRadio, self.setDataset, 'set of thoracic vertebrae')
 		vizact.onbuttondown(self.Puzzle, self.puzzleFunc)
 
 	def puzzleFunc(self):

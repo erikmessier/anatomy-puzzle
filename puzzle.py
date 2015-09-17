@@ -5,6 +5,7 @@ This file provides all methods and objects necessary to
 run the anatomy puzzle game.
 """
 
+# Vizard modules
 import viz
 import vizact
 import vizmat
@@ -12,13 +13,19 @@ import vizshape
 import vizproximity
 import viztask
 
+# Python built-in modules
 import random
+import json
 import math
 import csv
 import time
 import datetime
+
+# Custom modules
 import init
 import menu
+import config
+import datasetHandler
 
 ### Constants
 
@@ -30,6 +37,7 @@ SF = 1.0/200
 # Point to the main dataset folder for convenience
 datasets = {'Skull':'.\\dataset\\Skull\\','Arm':'.\\dataset\\Arm\\','Pelvis':'.\\dataset\\Pelvis\\'}
 path = datasets['Skull']
+PATH = '.\\dataset\\full\\'
 extension = '.obj'
 
 INSTRUCTIONS = '''
@@ -122,39 +130,42 @@ class BoneGroup():
 		for b in source.group.members:
 			b.setGroup(self)
 
-class Bone(viz.VizNode):
+class Mesh(viz.VizNode):
 	"""
 	Bone object is a customized version of VizNode that is design to accomodate
 	obj files from the BodyParts3D database.
 	"""
-	def __init__(self, filePath, metaData, boneDesc, display, SF = 1.0/50):
-		"""Pull the BodyParts3D mesh into an instance and set everything up"""		
-		self.centerPoint = metaData['coordinates']
+	def __init__(self, fileName, SF = 1.0/50):
+		"""Pull the BodyParts3D mesh into an instance and set everything up"""
+		self.metaData = ds.getMetaData(file = fileName)
+		self.centerPoint = self.metaData['centerPoint']
+		print self.centerPoint
 		self.centerPointScaled = [a*SF for a in self.centerPoint]
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
-		self.display = display
-		self.name = metaData['name']
+		print self.centerPointScaledFlipped
+		
+		self.name = self.metaData['name']
 		self.nameFormatted = ''
-		for i, w in enumerate(metaData['name'].split()):
+		for i, w in enumerate(self.name.split()):
 			if (i + 1) % 2 == 0 and i != 0: 
 				self.nameFormatted += w + '\n'
 			else:
 				self.nameFormatted += w + ' ' 
 		
 		#give a bone an information property
-		self.info = ''
-		for j,bd in enumerate(boneDesc['info'].split()):
-			if(j+1) % 10 ==0 and j != 0:
-				self.info += bd + ' \n'
-			else: 
-				self.info += bd + ' '
+#		self.info = ''
+#		for j,bd in enumerate(boneDesc['info'].split()):
+#			if(j+1) % 10 ==0 and j != 0:
+#				self.info += bd + ' \n'
+#			else: 
+#				self.info += bd + ' '
 		
 		# We are using a 'center' viznode to make manipulation easy
 		self.center = vizshape.addCube(0.1) # An arbitrary placeholder cube
 		viz.VizNode.__init__(self, self.center.id)
 		
 		# This is the actual mesh we will see
-		self.mesh = viz.addChild(filePath)
+		self.mesh = viz.addChild(config.DATASET_PATH + fileName + '.obj')
 		self.mesh.setScale([SF,SF,SF])
 		
 		# This is the viznode that will be moved around to check distances for snapping
@@ -166,21 +177,21 @@ class Bone(viz.VizNode):
 		self.tooltip.setScale(0.001,0.001,0.001) #small scale for bounding box calc
 		
 		#Description
-		if display.displayMode == 2:
-			self.dialogue = viz.addText(self.info,pos = [0,3,0],parent=viz.WORLD)
-			self.dialogue.billboard(viz.BILLBOARD_VIEW)
-			self.dialogue.setBackdrop(viz.BACKDROP_CENTER_TOP)
-			self.dialogue.setScale(0.15,0.15,0.15)
-			self.dialogue.alignment(viz.ALIGN_CENTER_CENTER)
-			#self.dialogue.setPosition([0.03,0.85,0])
-			#self.dialogue.color(viz.BLACK)
-		else:
-			self.dialogue = viz.addText(self.info,parent=viz.SCREEN)
-			#self.dialogue.setBackdrop(viz.BACKDROP_CENTER_TOP)
-			self.dialogue.setScale(0.3,0.3,0.0)
-			self.dialogue.alignment(viz.ALIGN_LEFT_BOTTOM)
-			self.dialogue.setPosition([0.03,0.85,0])
-			#self.dialogue.color(viz.BLACK)
+#		if display.displayMode == 2:
+#			self.dialogue = viz.addText(self.info,pos = [0,3,0],parent=viz.WORLD)
+#			self.dialogue.billboard(viz.BILLBOARD_VIEW)
+#			self.dialogue.setBackdrop(viz.BACKDROP_CENTER_TOP)
+#			self.dialogue.setScale(0.15,0.15,0.15)
+#			self.dialogue.alignment(viz.ALIGN_CENTER_CENTER)
+#			#self.dialogue.setPosition([0.03,0.85,0])
+#			#self.dialogue.color(viz.BLACK)
+#		else:
+#			self.dialogue = viz.addText(self.info,parent=viz.SCREEN)
+#			#self.dialogue.setBackdrop(viz.BACKDROP_CENTER_TOP)
+#			self.dialogue.setScale(0.3,0.3,0.0)
+#			self.dialogue.alignment(viz.ALIGN_LEFT_BOTTOM)
+#			self.dialogue.setPosition([0.03,0.85,0])
+#			#self.dialogue.color(viz.BLACK)
 			
 		
 		# Setup heirarchy for proper movement behavior
@@ -200,11 +211,12 @@ class Bone(viz.VizNode):
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
 		
 		# Turn off visibility of center and checker viznodes
-		self.disable([viz.RENDERING])
+#		self.disable([viz.RENDERING])
+		self.color([0.3,0,0])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 		self.tooltip.disable([viz.RENDERING])
 		#self.dialogueBox.disable([viz.RENDERING])
-		self.dialogue.disable([viz.RENDERING])
+#		self.dialogue.disable([viz.RENDERING])
 		
 		self.scale = SF
 #		self.phys = self.collideSphere()
@@ -315,9 +327,20 @@ class Bone(viz.VizNode):
 		"""
 		"""
 		self.tooltip.remove()
-		self.dialogue.remove()
+#		self.dialogue.remove()
 		self.checker.remove()
+	
+	def displayBoneInfo(self):
+		"""Displays the bone description and bone tool tip"""
+		self.tooltip.enable([viz.RENDERING])
+		self.dialogue.enable([viz.RENDERING])
 		
+	def removeBoneInfo(self):
+		"""removes bone description and bone tool tip and clears the proximity counter used for debouncing"""
+		self.tooltip.disable([viz.RENDERING])
+		self.dialogue.disable([viz.RENDERING])
+		self.clearProxCounter()
+			
 	def getDescAudioFlag(self):
 		""" return seld.descAudioFlag """
 		return self.descAudioFlag
@@ -632,11 +655,11 @@ def end():
 			bind.remove()
 		RUNNING = False
 	
-def loadBones(animate = False):
+def loadMeshes(meshes = [], animate = False):
 	"""Load all of the bones from the dataset into puzzle.bone instances"""
-	for i, n in enumerate(names):
+	for i, fileName in enumerate(meshes):
 		# This is the actual mesh we will see
-		b = Bone(path + n + '.obj', boneExcelData[n], boneInfo[n],display,SF)
+		b = Mesh(fileName)
 		
 		if (i == 0):
 			#Hardcoded keystone
@@ -661,7 +684,7 @@ def loadBones(animate = False):
 				b.setEuler(targetEuler)
 		
 		bones.append(b)
-		bonesByName[n] = b
+		bonesByName[fileName] = b
 		bonesById[b.id] = b
 
 	return bones
@@ -816,17 +839,6 @@ def playBoneDesc(boneObj):
 	except ValueError:
 		print ("the name of the audio description file was wrong")
 	
-def displayBoneInfo(boneObj):
-	"""Displays the bone description and bone tool tip"""
-	boneObj.tooltip.enable([viz.RENDERING])
-	boneObj.dialogue.enable([viz.RENDERING])
-	
-def removeBoneInfo(boneObj):
-	"""remoces bone description and bone tool tip and clears the proximity counter used for debouncing"""
-	boneObj.tooltip.disable([viz.RENDERING])
-	boneObj.dialogue.disable([viz.RENDERING])
-	boneObj.clearProxCounter()
-	
 def calcClosestBone(pointer, proxList):
 	"""
 	looks through proximity list and searches for the closest bone to the glove and puts it at
@@ -870,7 +882,7 @@ def soundTask(pointer):
 				#displayBoneInfo(proximityList[0])
 
 				if(tempDist < shortestDist):
-					removeBoneInfo(proximityList[0])
+#					removeBoneInfo(proximityList[0])
 					shortestDist = tempDist
 					tempBone = proximityList[i]
 					proximityList[i] = proximityList[0]
@@ -904,22 +916,29 @@ def ExitProximity(e):
 	getBone(source.id).mesh.color([1.0,1.0,1.0])
 	getBone(source.id).setNameAudioFlag(0)
 	proximityList.remove(source)
-	removeBoneInfo(getBone(source.id))
+#	removeBoneInfo(getBone(source.id))
 
-def load(dataset = 'Skull'):
-	"""Setup proximity manager"""
+def load(dataset = 'right arm'):
+	"""
+	Load datasets and initialize everything necessary to commence
+	the puzzle game.
+	"""
+	
 	global RUNNING
 	global path
 	global manager
+	global ds
 	
 	if not RUNNING:
 		init() # Flush everything
 		
 		RUNNING = True
-		path = datasets[dataset]
 		
+		# Dataset
+		ds = datasetHandler.Dataset()
+
+		# Proximity management
 		manager = vizproximity.Manager()
-		
 		target = vizproximity.Target(glove)
 		manager.addTarget(target)
 
@@ -927,7 +946,7 @@ def load(dataset = 'Skull'):
 		manager.onExit(None, ExitProximity)
 
 	
-		#selection commands 
+		# Selection commands 
 		global keyBindings
 		keyBindings.append(vizact.onkeydown('o',manager.setDebug,viz.TOGGLE)) #debug shapes
 		keyBindings.append(vizact.onkeydown(' ',grab,proximityList)) #space select
@@ -942,16 +961,6 @@ def load(dataset = 'Skull'):
 		boneDescriptions = csvToList(path + 'descriptions.csv')
 		smallBoneGroups = csvToList(path + 'BonesThatShouldBeTogether.csv')
 
-		### Process coordinates
-		for i, row in enumerate(rawExcelData[1:]):
-			name = row[0]
-			x = float(row[2])
-			z = float(row[3])
-			y = float(row[4]) * -1
-			
-			boneExcelData[name] = {'coordinates':[x,z,y],'name':name}
-			names.append(name)
-
 		#Create boneInfo set
 		for i,row in enumerate(boneDescriptions[1:]):
 			name = row[0]
@@ -964,7 +973,7 @@ def load(dataset = 'Skull'):
 		global score
 		score = PuzzleScore()
 		
-		viztask.schedule(soundTask(glove))
+#		viztask.schedule(soundTask(glove))
 		
-		loadBones()
-		snapGroup(smallBoneGroups)
+		loadMeshes(ds.getOntologySet(dataset)['filenames'])
+		#snapGroup(smallBoneGroups)
