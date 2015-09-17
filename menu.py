@@ -15,14 +15,32 @@ import vizproximity
 import vizdlg
 import config
 
-#def init():
-#	"""Create global menu instance"""
-#
+def init():
+	"""Create global menu instance"""
+
 canvas = viz.addGUICanvas()
 canvas.setRenderWorldOverlay([2000,2000],60,1)
+#main = MainMenu(canvas)
+#game = GameMenu(canvas, config.layers)
+#ingame = InGameMenu(canvas)
+#vizact.onkeydown('l', ingame.toggle)
 # Compatibility for all display types
 canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
 canvas.setCursorPosition([0,0])	
+
+class OptionsPrompt(vizinfo.InfoPanel):
+	def __init__(self, canvas):
+		vizinfo.InfoPanel.__init__(self,'', parent = canvas, title = 'Select Options', fontSize = 100, \
+			icon = False, align = viz.ALIGN_CENTER_CENTER)
+		
+		#Using vizard pointer, hide system mouse
+		viz.mouse.setVisible(False)
+		viz.mouse.setTrap(True)
+		self.menuVisible = True
+		self.canvas = canvas
+		self.active = True
+		
+		
 
 class MainMenu(vizinfo.InfoPanel):
 	"""Main game menu"""
@@ -43,8 +61,8 @@ class MainMenu(vizinfo.InfoPanel):
 		vizact.onbuttondown(self.play, self.playButton)
 		
 		# add options button row
-		self.options = self.addItem(viz.addButtonLabel('Options'), fontSize = 50)
-		vizact.onbuttondown(self.options, self.optionsButton)
+		self.help = self.addItem(viz.addButtonLabel('Help'), fontSize = 50)
+		vizact.onbuttondown(self.help, self.helpButton)
 		
 		# add help button row
 		self.exit = self.addItem(viz.addButtonLabel('Exit'), fontSize = 50)
@@ -74,13 +92,13 @@ class MainMenu(vizinfo.InfoPanel):
 		viz.quit()
 		print 'Visual Anatomy Trainer has closed'
 	
-	def optionsButton(self):
-		print 'Options button was pressed'
+	def helpButton(self):
+		print 'Help Button was Pressed'
 
 class GameMenu(vizinfo.InfoPanel):
 	"""Game selection submenu"""
 	def __init__(self,canvas, layers):
-		vizinfo.InfoPanel.__init__(self, '',title= None,fontSize = 25,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
+		vizinfo.InfoPanel.__init__(self, '',title = None,fontSize = 25,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
 		self.layers = config.layers
 		
 		self.canvas = canvas
@@ -139,20 +157,19 @@ class GameMenu(vizinfo.InfoPanel):
 		vizact.onbuttondown(startButton, self.start)
 
 	def start(self):
-		loadLayers = []
+		self.loadLayers = []
 		print 'Puzzle game has been started!'
 		for i in self.checkState:
 			if self.checkState[i] == True:
-				loadLayers.append(i)
-		if len(loadLayers) != 0:
-			print loadLayers
+				self.loadLayers.append(i)
+		if len(self.loadLayers) != 0:
+			print self.loadLayers
+			self.setPanelVisible(viz.OFF)
+			self.canvas.setCursorVisible(viz.OFF)
+			self.active = False
+			ingame.active = True
 		else: 
 			print 'No Layer Was Selected!'
-		
-#		self.setPanelVisible(viz.OFF)
-#		self.canvas.setCursorVisible(viz.OFF)
-#		self.active = False
-#		ingame.active = True
 	
 	def setDataset(self, name):
 		self.dataset = name
@@ -191,21 +208,21 @@ class InGameMenu(vizinfo.InfoPanel):
 		self.setPanelVisible(viz.OFF, animate = False)
 		self.menuVisible = False
 		
-		self.options = self.addItem(viz.addButtonLabel('Options'))
+		
 		self.restart = self.addItem(viz.addButtonLabel('Restart'))
 		self.end = self.addItem(viz.addButtonLabel('End game'))
 		
 		#Callbacks
 #		vizact.onbuttondown(self.options, self.optionsButton)
-		vizact.onbuttondown(self.restart, self.restartButton)
+#		vizact.onbuttondown(self.restart, self.restartButton)
 		vizact.onbuttondown(self.end, self.endButton)
 		
 		
 
-	def restartButton(self):
-		puzzle.end()
-		puzzle.load(game.dataset)
-		self.toggle()
+#	def restartButton(self):
+#		puzzle.end()
+#		puzzle.load(game.loadLayers)
+#		self.toggle()
 	
 	def endButton(self):
 		puzzle.end()
@@ -241,6 +258,13 @@ def toggle(visibility = viz.TOGGLE):
 #canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
 #canvas.setCursorPosition([0,0])	
 
+#main = MainMenu(canvas)
+#game = GameMenu(canvas, config.layers)
+#ingame = InGameMenu(canvas)
+#
+#
+#vizact.onkeydown('l', ingame.toggle)
 main = MainMenu(canvas)
 game = GameMenu(canvas, config.layers)
-#ingame = InGameMenu(canvas)
+ingame = InGameMenu(canvas)
+vizact.onkeydown('l', ingame.toggle)

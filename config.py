@@ -21,4 +21,11 @@ camMode = 0
 #  1 - SpaceMouse control
 #  2 - Mouse plane selection?
 pointerMode = 0
+
+"""
+Dictionary of lists:
+- used for game menu layer selections, currently only the skeletal system layers are available.
+- format in dictionary: {superset: [subset, subset, etc.]}
+- format in menu: superset is label for tab panel, subsets can be selected using check boxes from the tab panel.
+"""
 layers = {'Axial':['Skull', 'Thorax'], 'Upper Appen.': ['Right Arm', 'Left Arm', 'Right Shoulder', 'Left Shoulder'], 'Lower Appen.': ['Right Leg', 'Left Leg', 'Pelvic Girdle']}
