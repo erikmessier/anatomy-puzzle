@@ -145,6 +145,7 @@ class Mesh(viz.VizNode):
 		print self.centerPointScaledFlipped
 		
 		self.name = self.metaData['name']
+
 		self.nameFormatted = ''
 		for i, w in enumerate(self.name.split()):
 			if (i + 1) % 2 == 0 and i != 0: 
@@ -177,6 +178,7 @@ class Mesh(viz.VizNode):
 		self.tooltip.setScale(0.001,0.001,0.001) #small scale for bounding box calc
 		
 		#Description
+
 #		if display.displayMode == 2:
 #			self.dialogue = viz.addText(self.info,pos = [0,3,0],parent=viz.WORLD)
 #			self.dialogue.billboard(viz.BILLBOARD_VIEW)
@@ -192,7 +194,6 @@ class Mesh(viz.VizNode):
 #			self.dialogue.alignment(viz.ALIGN_LEFT_BOTTOM)
 #			self.dialogue.setPosition([0.03,0.85,0])
 #			#self.dialogue.color(viz.BLACK)
-			
 		
 		# Setup heirarchy for proper movement behavior
 		self.mesh.setParent(self)
@@ -264,7 +265,8 @@ class Mesh(viz.VizNode):
 		self.mesh.alpha(level)
 	
 	def snap(self, target, animate = True):
-		"""Invoked by the puzzle.snap method to handle local business"""		
+		"""Invoked by the puzzle.snap method to handle local business"""
+		moveCheckers(self)
 		targetPosition = target.checker.getPosition(viz.ABS_GLOBAL)
 		targetEuler = target.checker.getEuler(viz.ABS_GLOBAL)		
 		# WARNING the full setMatrix cannot be assigned because scale is different.
@@ -655,17 +657,17 @@ def end():
 			bind.remove()
 		RUNNING = False
 	
-def loadMeshes(meshes = [], animate = False):
+def loadMeshes(meshes = [], animate = False, randomize = True):
 	"""Load all of the bones from the dataset into puzzle.bone instances"""
 	for i, fileName in enumerate(meshes):
 		# This is the actual mesh we will see
 		b = Mesh(fileName)
-		
-		if (i == 0):
+		if (not randomize or i == 0):
 			#Hardcoded keystone
 			b.setPosition([0.0,1.0,0.0])
 			b.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical
-			b.group.grounded = True
+			if (i == 0):
+				b.group.grounded = True
 		else:		
 			# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
 			angle = random.random() * 2 * math.pi
@@ -802,10 +804,10 @@ def grab(inRange):
 			grabList[0].setGrabbedFlag(1)
 		target.setGroupParent()
 		gloveLink = viz.grab(glove, target, viz.ABS_GLOBAL)
-		score.event(event = 'grab', source = target.name)
+#		score.event(event = 'grab', source = target.name)
 		transparency(target, 0.7)
-	elif not grabFlag:
-		score.event(event = 'grab')
+#	elif not grabFlag:
+#		score.event(event = 'grab')
 	grabFlag = True
 
 def release():
@@ -899,9 +901,7 @@ def soundTask(pointer):
 #				yield viztask.waitTime(1.5)
 #				#playBoneDesc(proximityList[0])
 #				vizact.ontimer2(0,0, playBoneDesc,tempBone)
-#				tempBone.setDescAudioFlag(0)
-
-	
+#				tempBone.setDescAudioFlag(0)	
 
 def EnterProximity(e):
 	global proximityList
@@ -970,10 +970,10 @@ def load(dataset = 'right arm'):
 		# start the clock
 		time.clock()
 		
-		global score
-		score = PuzzleScore()
+#		global score
+#		score = PuzzleScore()
 		
 #		viztask.schedule(soundTask(glove))
-		
+
 		loadMeshes(ds.getOntologySet(dataset)['filenames'])
 		#snapGroup(smallBoneGroups)
