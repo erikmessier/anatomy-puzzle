@@ -26,6 +26,7 @@ import vizact
 import vizshape
 import viztask
 import vizproximity
+
 import puzzle
 
 #--------------------------init classes-------------------------
@@ -360,12 +361,17 @@ def loadTemple():
 	temple = viz.addChild('.\\dataset\\environment\\temple.OSGB')
 	temple.setEuler([0,90,0])
 	temple.setScale([sf,sf,sf])
-	temple.setPosition([0,-3, 0]) #Found by testing
+	temple.setPosition([0,-2.8, 0]) #Found by testing
 
-	pedistal = viz.addChild('.\\dataset\\environment\\Column.OSGB')
-#	pedistal.addParent(temple)
-	pedistal.setScale([3.0,3.0,3.0])
-	pedistal.setPosition([0,-1.5,0]) #Found by testing
+#	pedistal = viz.addChild('.\\dataset\\environment\\Column.OSGB')
+#	pedistal.setScale([3.0,3.0,3.0])
+#	pedistal.setPosition([0,-1.5,0]) #Found by testing
+	
+	dimensions = [1,2,0.5]
+
+	boundingBox = puzzle.wireframeCube(dimensions)
+	boundingBox.setPosition(0,dimensions[1]/2,0)
+	boundingBox.alpha(0.25)
 
 def pointerInput(mode, pointer,arena):
 	viz.phys.enable()

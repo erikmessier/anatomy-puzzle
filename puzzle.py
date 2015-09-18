@@ -135,7 +135,7 @@ class Mesh(viz.VizNode):
 	Bone object is a customized version of VizNode that is design to accomodate
 	obj files from the BodyParts3D database.
 	"""
-	def __init__(self, fileName, SF = 1.0/50):
+	def __init__(self, fileName, SF = 1.0/200):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
 		self.metaData = ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
@@ -215,7 +215,7 @@ class Mesh(viz.VizNode):
 #		self.disable([viz.RENDERING])
 		self.color([0.3,0,0])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
-		self.tooltip.disable([viz.RENDERING])
+#		self.tooltip.disable([viz.RENDERING])
 		#self.dialogueBox.disable([viz.RENDERING])
 #		self.dialogue.disable([viz.RENDERING])
 		
@@ -269,8 +269,7 @@ class Mesh(viz.VizNode):
 		moveCheckers(self)
 		targetPosition = target.checker.getPosition(viz.ABS_GLOBAL)
 		targetEuler = target.checker.getEuler(viz.ABS_GLOBAL)		
-		# WARNING the full setMatrix cannot be assigned because scale is different.
-		
+		# WARNING the full setMatrix cannot be assigned because scale is different!
 		if (animate):
 			move = vizact.moveTo(targetPosition, time = 0.3)
 			spin = vizact.spinTo(euler = targetEuler, time = 0.3)
@@ -324,13 +323,6 @@ class Mesh(viz.VizNode):
 		True if bone was grabbed
 		"""
 		self.grabbedFlag = flag
-
-	def textRemove(self):
-		"""
-		"""
-		self.tooltip.remove()
-#		self.dialogue.remove()
-		self.checker.remove()
 	
 	def displayBoneInfo(self):
 		"""Displays the bone description and bone tool tip"""
@@ -340,7 +332,7 @@ class Mesh(viz.VizNode):
 	def removeBoneInfo(self):
 		"""removes bone description and bone tool tip and clears the proximity counter used for debouncing"""
 		self.tooltip.disable([viz.RENDERING])
-		self.dialogue.disable([viz.RENDERING])
+#		self.dialogue.disable([viz.RENDERING])
 		self.clearProxCounter()
 			
 	def getDescAudioFlag(self):
@@ -417,27 +409,7 @@ class viewCube():
 		
 		#add cube
 		RADIUS = .5 *SF
-		viz.startLayer(viz.LINE_STRIP)
-		viz.vertexColor([0, .6, 0])
-		viz.vertex([-RADIUS, -RADIUS, -RADIUS])
-		viz.vertex([-RADIUS, -RADIUS,  RADIUS])
-		viz.vertex([ RADIUS, -RADIUS,  RADIUS])
-		viz.vertex([ RADIUS, -RADIUS, -RADIUS])
-		viz.vertex([-RADIUS, -RADIUS, -RADIUS])
-		viz.vertex([-RADIUS,  RADIUS, -RADIUS])
-		viz.vertex([-RADIUS,  RADIUS,  RADIUS])
-		viz.vertex([ RADIUS,  RADIUS,  RADIUS])
-		viz.vertex([ RADIUS,  RADIUS, -RADIUS])
-		viz.vertex([-RADIUS,  RADIUS, -RADIUS])
-		viz.startLayer(viz.LINES)
-		viz.vertex([-RADIUS, -RADIUS,  RADIUS])
-		viz.vertex([-RADIUS,  RADIUS,  RADIUS])
-		viz.vertex([ RADIUS, -RADIUS,  RADIUS])
-		viz.vertex([ RADIUS,  RADIUS,  RADIUS])
-		viz.vertex([ RADIUS, -RADIUS, -RADIUS])
-		viz.vertex([ RADIUS,  RADIUS, -RADIUS])
-
-		self.cube = viz.endLayer()
+		self.cube = wireframeCube([RADIUS,RADIUS,RADIUS])
 		self.cube.setPosition([0,RADIUS, 0] , viz.ABS_PARENT)
 		
 		#turn off visability
@@ -970,10 +942,23 @@ def load(dataset = 'right arm'):
 		# start the clock
 		time.clock()
 		
-#		global score
-#		score = PuzzleScore()
+		global score
+		score = PuzzleScore()
 		
 #		viztask.schedule(soundTask(glove))
 
 		loadMeshes(ds.getOntologySet(dataset)['filenames'])
 		#snapGroup(smallBoneGroups)
+
+def wireframeCube(dimensions):
+	edges = [[x,y,z] for x in [-1,0,1] for y in [-1,0,1] for z in [-1,0,1] if abs(x)+abs(y)+abs(z) == 2]
+	for edge in edges:
+		viz.startLayer(viz.LINES)
+		viz.vertexColor(0,1,0)
+		i = edge.index(0)
+		edge[i] = 1
+		viz.vertex(map(lambda a,b:a*b,edge,dimensions))
+		edge[i] = -1
+		viz.vertex(map(lambda a,b:a*b,edge,dimensions))
+	cube = viz.endLayer()
+	return cube
