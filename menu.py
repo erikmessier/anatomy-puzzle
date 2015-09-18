@@ -139,20 +139,20 @@ class GameMenu(vizinfo.InfoPanel):
 			tp.addPanel(i, layPan[i], align = viz.ALIGN_LEFT_TOP)
 		
 		#add directions above menu items
-		self.addItem(viz.addText('Select the Following Parts of the Skeletal System That You Wish to Puzzle', parent = canvas), fontSize = 30)
+		self.addItem(viz.addText('Select Parts of the Skeletal System You Wish to Puzzle and Select a Mode:', parent = canvas), fontSize = 30)
 		
 		#add tab panel to info panel
-		self.addItem(tp, align = viz.ALIGN_CENTER_TOP)
+		self.addItem(tp, align = viz.ALIGN_LEFT_TOP)
 		tp.setCellPadding(10)
 
-		#creating grid panel to add mode, start, and back buttons to
+		#creating grid panel to add mode to
 		modeGrid = vizdlg.GridPanel(parent = canvas)
-		modeGrid.addRow([viz.addText('Select The Mode that You Want To Play')])
+
 		
 		#adding modes and radio buttons to grid panel
 		for i in self.modes.keys():
 			modeGrid.addRow([self.modeLabels[i], self.radioButtons[i]])
-		self.addItem(modeGrid, align = viz.ALIGN_CENTER_CENTER)
+		self.addItem(modeGrid, align = viz.ALIGN_LEFT_TOP)
 		
 		#creating grid panels to add start and back buttons to
 		setGrid = vizdlg.GridPanel(parent = canvas)
@@ -167,19 +167,33 @@ class GameMenu(vizinfo.InfoPanel):
 		self.checkState = {}
 		for cb in [cb for l in self.layers.values() for cb in l]:
 			self.checkState[cb] = False
-		viz.callback(viz.BUTTON_EVENT, self.checkBoxState)
+	
+		self.radioState = {}
+		for rb in self.radioButtons.keys():
+			if self.radioButtons[rb]:
+				self.radioState[rb] = True
+			else:
+				self.radioState[rb] = False
+				print 'its all a lie'
+	
+		viz.callback(viz.BUTTON_EVENT, self.checkOBJState)
 		
 		#add back and state button actions
 		vizact.onbuttondown(backButton, self.back)
 		vizact.onbuttondown(startButton, self.start)
 
 	def start(self):
+		self.mode = []
 		self.loadLayers = []
 		'''Which subsets were selected'''
 		for i in self.checkState:
 			if self.checkState[i] == True:
 				self.loadLayers.append(i)
+		for i in self.radioState:
+			if self.radioState[i] == True:
+				self.mode.append(i)
 		if len(self.loadLayers) != 0:
+			print str(self.mode) + 'was selected'
 			puzzle.load(self.loadLayers)
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
@@ -191,16 +205,22 @@ class GameMenu(vizinfo.InfoPanel):
 	def setDataset(self, name):
 		self.dataset = name
 		
-	def checkBoxState(self, obj, state):
+	def checkOBJState(self, obj, state):
 		"""on button event checks what type of button was selected and
-		if the button is a checkbox then the state of the check boxes
-		and associates selected checkboxes with their label"""
+		if the button is a checkbox or radio button then the state of the check boxes
+		and associates selected checkboxes and radio buttons with their label"""
 		for l in self.checkBox:
 			if obj == self.checkBox[l]:
 				if state == viz.DOWN:
 					self.checkState[l] = True
 				else:
 					self.checkState[l] = False
+		for l in self.radioButtons:
+			if obj == self.radioButtons[l]:
+				if state == viz.DOWN:
+					self.radioState[l] = True
+				else:
+					self.radioState[l] = False
 	def back(self):
 		self.setPanelVisible(viz.OFF, animate = False)
 		main.setPanelVisible(viz.ON, animate = True)
