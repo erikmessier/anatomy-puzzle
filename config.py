@@ -36,6 +36,12 @@ Dictionary of lists:
 """
 layers = {'Axial':['skull', 'skeletal system of thorax'], 'Upper Appen.': ['right free upper limb', 'left free upper limb'], 'Lower Appen.': ['right free lower limb', 'left free lower limb', 'pelvic girdle']}
 
+
+"""
+Available modes for selection
+"""
+modes = {'Free Play': 'free play description', 'Test Your Knowledge': 'test play description'}
+
 HELP_MESSAGE = \
 '''
 Welcome to the puzzle game demo!
