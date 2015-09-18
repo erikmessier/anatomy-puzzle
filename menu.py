@@ -27,7 +27,7 @@ def init():
 #	canvas.setRenderWorldOverlay([2000,2000],60,1)
 	
 	main = MainMenu(canvas)
-	game = GameMenu(canvas, config.layers)
+	game = GameMenu(canvas)
 	ingame = InGameMenu(canvas)
 	
 	# Compatibility for all display types
@@ -92,9 +92,10 @@ class MainMenu(vizinfo.InfoPanel):
 
 class GameMenu(vizinfo.InfoPanel):
 	"""Game selection submenu"""
-	def __init__(self,canvas, layers):
+	def __init__(self,canvas):
 		vizinfo.InfoPanel.__init__(self, '',title = 'Game Menu',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
 		self.layers = config.layers
+		self.modes = config.modes
 		
 		self.canvas = canvas
 		self.active = False
@@ -106,12 +107,25 @@ class GameMenu(vizinfo.InfoPanel):
 		#creating tab panel tp 
 		tp = vizdlg.TabPanel(align = viz.ALIGN_LEFT_TOP, parent = canvas)
 		
-		#creating dict space for checkboxes
+		#creating labels for modes
+		self.modeLabels = {}
+		
+		for l in self.modes.keys():
+			self.modeLabels[l] = viz.addText(l)
+
+		#creating radio buttons for modes
+		self.modeGroup = viz.addGroup(parent = canvas)
+		self.radioButtons = {}
+		
+		for rb in self.modes.keys():
+			self.radioButtons[rb] = viz.addRadioButton(self.modeGroup, parent = canvas)
+		
+		#creating dict of checkboxes for layers
 		self.checkBox = {}
 		
 		for cb in [cb for l in self.layers.values() for cb in l]:
-			self.checkBox[cb] = viz.addCheckbox()
-		
+			self.checkBox[cb] = viz.addCheckbox(parent = canvas)
+	
 		#creating sub panels for tab panels(all layer data is stored in config.layers) storing sub panels in laypan
 		layPan = {}
 		
@@ -133,14 +147,17 @@ class GameMenu(vizinfo.InfoPanel):
 
 		#creating grid panel to add mode, start, and back buttons to
 		modeGrid = vizdlg.GridPanel(parent = canvas)
+		modeGrid.addRow([viz.addText('Select The Mode that You Want To Play')])
 		
-		#add mode directions
-		modeGrid.addRow([viz.addText('Select a Game Mode')])
+		#adding modes and radio buttons to grid panel
+		for i in self.modes.keys():
+			modeGrid.addRow([self.modeLabels[i], self.radioButtons[i]])
+		self.addItem(modeGrid, align = viz.ALIGN_CENTER_CENTER)
 		
-		#creating grid panel to add mode, start, and back buttons to
+		#creating grid panels to add start and back buttons to
 		setGrid = vizdlg.GridPanel(parent = canvas)
 		
-		#create back and start buttons
+		#create back and start buttons and add to grid panel
 		backButton = viz.addButtonLabel('Back')
 		startButton = viz.addButtonLabel('Start')
 		setGrid.addRow([backButton, startButton])
@@ -163,7 +180,7 @@ class GameMenu(vizinfo.InfoPanel):
 			if self.checkState[i] == True:
 				self.loadLayers.append(i)
 		if len(self.loadLayers) != 0:
-			puzzle.load(self.loadLayers[0])
+			puzzle.load(self.loadLayers)
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
 			self.active = False
@@ -222,7 +239,7 @@ class InGameMenu(vizinfo.InfoPanel):
 
 	def restartButton(self):
 		puzzle.end()
-		puzzle.load(game.loadLayers[0])
+		puzzle.load(game.loadLayers)
 		self.toggle()
 	
 	def endButton(self):

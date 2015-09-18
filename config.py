@@ -40,4 +40,4 @@ layers = {'Axial':['skull', 'skeletal system of thorax'], 'Upper Appen.': ['righ
 Available modes for selection
 """
 
-modes = {'Free Play': 'free play description', 'Test Your Knowledge': 'test play description'}
+modes = {'Free Play': 'free play description', 'Test Mode': 'test play description'}
