@@ -20,10 +20,16 @@ class Dataset():
 		"""
 		names = [self.partOfElement[n]['name'] for n in self.partOfElement.keys()]
 		indexByName = dict(zip(names, self.partOfElement.values()))
-		try:
-			return indexByName[searchValue]
-		except KeyError:
-			print 'Unknown name ' + searchValue
+		if type(searchValue) == str:
+			searchValue = searchValue.split('\0')
+		set = []
+		for v in searchValue:
+			try:
+				set.extend(indexByName[v]['filenames'])
+			except KeyError:
+				print 'Unknown name ' + searchValue
+		print set
+		return set
 		
 	def getMetaData(self, concept = None, file = None):
 		"""

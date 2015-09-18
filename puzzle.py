@@ -28,28 +28,10 @@ import config
 import datasetHandler
 
 ### Constants
-
 #Delay to bone name sound
 boneNameDelay = 1
 # Scale factor
-SF = 1.0/200 
-
-# Point to the main dataset folder for convenience
-datasets = {'Skull':'.\\dataset\\Skull\\','Arm':'.\\dataset\\Arm\\','Pelvis':'.\\dataset\\Pelvis\\'}
-path = datasets['Skull']
-PATH = '.\\dataset\\full\\'
-extension = '.obj'
-
-INSTRUCTIONS = '''
-Welcome to the puzzle game demo!
-Drag and drop the bones together to complete the anatomical model.
-Controls:
-	Press and hold space bar to grab bones
-	Use the arrow keys to move the camera
-	Use 'o' key to toggle proximity spheres
-Note: This demo requires the 3D Connexion SpaceMouse. If you do not have
-a SpaceMouse, see the code to enable wx/ad/ze control of the glove instead.
-'''
+SF = 1.0/200
 
 glove = None
 
@@ -57,28 +39,23 @@ def init():
 	"""Flush global variables"""
 	global RUNNING
 	global bones
-	global names
 	global bonesById
 	global bonesByName
 	global groups
-	global boneExcelData
 	global boneInfo
 	global proximityList
 	global inRange
 	global gloveLink
 	global grabFlag
 	global keyBindings
-	#global shortestDist
 	global closestBoneIdx
 	global prevBoneIdx
 	
 	RUNNING = False
 	bones = []
-	names = []
 	bonesById = {}
 	bonesByName = {}
 	groups = []
-	boneExcelData = {}
 	boneInfo = {}
 	proximityList = []
 	keyBindings = []
@@ -87,9 +64,11 @@ def init():
 	gloveLink = None
 	grabFlag = False
 	
-"""Need to know if the display is oculus or not"""
 def setDisplay(displayInstance):
-	"""Set the instance of the display"""
+	"""
+	Set the instance of the display
+	Need to know if the display is oculus or not
+	"""
 	global display
 	display = displayInstance
 
@@ -304,6 +283,16 @@ class Mesh(viz.VizNode):
 		True to allow bone name playback
 		"""
 		self.nameAudioFlag = flag
+	
+	def playDescription(self):
+		"""
+		Play the Bone description audio
+		"""
+		try:
+			#print ("play " + boneObj.name + " description")
+			viz.playSound(path + "audio_descriptions2\\" + self.name + ".wav")
+		except ValueError:
+			print ("the name of the audio description file was wrong")
 	
 	def getNameAudioFlag(self):
 		"""
@@ -666,7 +655,7 @@ def loadMeshes(meshes = [], animate = False, randomize = True):
 def unloadBones():
 	"""Unload all of the bone objects to reset the puzzle game"""
 	for b in bones:
-		b.textRemove()
+#		b.textRemove()
 		b.remove(children = True)
 	
 def transparency(source, level, includeSource = False):
@@ -772,7 +761,7 @@ def grab(inRange):
 		target = grabList[0]
 		# only play bone description sound once, so set it if it hasnt been
 		if grabList[0].grabbedFlag == 0:
-			playBoneDesc(grabList[0])
+#			playBoneDesc(grabList[0])
 			grabList[0].setGrabbedFlag(1)
 		target.setGroupParent()
 		gloveLink = viz.grab(glove, target, viz.ABS_GLOBAL)
@@ -802,16 +791,6 @@ def playName(boneObj):
 			viz.playSound(path + "audio_names\\" + boneObj.name + ".wav") # should be updated to path
 	except ValueError:
 		print ("the name of the audio name file was wrong")
-		
-def playBoneDesc(boneObj):
-	"""
-	Play the Bone description audio
-	"""
-	try:
-		#print ("play " + boneObj.name + " description")
-		viz.playSound(path + "audio_descriptions2\\" + boneObj.name + ".wav")
-	except ValueError:
-		print ("the name of the audio description file was wrong")
 	
 def calcClosestBone(pointer, proxList):
 	"""
@@ -925,19 +904,6 @@ def load(dataset = 'right arm'):
 		keyBindings.append(vizact.onkeydown('65421',grab,proximityList)) #numpad enter select
 		keyBindings.append(vizact.onkeyup(' ',release))
 		keyBindings.append(vizact.onkeyup('65421',release))
-
-		
-		rawExcelData = csvToList(path + 'CenterPointsCompleted.csv')
-		#rawExcelData = rawExcelData[:3] # fast loading for debug
-
-		boneDescriptions = csvToList(path + 'descriptions.csv')
-		smallBoneGroups = csvToList(path + 'BonesThatShouldBeTogether.csv')
-
-		#Create boneInfo set
-		for i,row in enumerate(boneDescriptions[1:]):
-			name = row[0]
-			info = row[1]
-			boneInfo[name] = {'name':name,'info':info}
 		
 		# start the clock
 		time.clock()
@@ -947,7 +913,7 @@ def load(dataset = 'right arm'):
 		
 #		viztask.schedule(soundTask(glove))
 
-		loadMeshes(ds.getOntologySet(dataset)['filenames'])
+		loadMeshes(ds.getOntologySet(dataset))
 		#snapGroup(smallBoneGroups)
 
 def wireframeCube(dimensions):

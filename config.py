@@ -4,6 +4,7 @@ config.py
 Just a bunch of constants defining running configuration
 """
 
+# Where is the dataset in relation to where I am?
 DATASET_PATH = '.\\dataset\\full\\'
 
 # Display mode options:
@@ -39,5 +40,16 @@ layers = {'Axial':['skull', 'skeletal system of thorax'], 'Upper Appen.': ['righ
 """
 Available modes for selection
 """
-
 modes = {'Free Play': 'free play description', 'Test Mode': 'test play description'}
+
+HELP_MESSAGE = \
+'''
+Welcome to the puzzle game demo!
+Drag and drop the bones together to complete the anatomical model.
+Controls:
+	Press and hold space bar to grab bones
+	Use the arrow keys to move the camera
+	Use 'o' key to toggle proximity spheres
+Note: This demo requires the 3D Connexion SpaceMouse. If you do not have
+a SpaceMouse, see the code to enable wx/ad/ze control of the glove instead.
+'''
