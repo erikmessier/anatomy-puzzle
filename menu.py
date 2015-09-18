@@ -161,7 +161,7 @@ class GameMenu(vizinfo.InfoPanel):
 			if self.checkState[i] == True:
 				self.loadLayers.append(i)
 		if len(self.loadLayers) != 0:
-			puzzle.load(self.loadLayers[0])
+			puzzle.load(self.loadLayers)
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
 			self.active = False
