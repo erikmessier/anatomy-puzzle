@@ -78,15 +78,12 @@ class MainMenu(vizinfo.InfoPanel):
 		
 			
 	def playButton(self):
-		print 'Play button was pressed'
 		self.setPanelVisible(viz.OFF, animate = False)
 		game.setPanelVisible(viz.ON, animate = True)
 		self.active = False
 		game.active = True
 		
 	def exitButton(self):
-		print 'Exit button was pressed'
-		print 'Exiting Visual Anatomy Trainer'
 		viz.quit()
 		print 'Visual Anatomy Trainer has closed'
 	
@@ -134,7 +131,13 @@ class GameMenu(vizinfo.InfoPanel):
 		self.addItem(tp, align = viz.ALIGN_CENTER_TOP)
 		tp.setCellPadding(10)
 
-		#creating grid panel to add back and start buttons to
+		#creating grid panel to add mode, start, and back buttons to
+		modeGrid = vizdlg.GridPanel(parent = canvas)
+		
+		#add mode directions
+		modeGrid.addRow([viz.addText('Select a Game Mode')])
+		
+		#creating grid panel to add mode, start, and back buttons to
 		setGrid = vizdlg.GridPanel(parent = canvas)
 		
 		#create back and start buttons
@@ -155,7 +158,6 @@ class GameMenu(vizinfo.InfoPanel):
 
 	def start(self):
 		self.loadLayers = []
-		print 'Puzzle game has been started!'
 		'''Which subsets were selected'''
 		for i in self.checkState:
 			if self.checkState[i] == True:
@@ -183,7 +185,6 @@ class GameMenu(vizinfo.InfoPanel):
 				else:
 					self.checkState[l] = False
 	def back(self):
-		print "Goi'n Back!"
 		self.setPanelVisible(viz.OFF, animate = False)
 		main.setPanelVisible(viz.ON, animate = True)
 		self.active = False
@@ -221,7 +222,7 @@ class InGameMenu(vizinfo.InfoPanel):
 
 	def restartButton(self):
 		puzzle.end()
-		puzzle.load(game.loadLayers)
+		puzzle.load(game.loadLayers[0])
 		self.toggle()
 	
 	def endButton(self):
@@ -244,7 +245,6 @@ class InGameMenu(vizinfo.InfoPanel):
 			self.menuVisible = True
 
 def toggle(visibility = viz.TOGGLE):
-	print "toggling menu"
 	if(main.active == True):
 		main.toggle()
 	elif(game.active == True):

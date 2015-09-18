@@ -620,7 +620,7 @@ def end():
 	global RUNNING
 	if RUNNING:
 		print "Puzzle Quitting!"
-		score.close()
+#		score.close()
 		manager.clearSensors()
 		manager.clearTargets()
 		manager.remove()
