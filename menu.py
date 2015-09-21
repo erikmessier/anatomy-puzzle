@@ -23,7 +23,7 @@ def init():
 	global main
 	global game
 	global ingame
-	
+
 	canvas = viz.addGUICanvas()
 #	canvas.setRenderWorldOverlay([2000,2000],60,1)
 	
@@ -33,7 +33,7 @@ def init():
 	
 	# Compatibility for all display types
 	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
-	canvas.setCursorSize([50,50])
+	canvas.setCursorSize([25,25])
 	canvas.setCursorPosition([0,0])
 
 class MainMenu(vizinfo.InfoPanel):
@@ -49,6 +49,7 @@ class MainMenu(vizinfo.InfoPanel):
 		self.menuVisible = True
 		self.canvas = canvas
 		self.active = True
+		self.name = 'main'
 		
 		# add play button, play button action, and scroll over animation
 		self.play = self.addItem(viz.addButtonLabel('Play'), fontSize = 50)
@@ -65,6 +66,9 @@ class MainMenu(vizinfo.InfoPanel):
 		#rendering
 		bb = self.getBoundingBox()
 		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 3)
+		
+		#change scale depending on display mode
+		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 
 	def toggle(self):
 		if(self.menuVisible == True):
@@ -97,11 +101,11 @@ class GameMenu(vizinfo.InfoPanel):
 		self.layers = config.layers
 		self.modes = config.modes
 		
+		self.name = 'game'
 		self.canvas = canvas
 		self.active = False
 		self.getPanel().fontSize(50)
 		self.setPanelVisible(viz.OFF, animate = False)
-		self.setScale(.75,.75)
 
 		self.menuVisible = False	
 		
@@ -186,7 +190,10 @@ class GameMenu(vizinfo.InfoPanel):
 	
 		#start and back buttons
 		self.addItem(setGrid, align = viz.ALIGN_RIGHT_TOP)
-
+		
+		#change scale depending on display mode
+		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
+		
 	def start(self):
 		self.mode = []
 		self.loadLayers = []
@@ -234,6 +241,7 @@ class InGameMenu(vizinfo.InfoPanel):
 	def __init__(self,canvas):
 		vizinfo.InfoPanel.__init__(self, '',title='In Game',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent=canvas)
 		
+		self.name = 'ingame'
 		self.canvas = canvas
 		self.active = False
 		self.getPanel().fontSize(50)
@@ -248,7 +256,8 @@ class InGameMenu(vizinfo.InfoPanel):
 		vizact.onbuttondown(self.restart, self.restartButton)
 		vizact.onbuttondown(self.end, self.endButton)
 		
-		
+		#change scale depending on display mode
+		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 
 	def restartButton(self):
 		puzzle.end()
@@ -281,18 +290,3 @@ def toggle(visibility = viz.TOGGLE):
 		game.toggle()
 	else:
 		ingame.toggle()
-def modifyDim(menu):
-	pass
-
-#canvas = viz.addGUICanvas()
-#canvas.setRenderWorldOverlay([2000,2000],60,1)
-## Compatibility for all display types
-#canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
-#canvas.setCursorPosition([0,0])	
-
-#main = MainMenu(canvas)
-#game = GameMenu(canvas, config.layers)
-#ingame = InGameMenu(canvas)
-#
-#
-#vizact.onkeydown('l', ingame.toggle)
