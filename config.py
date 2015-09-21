@@ -12,7 +12,7 @@ DATASET_PATH = '.\\dataset\\full\\'
 #  1 - 3D TV
 #  2 - Oculus rift
 dispChoices = {'Regular Computer': 0, '3D TV': 1, 'Occulus Rift': 2}
-dispMode = 0                                                                            
+dispMode = 1                                                                           
 
 # Camera control mode options:
 #  0 - arrow button  keyboard control
@@ -26,7 +26,7 @@ camMode = 0
 #  1 - SpaceMouse control
 #  2 - Mouse plane selection?
 pointerChoices = {'Keyboard Control': 0, 'SpaceMouse Control': 1}
-pointerMode = 0
+pointerMode = 1
 
 """
 Dictionary of lists:

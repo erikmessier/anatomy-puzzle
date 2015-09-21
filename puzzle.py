@@ -72,9 +72,9 @@ def setDisplay(displayInstance):
 	global display
 	display = displayInstance
 
-class BoneGroup():
+class MeshGroup():
 	"""
-	BoneGroup object manages a group of bones that need to stay
+	MeshGroup object manages a group of bones that need to stay
 	fused to each other. Besides keeping a list of bones, it also
 	has methods necessary to allow ease of group management
 	"""
@@ -114,7 +114,7 @@ class Mesh(viz.VizNode):
 	Bone object is a customized version of VizNode that is design to accomodate
 	obj files from the BodyParts3D database.
 	"""
-	def __init__(self, fileName, SF = 1.0/200):
+	def __init__(self, fileName, SF = 1.0/500):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
 		self.metaData = ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
@@ -191,8 +191,7 @@ class Mesh(viz.VizNode):
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
 		
 		# Turn off visibility of center and checker viznodes
-#		self.disable([viz.RENDERING])
-		self.color([0.3,0,0])
+		self.disable([viz.RENDERING])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 #		self.tooltip.disable([viz.RENDERING])
 		#self.dialogueBox.disable([viz.RENDERING])
@@ -209,7 +208,7 @@ class Mesh(viz.VizNode):
 		
 		
 		# Group handling
-		self.group = BoneGroup([self])
+		self.group = MeshGroup([self])
 		groups.append(self.group)
 		
 	
@@ -239,7 +238,7 @@ class Mesh(viz.VizNode):
 		"""Set bone group"""
 		self.group = group
 	
-	def setAlpha(self, level):
+	def alpha(self, level):
 		"""Set bone alpha level"""
 		self.mesh.alpha(level)
 	
@@ -662,10 +661,10 @@ def transparency(source, level, includeSource = False):
 	"""Set the transparency of all the bones"""
 	if includeSource:
 		for b in bones:
-			b.setAlpha(level)
+			b.alpha(level)
 	else:
 		for b in [b for b in bones if b != source]:
-			b.setAlpha(level)			
+			b.alpha(level)			
 
 def moveCheckers(sourceChild):
 	"""
@@ -685,7 +684,7 @@ def snap(sourceChild):
 	SNAP_THRESHOLD = 0.5;
 	DISTANCE_THRESHOLD = 1.5;
 	ANGLE_THRESHOLD = 45;
-	source = getBone(sourceChild.id)
+	source = getMesh(sourceChild.id)
 	moveCheckers(sourceChild)
 
 	# Search through all of the checkers, and snap to the first one meeting our snap
@@ -720,11 +719,11 @@ def snapGroup(boneNames):
 	print boneNames
 	if (len(boneNames) > 0):
 		bones = []
-		[[bones.append(getBone(b)) for b in group] for group in boneNames]
+		[[bones.append(getMesh(b)) for b in group] for group in boneNames]
 		[b.snap(bones[0], animate = False) for b in bones[1:]]
 
-def getBone(value):
-	"""Return a bone instance with given ID or Name"""
+def getMesh(value):
+	"""Return a mesh instance with given ID or Name"""
 	if type(value) == int:
 		return bonesById[value]
 	elif type(value) == str:
@@ -741,12 +740,10 @@ def csvToList(location):
 	try:
 		with open(location, 'rb') as csvfile:
 			wowSuchCSV = csv.reader(csvfile, delimiter=',')
-			for row in wowSuchCSV:
-				raw.append(row)
+			for wow in wowSuchCSV:
+				raw.append(wow)
 	except IOError:
 		print "ERROR: Unable to open CSV file at", location
-	except:
-		print "Unknown error opening CSV file at:", location
 	return raw
 
 def grab(inRange):
@@ -857,17 +854,17 @@ def soundTask(pointer):
 def EnterProximity(e):
 	global proximityList
 	source = e.sensor.getSourceObject()
-	getBone(source.id).mesh.color([1.0,1.0,0.5])
-	getBone(source.id).setNameAudioFlag(1)
+	getMesh(source.id).mesh.color([1.0,1.0,0.5])
+	getMesh(source.id).setNameAudioFlag(1)
 	proximityList.append(source)
 	
 
 def ExitProximity(e):
 	source = e.sensor.getSourceObject()
-	getBone(source.id).mesh.color([1.0,1.0,1.0])
-	getBone(source.id).setNameAudioFlag(0)
+	getMesh(source.id).mesh.color([1.0,1.0,1.0])
+	getMesh(source.id).setNameAudioFlag(0)
 	proximityList.remove(source)
-#	removeBoneInfo(getBone(source.id))
+#	removeBoneInfo(getMesh(source.id))
 
 def load(dataset = 'right arm'):
 	"""
@@ -916,11 +913,11 @@ def load(dataset = 'right arm'):
 		loadMeshes(ds.getOntologySet(dataset))
 		#snapGroup(smallBoneGroups)
 
-def wireframeCube(dimensions):
+def wireframeCube(dimensions, color=[0,1,0]):
 	edges = [[x,y,z] for x in [-1,0,1] for y in [-1,0,1] for z in [-1,0,1] if abs(x)+abs(y)+abs(z) == 2]
 	for edge in edges:
 		viz.startLayer(viz.LINES)
-		viz.vertexColor(0,1,0)
+		viz.vertexColor(*color)
 		i = edge.index(0)
 		edge[i] = 1
 		viz.vertex(map(lambda a,b:a*b,edge,dimensions))
