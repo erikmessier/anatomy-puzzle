@@ -8,11 +8,23 @@ Just a bunch of constants defining running configuration
 DATASET_PATH = '.\\dataset\\full\\'
 
 # Display mode options:
-#  0 - Regular computer
-#  1 - 3D TV
-#  2 - Oculus rift
-dispChoices = {'Regular Computer': 0, '3D TV': 1, 'Occulus Rift': 2}
-dispMode = 0                                                                            
+class Displays:
+	# pseudo enumerated type
+	#  0 - Regular computer
+	computer = 0
+	#  1 - 3D TV
+	tv = 1
+	#  2 - Oculus rift
+	oculus = 2
+	label = {'Regular Computer': 0, '3D TV': 1, 'Occulus Rift': 2}
+
+dispMode = Displays.computer
+menuScaleConfig = { \
+	0:{'main':1.2, 'game':.75, 'ingame': 1}, \
+	1:{'main':.1, 'game':.3, 'ingame': 1}, \
+	2:{'main':1, 'game':.3, 'ingame': 1}}
+menuScale = menuScaleConfig[dispMode]
+
 
 # Camera control mode options:
 #  0 - arrow button  keyboard control
