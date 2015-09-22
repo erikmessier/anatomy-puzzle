@@ -12,6 +12,7 @@ import vizinfo
 import vizshape
 import vizproximity
 import vizdlg
+import viztip
 
 #custom modules
 import config
@@ -48,7 +49,6 @@ class MainMenu(vizinfo.InfoPanel):
 		self.menuVisible = True
 		self.canvas = canvas
 		self.active = True
-		self.setScale(1.5,1.5)
 		
 		# add play button, play button action, and scroll over animation
 		self.play = self.addItem(viz.addButtonLabel('Play'), fontSize = 50)
@@ -101,18 +101,45 @@ class GameMenu(vizinfo.InfoPanel):
 		self.active = False
 		self.getPanel().fontSize(50)
 		self.setPanelVisible(viz.OFF, animate = False)
+		self.setScale(.75,.75)
 
 		self.menuVisible = False	
-	
+		
+		#####################
+		'''LAYER TAB PANEL SETUP'''
+		#####################
+		
 		#creating tab panel tp 
 		tp = vizdlg.TabPanel(align = viz.ALIGN_LEFT_TOP, parent = canvas)
+		
+		#creating sub panels for tab panels(all layer data is stored in config.layers) storing sub panels in laypan
+		layPan = {}
+		
+		for i, l in enumerate(self.layers):
+			layPan[l] = vizdlg.GridPanel(parent = canvas)
+		
+		#creating dict of checkboxes for layers
+		self.checkBox = {}
+		
+		for cb in [cb for l in self.layers.values() for cb in l]:
+			self.checkBox[cb] = viz.addCheckbox(parent = canvas)
+		
+		#add layers and textboxes to panels
+		for i in self.layers:
+			for j in self.layers[i]:
+				layPan[i].addRow([viz.addText(j), self.checkBox[j]])
+			tp.addPanel(i, layPan[i], align = viz.ALIGN_LEFT_TOP)
+		
+		###############################################
+		'''CREATING MODES PANEL'''
+		###############################################
 		
 		#creating labels for modes
 		self.modeLabels = {}
 		
 		for l in self.modes.keys():
-			self.modeLabels[l] = viz.addText(l)
-
+			self.modeLabels[l] = viz.addText(l, parent = canvas)
+		
 		#creating radio buttons for modes
 		self.modeGroup = viz.addGroup(parent = canvas)
 		self.radioButtons = {}
@@ -120,39 +147,16 @@ class GameMenu(vizinfo.InfoPanel):
 		for rb in self.modes.keys():
 			self.radioButtons[rb] = viz.addRadioButton(self.modeGroup, parent = canvas)
 		
-		#creating dict of checkboxes for layers
-		self.checkBox = {}
-		
-		for cb in [cb for l in self.layers.values() for cb in l]:
-			self.checkBox[cb] = viz.addCheckbox(parent = canvas)
-	
-		#creating sub panels for tab panels(all layer data is stored in config.layers) storing sub panels in laypan
-		layPan = {}
-		
-		for i, l in enumerate(self.layers):
-			layPan[l] = vizdlg.GridPanel(parent = canvas)
-
-		#add items to sub panels of tab panels
-		for i in self.layers:
-			for j in self.layers[i]:
-				layPan[i].addRow([viz.addText(j), self.checkBox[j]])
-			tp.addPanel(i, layPan[i], align = viz.ALIGN_LEFT_TOP)
-		
-		#add directions above menu items
-		self.addItem(viz.addText('Select Parts of the Skeletal System You Wish to Puzzle and Select a Mode:', parent = canvas), fontSize = 30)
-		
-		#add tab panel to info panel
-		self.addItem(tp, align = viz.ALIGN_LEFT_TOP)
-		tp.setCellPadding(10)
-
 		#creating grid panel to add mode to
 		modeGrid = vizdlg.GridPanel(parent = canvas)
-
 		
 		#adding modes and radio buttons to grid panel
 		for i in self.modes.keys():
 			modeGrid.addRow([self.modeLabels[i], self.radioButtons[i]])
-		self.addItem(modeGrid, align = viz.ALIGN_LEFT_TOP)
+		
+		###################################
+		'''CREATE START AND STOP BUTTONS'''
+		###################################
 		
 		#creating grid panels to add start and back buttons to
 		setGrid = vizdlg.GridPanel(parent = canvas)
@@ -161,66 +165,55 @@ class GameMenu(vizinfo.InfoPanel):
 		backButton = viz.addButtonLabel('Back')
 		startButton = viz.addButtonLabel('Start')
 		setGrid.addRow([backButton, startButton])
-		self.addItem(setGrid, align = viz.ALIGN_RIGHT_TOP)
-		
-		#add button event callback
-		self.checkState = {}
-		for cb in [cb for l in self.layers.values() for cb in l]:
-			self.checkState[cb] = False
-	
-		self.radioState = {}
-		for rb in self.radioButtons.keys():
-			if self.radioButtons[rb]:
-				self.radioState[rb] = True
-			else:
-				self.radioState[rb] = False
-				print 'its all a lie'
-	
-		viz.callback(viz.BUTTON_EVENT, self.checkOBJState)
 		
 		#add back and state button actions
 		vizact.onbuttondown(backButton, self.back)
 		vizact.onbuttondown(startButton, self.start)
+		
+		############################
+		'''ADD ITEMS TO GAME MENU'''
+		############################
+		
+		#directions
+		self.addItem(viz.addText('Select Parts of the Skeletal System You Wish to Puzzle and Select a Mode:', parent = canvas), fontSize = 30, align = viz.ALIGN_LEFT_TOP)
+		
+		#add tab panel to info panel
+		tp.setCellPadding(5)
+		self.addItem(tp, align = viz.ALIGN_LEFT_TOP)
+		
+		#modes
+		self.addItem(modeGrid, align = viz.ALIGN_LEFT_TOP)
+	
+		#start and back buttons
+		self.addItem(setGrid, align = viz.ALIGN_RIGHT_TOP)
 
 	def start(self):
 		self.mode = []
 		self.loadLayers = []
 		'''Which subsets were selected'''
-		for i in self.checkState:
-			if self.checkState[i] == True:
+		for i in self.checkBox.keys():
+			if self.checkBox[i].get() == 1:
 				self.loadLayers.append(i)
-		for i in self.radioState:
-			if self.radioState[i] == True:
+		for i in self.radioButtons.keys():
+			if self.radioButtons[i].get() == 1:
 				self.mode.append(i)
 		if len(self.loadLayers) != 0:
-			print str(self.mode) + 'was selected'
-			puzzle.load(self.loadLayers)
+			print str(self.mode[0]) + ' was selected'
+			try:
+				puzzle.load(self.loadLayers)
+			except KeyError:
+				pass
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
 			self.active = False
 			ingame.active = True
 		else: 
+			print str(self.mode[0]) + ' was selected'
 			print 'No Layer Was Selected!'
 	
 	def setDataset(self, name):
 		self.dataset = name
-		
-	def checkOBJState(self, obj, state):
-		"""on button event checks what type of button was selected and
-		if the button is a checkbox or radio button then the state of the check boxes
-		and associates selected checkboxes and radio buttons with their label"""
-		for l in self.checkBox:
-			if obj == self.checkBox[l]:
-				if state == viz.DOWN:
-					self.checkState[l] = True
-				else:
-					self.checkState[l] = False
-		for l in self.radioButtons:
-			if obj == self.radioButtons[l]:
-				if state == viz.DOWN:
-					self.radioState[l] = True
-				else:
-					self.radioState[l] = False
+
 	def back(self):
 		self.setPanelVisible(viz.OFF, animate = False)
 		main.setPanelVisible(viz.ON, animate = True)
@@ -288,6 +281,8 @@ def toggle(visibility = viz.TOGGLE):
 		game.toggle()
 	else:
 		ingame.toggle()
+def modifyDim(menu):
+	pass
 
 #canvas = viz.addGUICanvas()
 #canvas.setRenderWorldOverlay([2000,2000],60,1)
