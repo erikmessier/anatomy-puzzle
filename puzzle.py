@@ -50,6 +50,7 @@ def init():
 	global keyBindings
 	global closestBoneIdx
 	global prevBoneIdx
+	global lastGrabbed
 	
 	RUNNING = False
 	bones = []
@@ -61,6 +62,7 @@ def init():
 	keyBindings = []
 		
 	inRange = []
+	lastGrabbed = None
 	gloveLink = None
 	grabFlag = False
 	
@@ -682,6 +684,10 @@ def snap(sourceChild):
 	Snap checks for any nearby bones, and mates a src bone to a dst bone
 	if they are in fact correctly placed.
 	"""
+	print sourceChild
+	if not sourceChild:
+		print 'nothing to snap'
+		return
 	SNAP_THRESHOLD = 0.5;
 	DISTANCE_THRESHOLD = 1.5;
 	ANGLE_THRESHOLD = 45;
@@ -713,6 +719,7 @@ def snap(sourceChild):
 				menu.ingame.endButton()
 			break
 	else:
+		print 'did not meet snap criteria'
 		score.event(event = 'release', source = source.name)
 
 def snapGroup(boneNames):
@@ -755,7 +762,9 @@ def grab(inRange):
 	global grabFlag
 	global closestBoneIdx
 	global glove
+	global lastGrabbed
 	grabList = [b for b in proximityList if not b.group.grounded] # Needed for disabling grab of grounded bones
+	
 	if len(grabList) > 0 and not grabFlag:
 		calcClosestBone(glove,grabList)
 		target = grabList[0]
@@ -767,6 +776,7 @@ def grab(inRange):
 		gloveLink = viz.grab(glove, target, viz.ABS_GLOBAL)
 #		score.event(event = 'grab', source = target.name)
 		transparency(target, 0.7)
+		lastGrabbed = target
 #	elif not grabFlag:
 #		score.event(event = 'grab')
 	grabFlag = True
@@ -776,9 +786,8 @@ def release():
 	global gloveLink
 	global grabFlag
 	if gloveLink:
-		target = gloveLink.getDst()
-		transparency(target, 1.0)
-		snap(target)
+#		snap(lastGrabbed)
+		transparency(lastGrabbed, 1.0)
 		gloveLink.remove()
 		gloveLink = None
 	else:
@@ -897,13 +906,9 @@ def load(dataset = 'right arm'):
 		manager.onExit(None, ExitProximity)
 
 	
-		# Selection commands 
-		global keyBindings
-		keyBindings.append(vizact.onkeydown('o',manager.setDebug,viz.TOGGLE)) #debug shapes
-		keyBindings.append(vizact.onkeydown(' ',grab,proximityList)) #space select
-		keyBindings.append(vizact.onkeydown('65421',grab,proximityList)) #numpad enter select
-		keyBindings.append(vizact.onkeyup(' ',release))
-		keyBindings.append(vizact.onkeyup('65421',release))
+		#Setup Key Bindings
+		bindKeys()
+
 		
 		# start the clock
 		time.clock()
@@ -928,3 +933,12 @@ def wireframeCube(dimensions):
 		viz.vertex(map(lambda a,b:a*b,edge,dimensions))
 	cube = viz.endLayer()
 	return cube
+
+def bindKeys():
+	global keyBindings
+	keyBindings.append(vizact.onkeydown('o', manager.setDebug, viz.TOGGLE)) #debug shapes
+	keyBindings.append(vizact.onkeydown(' ', grab, proximityList)) #space select
+	keyBindings.append(vizact.onkeydown('65421', grab, proximityList)) #numpad enter select
+	keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, snap, lastGrabbed))
+	keyBindings.append(vizact.onkeyup(' ', release))
+	keyBindings.append(vizact.onkeyup('65421', release))
