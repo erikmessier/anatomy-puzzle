@@ -355,8 +355,11 @@ def loadColiseum():
 	pedistal.setScale([100,100,100])
 	pedistal.setPosition([0,-7.26,0]) #Found by testing
 
-def loadTemple():
+def loadTemple(bounding = True):
 	"""loads temple enviornment"""
+	global boundingBox
+	global temple
+	
 	sf = 100
 	temple = viz.addChild('.\\dataset\\environment\\temple.OSGB')
 	temple.setEuler([0,90,0])
@@ -366,12 +369,12 @@ def loadTemple():
 #	pedistal = viz.addChild('.\\dataset\\environment\\Column.OSGB')
 #	pedistal.setScale([3.0,3.0,3.0])
 #	pedistal.setPosition([0,-1.5,0]) #Found by testing
-	
-	dimensions = [1,2,0.5]
+	if bounding == True:
+		dimensions = [1,2,0.5]
 
-	boundingBox = puzzle.wireframeCube(dimensions)
-	boundingBox.setPosition(0,dimensions[1]/2,0)
-	boundingBox.alpha(0.25)
+		boundingBox = puzzle.wireframeCube(dimensions)
+		boundingBox.setPosition(0,dimensions[1]/2,0)
+		boundingBox.alpha(0.25)
 
 def pointerInput(mode, pointer,arena):
 	viz.phys.enable()

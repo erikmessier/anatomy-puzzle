@@ -65,7 +65,7 @@ def main():
 	puzzle.setPointer(glove)
 	puzzle.init()
 	puzzle.setDisplay(display)
-
+	
 	# Escape Key calls main menu
 	vizact.onkeydown(viz.KEY_ESCAPE, menu.toggle)
 
@@ -75,6 +75,7 @@ def main():
 	# Will move this out of main and where it belongs
 	viewcube = puzzle.viewCube()
 	vizact.onkeydown('65460', viewcube.toggleModes) # '4' key
+	
 
 if __name__ == '__main__':
 	main()

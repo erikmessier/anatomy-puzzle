@@ -17,6 +17,7 @@ import viztip
 #custom modules
 import config
 import puzzle
+import Tutorial
 
 def init():
 	"""Create global menu instance"""
@@ -214,6 +215,12 @@ class GameMenu(vizinfo.InfoPanel):
 			self.canvas.setCursorVisible(viz.OFF)
 			self.active = False
 			ingame.active = True
+		elif self.mode[0] == 'Movement Tutorial':
+			Tutorial.init()
+			self.setPanelVisible(viz.OFF)
+			self.canvas.setCursorVisible(viz.OFF)
+			self.active = False
+			ingame.active = True
 		else: 
 			print str(self.mode[0]) + ' was selected'
 			print 'No Layer Was Selected!'
@@ -265,6 +272,8 @@ class InGameMenu(vizinfo.InfoPanel):
 		self.toggle()
 	
 	def endButton(self):
+		if game.mode[0] == 'Movement Tutorial':
+			Tutorial.tutorial.end()
 		puzzle.end()
 		self.toggle()
 		self.active = False
