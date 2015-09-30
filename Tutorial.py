@@ -20,6 +20,8 @@ import config
 
 def init():
 	global proxList
+	global snapTransitionTime
+	global animateOutline
 	global tasks
 	global snapFlag
 	global gloveLink
@@ -28,6 +30,8 @@ def init():
 	snapFlag = False
 	proxList = []
 	gloveLink = None
+	snapTransitionTime = 0.3
+	animateOutline = 1.25
 	tasks = viztask.Scheduler
 	canvas = viz.addGUICanvas()
 	tutorial = InterfaceTutorial(canvas)
@@ -40,17 +44,17 @@ class InterfaceTutorial():
 		sf = 0.5
 		self.gloveStart = puzzle.glove.getPosition()
 		self.iterations = 0
-		
+		self.canvas = canvas
 		#creating directions panel
-		viz.mouse.setVisible(False)
-		directions = vizinfo.InfoPanel('', fontSize = 10, parent = canvas, align = viz.ALIGN_LEFT_TOP, title = 'Tutorial', icon = False)
-		if config.pointerMode ==0:
-			directions.addItem(viz.addText('Keyboard Controls:'))
-			directions.addLabelItem(viz.addText('W'))
-		
-		if config.pointerMode ==1:
-			directions.addItem(viz.addText('Spacemouse Controls:'))
-			directions.addItem(viz.addTexQuad(size = 300, parent = canvas, texture = viz.addTexture('.\\mouse key.png')))
+#		viz.mouse.setVisible(False)
+#		directions = vizinfo.InfoPanel('', fontSize = 10, parent = canvas, align = viz.ALIGN_LEFT_TOP, title = 'Tutorial', icon = False)
+#		if config.pointerMode ==0:
+#			directions.addItem(viz.addText('Keyboard Controls:'))
+#			directions.addLabelItem(viz.addText('W'))
+#		
+#		if config.pointerMode ==1:
+#			directions.addItem(viz.addText('Spacemouse Controls:'))
+#			directions.addItem(viz.addTexQuad(size = 300, parent = canvas, texture = viz.addTexture('.\\mouse key.png')))
 		
 		
 		#creating tutorial objects
@@ -59,6 +63,7 @@ class InterfaceTutorial():
 		self.dogStart = self.dog.getPosition()
 		self.dog.setScale([sf,sf,sf])
 		self.dogOutline.setScale([sf,sf,sf])
+		self.startColor = puzzle.glove.getColor()
 		
 		#creating dog outline
 		self.dogOutline.alpha(0.8)
@@ -69,6 +74,7 @@ class InterfaceTutorial():
 		
 		'''creating dog grab and snap sensors around sphere palced in the center of the dog'''
 		self.dogCenter = vizshape.addSphere(0.1, pos = (self.dogStart))
+		self.dogSnapSensor = vizproximity.Sensor(vizproximity.Sphere(0.35, center = [0,1,0]), source = self.dogCenter)
 		self.outlineCenter = vizshape.addSphere(0.1, pos = (self.dogStart))
 		self.dogCenter.setPosition([0,-.35,0])
 		self.outlineCenter.setPosition([0,-.35,0])
@@ -96,19 +102,29 @@ class InterfaceTutorial():
 		
 		#manager proximity events
 		self.manager.onEnter(self.dogGrabSensor, EnterProximity, self.gloveTarget)
-		self.manager.onExit(self.dogGrabSensor, ExitProximity, puzzle.glove)
+		self.manager.onExit(self.dogGrabSensor, ExitProximity, puzzle.glove, self.startColor)
 		self.manager.onEnter(self.dogSnapSensor, snapCheckEnter, self.dogTarget)
 		self.manager.onExit(self.dogSnapSensor, snapCheckExit, self.dogTargetMold)
 		
 		#reset command
 		self.keybindings = []
 		self.keybindings.append(vizact.onkeydown('l', reset, self.manager, self.gloveStart, self.dogCenter, self.outlineCenter))
-		
+		self.keybindings.append(vizact.onkeydown('p', self.debugger))
 		
 		#task schedule
 		viztask.schedule(self.interfaceTasks())
 		viztask.schedule(self.mechanics())
 		
+	def debugger(self):
+		self.manager.setDebug(viz.TOGGLE)
+		if self.dogCenter.getVisible() == viz.ON:
+			self.dogCenter.visible(viz.OFF)
+			self.outlineCenter.visible(viz.OFF)
+			self.dogTargetMold.visible(viz.OFF)
+		else:
+			self.dogCenter.visible(viz.ON)
+			self.outlineCenter.visible(viz.ON)
+			self.dogTargetMold.visible(viz.ON)
 	def interfaceTasks(self):
 		while True:
 			yield viztask.waitKeyDown(' ')
@@ -123,89 +139,85 @@ class InterfaceTutorial():
 		self.dogOutline.remove()
 		self.dogCenter.remove()
 		self.outlineCenter.remove()
+		self.dogTargetMold.remove()
+		self.iterations = 0
+		puzzle.glove.color(self.startColor)
 		for bind in self.keybindings:
 			bind.remove()
 	def mechanics(self):
 		if self.iterations<=0:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along x-axis')
 			randomPos = [random.randrange(-1,2,2), 0,0]
-			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = 1)
+			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 		
-		if self.iterations>0 and self.iterations<=1:
+		elif self.iterations>0 and self.iterations<=1:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along y-axis')
 			randomPos = [0, random.randrange(-1,2,2),0]
-			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = 1)
+			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 	
-		if self.iterations>1 and self.iterations<=2:
+		elif self.iterations>1 and self.iterations<=2:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along z-axis')
 			randomPos = [0,0,random.randrange(-1,2,2)]
-			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = 1)
+			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 	
-		if self.iterations>2 and self.iterations<=3:
+		elif self.iterations>2 and self.iterations<=3:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
 			randomPos = [0,1,-1]
-			self.movePos = vizact.moveTo(randomPos, speed = 1)
+			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 		
-		if self.iterations>3 and self.iterations<=4:
+		elif self.iterations>3 and self.iterations<=4:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about x-axis')
 			randomEuler = [random.randint(-100,100),0,0]
-			self.moveAng = vizact.spinTo(euler = randomEuler, speed = 55)
+			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.moveAng)
 	
-		if self.iterations>4 and self.iterations<=5:
+		elif self.iterations>4 and self.iterations<=5:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about y-axis')
 			randomEuler = [0,random.randint(-100,100),0]
-			self.moveAng = vizact.spinTo(euler = randomEuler, speed = 55)
+			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.moveAng)
 	
-		if self.iterations>5 and self.iterations<=6:
+		elif self.iterations>5 and self.iterations<=6:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about z-axis')
 			randomEuler = [0,0,random.randint(-100,100)]
-			self.moveAng = vizact.spinTo(euler = randomEuler, speed = 55)
+			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.moveAng)
 		
-		if self.iterations>6 and self.iterations<=7:
+		elif self.iterations>6 and self.iterations<=7:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about all axis')
 			randomEuler = [random.randint(-100,100),random.randint(-100,100),random.randint(-100,100)]
-			self.moveAng = vizact.spinTo(euler = randomEuler, speed = 55)
+			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.moveAng)
 	
-		if self.iterations>7 and self.iterations<=12:
+		elif self.iterations>7 and self.iterations<=12:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'change pos and euler')
 			randomPos = [random.randrange(-1,1,1),random.randrange(0,2,1),random.randrange(-1,1,1)]
 			randomEuler = [random.randint(-90,90),random.randint(-90,90),random.randint(-90,90)]
-			self.movePos = vizact.moveTo(randomPos, speed = 1)
-			self.moveAng = vizact.spinTo(euler = randomEuler, speed = 55)
+			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
+			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
+			transition = vizact.parallel(self.movePos, self.moveAng)
 			yield viztask.waitTime(1)
-			yield viztask.addAction(self.outlineCenter, self.movePos)
-			yield viztask.addAction(self.outlineCenter, self.moveAng)
+			yield viztask.addAction(self.outlineCenter, transition)
 
-		if self.iterations > 12:
-			print 'finished'
+		else:
+			recordData.event(event = 'FINISHED', result = 'FINISHED')
 	
 		self.iterations = self.iterations+1
 
 def reset(manager, gloveStart, dogCenter, outlineCenter):
-	manager.setDebug(viz.TOGGLE)
 	puzzle.glove.setPosition(gloveStart)
-	if dogCenter.getVisible() == False:
-		dogCenter.visible(viz.ON)
-		outlineCenter.visible(viz.ON)
-	else:
-		dogCenter.visible(viz.OFF)
-		outlineCenter.visible(viz.OFF)
 def EnterProximity(e, glove):
 	"""@args vizproximity.ProximityEvent()"""
 	global proxList
@@ -213,13 +225,15 @@ def EnterProximity(e, glove):
 	targets = e.manager.getActiveTargets()
 	for t in targets:
 		if t == glove:
+			puzzle.glove.color(0,0,5)
 			proxList.append(source)
-def ExitProximity(e, glove):
+def ExitProximity(e, glove, startColor):
 	"""@args vizproximity.ProximityEvent()"""
 	global proxList
 	source = e.sensor.getSourceObject()
 	target = e.target.getSourceObject()
 	if target == glove:
+		puzzle.glove.color(startColor)
 		proxList.remove(source)
 def grab():
 	global gloveLink
@@ -248,10 +262,10 @@ def release(self):
 	else:
 		recordData.event()
 def snap(dog, dogTarget):
-	movePos = vizact.moveTo(dogTarget.getPosition(), speed = 1)
-	moveAng = vizact.spinTo(euler = dogTarget.getEuler(), speed = 55)
-	dog.addAction(moveAng)
-	dog.addAction(movePos)
+	movePos = vizact.moveTo(dogTarget.getPosition(), time = snapTransitionTime)
+	moveAng = vizact.spinTo(euler = dogTarget.getEuler(), time = snapTransitionTime)
+	transition = vizact.parallel(movePos, moveAng)
+	dog.addAction(transition)
 	viztask.schedule(tutorial.mechanics())
 def snapCheckEnter(e, dogTarget):
 	"""@args vizproximity.ProximityEvent()"""
@@ -278,7 +292,7 @@ class TutorialData():
 		self.csv.writerow(self.header)
 	def event(self, event = "release", result = 'Did Not Snap'):
 		'''record event'''
-		print 'EVENT!'
+#		print 'EVENT!'
 		currentEvent = dict(zip(self.header,[time.clock(), event, result]))
 		self.events.append(currentEvent)
 		self.csv.writerow([self.events[-1][column] for column in self.header])

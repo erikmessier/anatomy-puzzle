@@ -268,8 +268,8 @@ class InGameMenu(vizinfo.InfoPanel):
 
 	def restartButton(self):
 		if game.mode[0] == 'Movement Tutorial':
-			puzzle.glove.setPosition(Tutorial.tutorial.gloveStart)
 			Tutorial.tutorial.end()
+			puzzle.glove.setPosition(Tutorial.tutorial.gloveStart)
 			Tutorial.init()
 		else:
 			puzzle.end()
