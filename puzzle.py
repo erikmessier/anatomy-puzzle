@@ -65,14 +65,132 @@ def init():
 	lastGrabbed = 'initValueLastGrabbed'
 	gloveLink = None
 	grabFlag = False
+
+def __init__(self):
+	pass
 	
-def setDisplay(displayInstance):
+def end():
+	"""Do everything that needs to be done to end the puzzle game"""
+	global RUNNING
+	if RUNNING:
+		print "Puzzle Quitting!"
+#		score.close()
+		manager.clearSensors()
+		manager.clearTargets()
+		manager.remove()
+		unloadBones()
+		for bind in keyBindings:
+			bind.remove()
+		RUNNING = False
+
+def loadMeshes(meshes = [], animate = False, randomize = True):
+	"""Load all of the bones from the dataset into puzzle.bone instances"""
+	for i, fileName in enumerate(meshes):
+		# This is the actual mesh we will see
+		b = Mesh(fileName)
+		if (not randomize or i == 0):
+			#Hardcoded keystone
+			b.setPosition([0.0,1.0,0.0])
+			b.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical
+			if (i == 0):
+				b.group.grounded = True
+		else:		
+			# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
+			angle = random.random() * 2 * math.pi
+			radius = random.random() + 1.5
+			
+			targetPosition = [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
+			targetEuler = [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
+			
+			if (animate):
+				move = vizact.moveTo(targetPosition, time = 2)
+				spin = vizact.spinTo(euler = targetEuler, time = 2)
+				transition = vizact.parallel(spin, move)
+				b.addAction(transition)
+			else:					
+				b.setPosition(targetPosition)
+				b.setEuler(targetEuler)
+		
+		bones.append(b)
+		bonesByName[fileName] = b
+		bonesById[b.id] = b
+
+	return bones
+
+def unloadBones():
+	"""Unload all of the bone objects to reset the puzzle game"""
+	for b in bones:
+#		b.textRemove()
+		b.remove(children = True)
+	
+def transparency(source, level, includeSource = False):
+	"""Set the transparency of all the bones"""
+	if includeSource:
+		for b in bones:
+			b.setAlpha(level)
+	else:
+		for b in [b for b in bones if b != source]:
+			b.setAlpha(level)			
+
+def moveCheckers(sourceChild):
 	"""
-	Set the instance of the display
-	Need to know if the display is oculus or not
+	Move all of the checker objects on each bone into position, in order to
+	see if they should be snapped.
 	"""
-	global display
-	display = displayInstance
+	source = bonesById[sourceChild.id]
+	
+	for bone in [b for b in bones if b != source]:
+		bone.checker.setPosition(source.centerPoint, viz.ABS_PARENT)
+
+def snap():
+	"""
+	Snap checks for any nearby bones, and mates a src bone to a dst bone
+	if they are in fact correctly placed.
+	"""
+	if not lastGrabbed:
+		print 'nothing to snap'
+		return
+	SNAP_THRESHOLD = 0.5;
+	DISTANCE_THRESHOLD = 1.5;
+	ANGLE_THRESHOLD = 45;
+	source = getBone(lastGrabbed.id)
+	moveCheckers(lastGrabbed)
+
+	# Search through all of the checkers, and snap to the first one meeting our snap
+	# criteria
+	for bone in [b for b in bones if b not in source.group.members]:
+		targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
+		targetPosition = bone.getPosition(viz.ABS_GLOBAL)
+		targetQuat = bone.getQuat(viz.ABS_GLOBAL)
+		
+		currentPosition = source.getPosition(viz.ABS_GLOBAL)
+		currentQuat = source.getQuat(viz.ABS_GLOBAL)		
+		
+		snapDistance = vizmat.Distance(targetSnap, currentPosition)
+		proximityDistance = vizmat.Distance(targetPosition, currentPosition)
+		angleDifference = vizmat.QuatDiff(bone.getQuat(), source.getQuat())
+		
+		if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) and (angleDifference < ANGLE_THRESHOLD):
+			print 'Snap! ', source, ' to ', bone
+			score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
+			viz.playSound(".\\dataset\\snap.wav")
+			source.snap(bone)
+			if len(bones) == len(source.group.members):
+				print "Assembly completed!"
+				end()
+				menu.ingame.endButton()
+			break
+	else:
+		print 'did not meet snap criteria'
+		score.event(event = 'release', source = source.name)
+
+#class FreePlayMode(PuzzleController):
+#	def __init__(self):
+#		pass
+#
+#class TestMode(PuzzleController):
+#	def __init__(self):
+#		pass
 
 class BoneGroup():
 	"""
@@ -464,9 +582,9 @@ class viewCube():
 	def toggleModes(self):
 		"""
 		This function will switch viewcube between its 3 modes:
-		-off
-		-(AP/RL/SI) + cube mode
-		-principle plane mode
+		- off
+		- (AP/RL/SI) + cube mode
+		- principle plane mode
 		"""
 		#logic so that each function gets called every 3rd time
 		self.modeCounter += 1
@@ -552,7 +670,6 @@ class viewCube():
 			self.transverseLabel.disable([viz.RENDERING])
 			self.sagittalLabel.disable([viz.RENDERING])
 			
-
 class PuzzleScore():
 	"""Handles scoring for the puzzle game"""
 	def __init__(self):
@@ -606,121 +723,6 @@ class PuzzleScore():
 		self.scoreFile.close()
 		self.textbox.remove()
 
-def end():
-	"""Do everything that needs to be done to end the puzzle game"""
-	global RUNNING
-	if RUNNING:
-		print "Puzzle Quitting!"
-#		score.close()
-		manager.clearSensors()
-		manager.clearTargets()
-		manager.remove()
-		unloadBones()
-		for bind in keyBindings:
-			bind.remove()
-		RUNNING = False
-	
-def loadMeshes(meshes = [], animate = False, randomize = True):
-	"""Load all of the bones from the dataset into puzzle.bone instances"""
-	for i, fileName in enumerate(meshes):
-		# This is the actual mesh we will see
-		b = Mesh(fileName)
-		if (not randomize or i == 0):
-			#Hardcoded keystone
-			b.setPosition([0.0,1.0,0.0])
-			b.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical
-			if (i == 0):
-				b.group.grounded = True
-		else:		
-			# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
-			angle = random.random() * 2 * math.pi
-			radius = random.random() + 1.5
-			
-			targetPosition = [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
-			targetEuler = [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
-			
-			if (animate):
-				move = vizact.moveTo(targetPosition, time = 2)
-				spin = vizact.spinTo(euler = targetEuler, time = 2)
-				transition = vizact.parallel(spin, move)
-				b.addAction(transition)
-			else:					
-				b.setPosition(targetPosition)
-				b.setEuler(targetEuler)
-		
-		bones.append(b)
-		bonesByName[fileName] = b
-		bonesById[b.id] = b
-
-	return bones
-
-def unloadBones():
-	"""Unload all of the bone objects to reset the puzzle game"""
-	for b in bones:
-#		b.textRemove()
-		b.remove(children = True)
-	
-def transparency(source, level, includeSource = False):
-	"""Set the transparency of all the bones"""
-	if includeSource:
-		for b in bones:
-			b.setAlpha(level)
-	else:
-		for b in [b for b in bones if b != source]:
-			b.setAlpha(level)			
-
-def moveCheckers(sourceChild):
-	"""
-	Move all of the checker objects on each bone into position, in order to
-	see if they should be snapped.
-	"""
-	source = bonesById[sourceChild.id]
-	
-	for bone in [b for b in bones if b != source]:
-		bone.checker.setPosition(source.centerPoint, viz.ABS_PARENT)
-
-def snap():
-	"""
-	Snap checks for any nearby bones, and mates a src bone to a dst bone
-	if they are in fact correctly placed.
-	"""
-	if not lastGrabbed:
-		print 'nothing to snap'
-		return
-	SNAP_THRESHOLD = 0.5;
-	DISTANCE_THRESHOLD = 1.5;
-	ANGLE_THRESHOLD = 45;
-	source = getBone(lastGrabbed.id)
-	moveCheckers(lastGrabbed)
-
-	# Search through all of the checkers, and snap to the first one meeting our snap
-	# criteria
-	for bone in [b for b in bones if b not in source.group.members]:
-		targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
-		targetPosition = bone.getPosition(viz.ABS_GLOBAL)
-		targetQuat = bone.getQuat(viz.ABS_GLOBAL)
-		
-		currentPosition = source.getPosition(viz.ABS_GLOBAL)
-		currentQuat = source.getQuat(viz.ABS_GLOBAL)		
-		
-		snapDistance = vizmat.Distance(targetSnap, currentPosition)
-		proximityDistance = vizmat.Distance(targetPosition, currentPosition)
-		angleDifference = vizmat.QuatDiff(bone.getQuat(), source.getQuat())
-		
-		if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) and (angleDifference < ANGLE_THRESHOLD):
-			print 'Snap! ', source, ' to ', bone
-			score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
-			viz.playSound(".\\dataset\\snap.wav")
-			source.snap(bone)
-			if len(bones) == len(source.group.members):
-				print "Assembly completed!"
-				end()
-				menu.ingame.endButton()
-			break
-	else:
-		print 'did not meet snap criteria'
-		score.event(event = 'release', source = source.name)
-
 def snapGroup(boneNames):
 	"""Specify a list of bones that should be snapped together"""
 	print boneNames
@@ -728,18 +730,6 @@ def snapGroup(boneNames):
 		bones = []
 		[[bones.append(getBone(b)) for b in group] for group in boneNames]
 		[b.snap(bones[0], animate = False) for b in bones[1:]]
-
-def getBone(value):
-	"""Return a bone instance with given ID or Name"""
-	if type(value) == int:
-		return bonesById[value]
-	elif type(value) == str:
-		return bonesByName[value]
-
-def setPointer(pointer):
-	"""Set puzzle module global pointer"""
-	global glove
-	glove = pointer
 	
 def csvToList(location):
 	"""Read in a CSV file to a list of lists"""
@@ -791,13 +781,6 @@ def release():
 	else:
 		score.event(event = 'release')
 	grabFlag = False
-	
-def playName(boneObj):
-	"""Play audio with the same name as the bone"""
-	try:
-		viz.playSound(path + "audio_names\\" + boneObj.name + ".wav") # should be updated to path
-	except ValueError:
-		print ("the name of the audio name file was wrong")
 	
 def getClosestBone(pointer, proxList):
 	"""
@@ -862,21 +845,13 @@ def soundTask(pointer):
 #				vizact.ontimer2(0,0, playBoneDesc,tempBone)
 #				tempBone.setDescAudioFlag(0)	
 
-def EnterProximity(e):
-	global proximityList
-	source = e.sensor.getSourceObject()
-	getBone(source.id).mesh.color([1.0,1.0,0.5])
-	getBone(source.id).setNameAudioFlag(1)
-	proximityList.append(source)
+def playName(boneObj):
+	"""Play audio with the same name as the bone"""
+	try:
+		viz.playSound(path + "audio_names\\" + boneObj.name + ".wav") # should be updated to path
+	except ValueError:
+		print ("the name of the audio name file was wrong")
 	
-
-def ExitProximity(e):
-	source = e.sensor.getSourceObject()
-	getBone(source.id).mesh.color([1.0,1.0,1.0])
-	getBone(source.id).setNameAudioFlag(0)
-	proximityList.remove(source)
-#	removeBoneInfo(getBone(source.id))
-
 def load(dataset = 'right arm'):
 	"""
 	Load datasets and initialize everything necessary to commence
@@ -918,6 +893,51 @@ def load(dataset = 'right arm'):
 		loadMeshes(ds.getOntologySet(dataset))
 		#snapGroup(smallBoneGroups)
 
+def EnterProximity(e):
+	global proximityList
+	source = e.sensor.getSourceObject()
+	getBone(source.id).mesh.color([1.0,1.0,0.5])
+	getBone(source.id).setNameAudioFlag(1)
+	proximityList.append(source)
+	
+
+def ExitProximity(e):
+	source = e.sensor.getSourceObject()
+	getBone(source.id).mesh.color([1.0,1.0,1.0])
+	getBone(source.id).setNameAudioFlag(0)
+	proximityList.remove(source)
+#	removeBoneInfo(getBone(source.id))
+
+def bindKeys():
+	global keyBindings
+	keyBindings.append(vizact.onkeydown('o', manager.setDebug, viz.TOGGLE)) #debug shapes
+	keyBindings.append(vizact.onkeydown(' ', grab)) #space select
+	keyBindings.append(vizact.onkeydown('65421', grab)) #numpad enter select
+	keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, snap))
+	keyBindings.append(vizact.onkeyup(' ', release))
+	keyBindings.append(vizact.onkeyup('65421', release))
+
+	
+def setDisplay(displayInstance):
+	"""
+	Set the instance of the display
+	Need to know if the display is oculus or not
+	"""
+	global display
+	display = displayInstance
+
+def setPointer(pointer):
+	"""Set puzzle module global pointer"""
+	global glove
+	glove = pointer
+	
+def getBone(value):
+	"""Return a bone instance with given ID or Name"""
+	if type(value) == int:
+		return bonesById[value]
+	elif type(value) == str:
+		return bonesByName[value]
+
 def wireframeCube(dimensions):
 	edges = [[x,y,z] for x in [-1,0,1] for y in [-1,0,1] for z in [-1,0,1] if abs(x)+abs(y)+abs(z) == 2]
 	for edge in edges:
@@ -930,12 +950,3 @@ def wireframeCube(dimensions):
 		viz.vertex(map(lambda a,b:a*b,edge,dimensions))
 	cube = viz.endLayer()
 	return cube
-
-def bindKeys():
-	global keyBindings
-	keyBindings.append(vizact.onkeydown('o', manager.setDebug, viz.TOGGLE)) #debug shapes
-	keyBindings.append(vizact.onkeydown(' ', grab)) #space select
-	keyBindings.append(vizact.onkeydown('65421', grab)) #numpad enter select
-	keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, snap))
-	keyBindings.append(vizact.onkeyup(' ', release))
-	keyBindings.append(vizact.onkeyup('65421', release))
