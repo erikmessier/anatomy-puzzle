@@ -1,4 +1,5 @@
-﻿import viz
+﻿#builtin
+import viz
 import vizact
 import vizinfo
 import vizdlg
@@ -12,10 +13,10 @@ import time
 import datetime
 import random
 
-
+#custom
 import init
 import menu	
-import puzzle
+import controller as puzzle
 import config
 import model
 
@@ -27,7 +28,7 @@ def init():
 	global snapFlag
 	global gloveLink
 	global recordData
-	global tutorial
+	global Tutorial
 	snapFlag = False
 	proxList = []
 	gloveLink = None
@@ -35,10 +36,9 @@ def init():
 	animateOutline = 1.25
 	tasks = viztask.Scheduler
 	canvas = viz.addGUICanvas()
-	tutorial = InterfaceTutorial(canvas)
+	Tutorial = InterfaceTutorial(canvas)
 	recordData = TutorialData()
-	
-	
+		
 class InterfaceTutorial():
 	def __init__(self, canvas):
 		
@@ -73,6 +73,7 @@ class InterfaceTutorial():
 		#creating dog outline
 		self.dogOutline.alpha(0.8)
 		self.dogOutline.color(0,5,0)
+		self.dogOutline.texture(None)
 
 		#creating proximity manager
 		self.manager = vizproximity.Manager()
@@ -139,6 +140,7 @@ class InterfaceTutorial():
 			self.mainAxes = vizshape.addAxes()
 			self.outlineAxes = vizshape.addAxes(parent = self.outlineCenter)
 			self.dogAxes = vizshape.addAxes(parent = self.dogCenter)
+			
 	def interfaceTasks(self):
 		"""
 		Grab and Release task. viztask was used to make grab and release dependent on the occurence of one another.
@@ -149,6 +151,7 @@ class InterfaceTutorial():
 			grab()
 			yield viztask.waitKeyUp(' ')
 			release(self)
+			
 	def end(self):
 		"""
 		CLEANUP TUTORIAL
@@ -174,6 +177,7 @@ class InterfaceTutorial():
 		recordData.close()
 		for bind in self.keybindings:
 			bind.remove()
+			
 	def mechanics(self):
 		"""tutorial mechanics: moves the dog outline around the environment and waits for the dog to be snapped to it
 		before preforming the next action."""
@@ -304,6 +308,7 @@ class InterfaceTutorial():
 def resetGlove(manager, gloveStart, dogCenter, outlineCenter):
 	#move glove to starting position
 	puzzle.glove.setPosition(gloveStart)
+
 def EnterProximity(e, gloveTarget, gloveObject):
 	"""
 	If the target entering the proximity is the gloveTarget, and the gloveTarget is active
@@ -319,6 +324,7 @@ def EnterProximity(e, gloveTarget, gloveObject):
 			if t == gloveTarget:
 				gloveObject.color(0,0,5)
 				proxList.append(source)
+
 def ExitProximity(e, glove, startColor):
 	"""
 	If the target leaving the proximity sensor is the gloveTarget, then remove the source of 
@@ -331,6 +337,7 @@ def ExitProximity(e, glove, startColor):
 	if target == glove:
 		puzzle.glove.color(startColor)
 		proxList.remove(source)
+
 def grab():
 	"""
 	If the glove is not already linked to something, and the glove is within proximity of an object, link the 
@@ -345,6 +352,7 @@ def grab():
 		recordData.event(event = 'grab', result = 'Picked Up')
 	else:
 		recordData.event(event = 'grab', result = 'Did Not Pick Up')
+
 def release(self):
 	"""
 	Unlink the glove and the object, and if the object is close enough to its target, and is within angular range, then
@@ -362,6 +370,7 @@ def release(self):
 			gloveLink.remove()
 		except NameError:
 			gloveLink.removeItems(viz.grab(puzzle.glove, target, viz.ABS_GLOBAL))
+
 def snap(dog, dogTarget):
 	"""
 	Moves dog to the pos and euler of its target (dogTarget)
@@ -370,7 +379,8 @@ def snap(dog, dogTarget):
 	moveAng = vizact.spinTo(euler = dogTarget.getEuler(), time = snapTransitionTime)
 	transition = vizact.parallel(movePos, moveAng)
 	dog.addAction(transition)
-	viztask.schedule(tutorial.mechanics())
+	viztask.schedule(Tutorial.mechanics())
+
 def snapCheckEnter(e, dogTarget):
 	"""
 	If the snap proximity sensor has its desired target within range, then snapFlag is True.
@@ -382,6 +392,7 @@ def snapCheckEnter(e, dogTarget):
 	for t in targets:
 		if t == dogTarget:
 			snapFlag = True
+
 def snapCheckExit(e, dogTarget):
 	"""
 	If the dogTarget has left the proximity sensor then snapFlag is False
@@ -391,6 +402,7 @@ def snapCheckExit(e, dogTarget):
 	target = e.target.getSourceObject()
 	if target == dogTarget:
 		snapFlag = False
+
 class TutorialData():
 	'''collects data from tutorial'''
 	def __init__(self):

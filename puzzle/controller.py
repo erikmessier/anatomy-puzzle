@@ -68,7 +68,6 @@ def init():
 
 def __init__(self):
 	pass
-	
 def end():
 	"""Do everything that needs to be done to end the puzzle game"""
 	global RUNNING

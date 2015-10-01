@@ -17,7 +17,6 @@ import viztip
 #custom modules
 import config
 import puzzle
-import Tutorial
 
 def init():
 	"""Create global menu instance"""
@@ -208,7 +207,7 @@ class GameMenu(vizinfo.InfoPanel):
 		if len(self.loadLayers) != 0:
 			print str(self.mode[0]) + ' was selected'
 			try:
-				puzzle.load(self.loadLayers)
+				puzzle.controller.load(self.loadLayers)
 			except KeyError:
 				pass
 			self.setPanelVisible(viz.OFF)
@@ -216,7 +215,7 @@ class GameMenu(vizinfo.InfoPanel):
 			self.active = False
 			ingame.active = True
 		elif self.mode[0] == 'Movement Tutorial':
-			Tutorial.init()
+			puzzle.tutorial.init()
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
 			self.active = False
@@ -268,19 +267,18 @@ class InGameMenu(vizinfo.InfoPanel):
 
 	def restartButton(self):
 		if game.mode[0] == 'Movement Tutorial':
-			Tutorial.tutorial.end()
-			puzzle.glove.setPosition(Tutorial.tutorial.gloveStart)
-			Tutorial.init()
+			puzzle.tutorial.tutorial.end()
+			puzzle.tutorial.init()
 		else:
-			puzzle.end()
+			puzzle.controller.end()
 			puzzle.load(game.loadLayers)
 		self.toggle()
 	
 	def endButton(self):
 		if game.mode[0] == 'Movement Tutorial':
-			Tutorial.tutorial.end()
-			Tutorial.recordData.close()
-		puzzle.end()
+			puzzle.tutorial.Tutorial.end()
+			puzzle.tutorial.recordData.close()
+		puzzle.controller.end()
 		self.toggle()
 		self.active = False
 		main.active = True
