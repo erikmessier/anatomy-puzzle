@@ -17,6 +17,7 @@ import init
 import menu	
 import puzzle
 import config
+import model
 
 def init():
 	global proxList
@@ -45,6 +46,8 @@ class InterfaceTutorial():
 		self.gloveStart = puzzle.glove.getPosition()
 		self.iterations = 0
 		self.canvas = canvas
+		self.origPosVec = config.positionVector
+		self.origOrienVec = config.orientationVector
 		#creating directions panel
 #		viz.mouse.setVisible(False)
 #		directions = vizinfo.InfoPanel('', fontSize = 10, parent = canvas, align = viz.ALIGN_LEFT_TOP, title = 'Tutorial', icon = False)
@@ -79,8 +82,8 @@ class InterfaceTutorial():
 		self.dogCenter.setPosition([0,-.35,0])
 		self.outlineCenter.setPosition([0,-.35,0])
 		self.centerStart = self.dogCenter.getPosition()
-		viz.grab(self.dogCenter, self.dog)
-		viz.grab(self.outlineCenter, self.dogOutline)
+		self.dogGrab = viz.grab(self.dogCenter, self.dog)
+		self.outlineGrab = viz.grab(self.outlineCenter, self.dogOutline)
 		self.dogCenter.color(5,0,0)
 		self.outlineCenter.color(0,5,0)
 		self.dogCenter.visible(viz.OFF)
@@ -101,7 +104,7 @@ class InterfaceTutorial():
 		self.manager.addTarget(self.dogTarget)
 		
 		#manager proximity events
-		self.manager.onEnter(self.dogGrabSensor, EnterProximity, self.gloveTarget)
+		self.manager.onEnter(self.dogGrabSensor, EnterProximity, self.gloveTarget, puzzle.glove)
 		self.manager.onExit(self.dogGrabSensor, ExitProximity, puzzle.glove, self.startColor)
 		self.manager.onEnter(self.dogSnapSensor, snapCheckEnter, self.dogTarget)
 		self.manager.onExit(self.dogSnapSensor, snapCheckExit, self.dogTargetMold)
@@ -112,8 +115,8 @@ class InterfaceTutorial():
 		self.keybindings.append(vizact.onkeydown('p', self.debugger))
 		
 		#task schedule
-		viztask.schedule(self.interfaceTasks())
-		viztask.schedule(self.mechanics())
+		self.interface = viztask.schedule(self.interfaceTasks())
+		self.gameMechanics = viztask.schedule(self.mechanics())
 		
 	def debugger(self):
 		self.manager.setDebug(viz.TOGGLE)
@@ -142,9 +145,35 @@ class InterfaceTutorial():
 		self.dogTargetMold.remove()
 		self.iterations = 0
 		puzzle.glove.color(self.startColor)
+		proxList = []
+		gloveLink = None
+		config.orientationVector = self.origOrienVec
+		config.positionVector = self.origPosVec
+		viztask.Task.kill(self.interface)
+		viztask.Task.kill(self.gameMechanics)
 		for bind in self.keybindings:
 			bind.remove()
 	def mechanics(self):
+		if self.iterations <=3:
+			config.orientationVector = [0,0,0]
+			config.positionVector = self.origPosVec
+	
+		elif self.iterations >3 and self.iterations <=7:
+			puzzle.glove.setParent(viz.WORLD)
+			if self.iterations == 4:
+				proxList.append(self.dogCenter)
+			config.orientationVector = self.origOrienVec
+			config.positionVector = [0,0,0]
+			puzzle.glove.color(0,0,5)
+			puzzle.glove.setPosition(0,1,-1)
+	
+		elif self.iterations>7:
+			puzzle.glove.color(self.startColor)
+			puzzle.glove.setParent(model.display.camcenter)
+			proxList.remove(self.dogCenter)
+			config.orientationVector = self.origOrienVec
+			config.positionVector = self.origPosVec
+	
 		if self.iterations<=0:
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along x-axis')
 			randomPos = [random.randrange(-1,2,2), 0,0]
@@ -212,21 +241,25 @@ class InterfaceTutorial():
 			yield viztask.addAction(self.outlineCenter, transition)
 
 		else:
+			config.orientationVector = self.origOrien
+			config.positionVector = self.origPos
 			recordData.event(event = 'FINISHED', result = 'FINISHED')
-	
+		
 		self.iterations = self.iterations+1
 
 def reset(manager, gloveStart, dogCenter, outlineCenter):
 	puzzle.glove.setPosition(gloveStart)
-def EnterProximity(e, glove):
+def EnterProximity(e, gloveTarget, gloveObject):
 	"""@args vizproximity.ProximityEvent()"""
 	global proxList
 	source = e.sensor.getSourceObject()
+	target = e.target.getSourceObject()
 	targets = e.manager.getActiveTargets()
-	for t in targets:
-		if t == glove:
-			puzzle.glove.color(0,0,5)
-			proxList.append(source)
+	if target == gloveObject:
+		for t in targets:
+			if t == gloveTarget:
+				gloveObject.color(0,0,5)
+				proxList.append(source)
 def ExitProximity(e, glove, startColor):
 	"""@args vizproximity.ProximityEvent()"""
 	global proxList
@@ -246,21 +279,18 @@ def grab():
 	else:
 		recordData.event(event = 'grab', result = 'Did Not Pick Up')
 def release(self):
-	global snapFlag
-	global gloveLink
-	global proxList
 	eulerThres = 45
 	eulerDiff = vizmat.QuatDiff(self.outlineCenter.getQuat(), self.dogCenter.getQuat())
+	if snapFlag == True and eulerDiff <= eulerThres and gloveLink:
+		recordData.event(event = 'release', result = 'Snapped!')
+		snap(self.dogCenter, self.outlineCenter)
+	else:
+		recordData.event()
 	if gloveLink:
 		try:
 			gloveLink.remove()
 		except NameError:
 			gloveLink.removeItems(viz.grab(puzzle.glove, target, viz.ABS_GLOBAL))
-	if snapFlag == True and eulerDiff <= eulerThres:
-		recordData.event(event = 'release', result = 'Snapped!')
-		snap(self.dogCenter, self.outlineCenter)
-	else:
-		recordData.event()
 def snap(dog, dogTarget):
 	movePos = vizact.moveTo(dogTarget.getPosition(), time = snapTransitionTime)
 	moveAng = vizact.spinTo(euler = dogTarget.getEuler(), time = snapTransitionTime)

@@ -3,6 +3,7 @@ config.py
 
 Just a bunch of constants defining running configuration
 """
+import vizshape
 
 # Where is the dataset in relation to where I am?
 DATASET_PATH = '.\\dataset\\full\\'
@@ -67,3 +68,9 @@ Controls:
 Note: This demo requires the 3D Connexion SpaceMouse. If you do not have
 a SpaceMouse, see the code to enable wx/ad/ze control of the glove instead.
 '''
+
+"""
+Position and Orientation Vectors Scales for spacemouse control 
+"""
+positionVector = [.0001,.0001,.0001]
+orientationVector = [.01,.01,.01]

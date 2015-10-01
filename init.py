@@ -26,6 +26,7 @@ import vizact
 import vizshape
 import viztask
 import vizproximity
+import config
 
 import puzzle
 
@@ -275,11 +276,11 @@ class DisplayInstance():
 		"""
 		if self.camMode == 0:
 			# Use the arrow keys to move
-			camcenter = viz.addChild('ball.wrl')
-			camcenter.setPosition(0,1.4,0)
-			self.pointer.setParent(camcenter)
-			camcenter.disable(viz.RENDERING)
-			
+			self.camcenter = viz.addChild('ball.wrl')
+			self.camcenter.setPosition(0,1.4,0)
+			self.pointer.setParent(self.camcenter)
+			self.camcenter.disable(viz.RENDERING)
+		
 	#		#occulus Rift enabled
 			if(self.displayMode == 2):
 				import oculus
@@ -287,12 +288,12 @@ class DisplayInstance():
 				navigationNode = viz.addGroup()
 				viewlink = viz.link(navigationNode, viz.MainView)
 				viewlink.preMultLinkable(self.hmd.getSensor())
-				camlink = viz.link(camcenter,navigationNode)
+				camlink = viz.link(self.camcenter,navigationNode)
 				
 
 			#2D display
 			else:
-				camlink = viz.link(camcenter,viz.MainView)
+				camlink = viz.link(self.camcenter,viz.MainView)
 			
 			#set initial positions
 			camlink.preEuler([0,30,0])
@@ -303,19 +304,19 @@ class DisplayInstance():
 			controlScheme = CameraKeyboardControl()
 			
 			#schedule the control loop to be called
-			viztask.schedule(controlScheme.performKeyMovements(camcenter, camlink))
-			viztask.schedule(controlScheme.cameraFocus(camcenter, camlink))		
+			viztask.schedule(controlScheme.performKeyMovements(self.camcenter, camlink))
+			viztask.schedule(controlScheme.cameraFocus(self.camcenter, camlink))		
 			
 			#backup control functions:
-			vizact.whilekeydown(viz.KEY_RIGHT,camcenter.setEuler,[vizact.elapsed(-90),0,0],viz.REL_GLOBAL)
-			vizact.whilekeydown(viz.KEY_LEFT,camcenter.setEuler,[vizact.elapsed(90),0,0],viz.REL_GLOBAL)
-			vizact.whilekeydown(viz.KEY_UP,camcenter.setEuler,[0,vizact.elapsed(90),0],viz.REL_LOCAL)
-			vizact.whilekeydown(viz.KEY_DOWN,camcenter.setEuler,[0,vizact.elapsed(-90),0],viz.REL_LOCAL)
+			vizact.whilekeydown(viz.KEY_RIGHT,self.camcenter.setEuler,[vizact.elapsed(-90),0,0],viz.REL_GLOBAL)
+			vizact.whilekeydown(viz.KEY_LEFT,self.camcenter.setEuler,[vizact.elapsed(90),0,0],viz.REL_GLOBAL)
+			vizact.whilekeydown(viz.KEY_UP,self.camcenter.setEuler,[0,vizact.elapsed(90),0],viz.REL_LOCAL)
+			vizact.whilekeydown(viz.KEY_DOWN,self.camcenter.setEuler,[0,vizact.elapsed(-90),0],viz.REL_LOCAL)
 			vizact.whilekeydown( 't' , camlink.preTrans,[0,0,vizact.elapsed(-4)])
 			vizact.whilekeydown( 'g' ,  camlink.preTrans,[0,0,vizact.elapsed(4)])
 		
 		
-			default = camcenter.getPosition()
+			default = self.camcenter.getPosition()
 
 
 		elif self.camMode == 1:
@@ -467,9 +468,9 @@ def pointerInput(mode, pointer,arena):
 		#device.setRotateScale([0,0,0]) # i don't think we need this
 		
 		#add 3Dnode object that follows mainview exactly, called MainViewShadow
-		MainViewShadow = vizshape.addSphere(radius = .5)
-		MainViewShadow.disable(viz.RENDERING)
-		viz.link(viz.MainView, MainViewShadow)
+#		MainViewShadow = vizshape.addSphere(radius = .5)
+#		MainViewShadow.disable(viz.RENDERING)
+#		viz.link(viz.MainView, MainViewShadow)
 		
 		#make glove (pointer) child of MainViewShadow
 		
@@ -527,8 +528,8 @@ def pointerInput(mode, pointer,arena):
 				return orientation
 			
 			#set source scale
-			scale1 = [.0001,.0001,.0001]
-			scale2 =[.01,.01,.01]
+#			scale1 = [.0001,.0001,.0001]
+#			scale2 =[.01,.01,.01]
 			
 			#log
 			log = False
@@ -544,12 +545,12 @@ def pointerInput(mode, pointer,arena):
 				
 				#if selected do log scale on orientation
 				if log == True:
-					scale2 = [.5, .5 , .5]
+					config.orientationVector= [.5, .5 , .5]
 					orientation = logScale(orientation)
-				
+	
 				#rescale position
-				position = scalarMult(position,scale1)
-				orientation = scalarMult(orientation,scale2)
+				position = scalarMult(position,config.positionVector)
+				orientation = scalarMult(orientation,config.orientationVector)
 				
 				#invert signs of x and z 
 				x,y,z = position

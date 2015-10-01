@@ -19,16 +19,19 @@ import init
 import menu	
 import puzzle
 import config
+import model
+
 #import overHeadMenu
+
 
 def main():
 	### Configuration parameters
 	# moved to config.py
 
+
 	### Game startup
 	#overwrite escape key
 	viz.setOption('viz.default_key.quit','0')
-
  
 	# Physics
 	viz.phys.enable()
@@ -54,7 +57,7 @@ def main():
 	device = init.pointerInput(config.pointerMode, glove, sky)
 
 	# Initialize display
-	display = init.DisplayInstance(config.dispMode,config.camMode,device,glove)
+	model.display = init.DisplayInstance(config.dispMode,config.camMode,device,glove)
 	#init.display(config.dispMode)
 
 	# Initialize camera controls
@@ -64,7 +67,7 @@ def main():
 	menu.init()
 	puzzle.setPointer(glove)
 	puzzle.init()
-	puzzle.setDisplay(display)
+	puzzle.setDisplay(model.display)
 	
 	# Escape Key calls main menu
 	vizact.onkeydown(viz.KEY_ESCAPE, menu.toggle)
