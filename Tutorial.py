@@ -154,20 +154,19 @@ class InterfaceTutorial():
 		for bind in self.keybindings:
 			bind.remove()
 	def mechanics(self):
-		if self.iterations <=3:
+		if self.iterations ==0:
 			config.orientationVector = [0,0,0]
 			config.positionVector = self.origPosVec
 	
-		elif self.iterations >3 and self.iterations <=7:
+		elif self.iterations==4:
 			puzzle.glove.setParent(viz.WORLD)
-			if self.iterations == 4:
-				proxList.append(self.dogCenter)
+			proxList.append(self.dogCenter)
 			config.orientationVector = self.origOrienVec
 			config.positionVector = [0,0,0]
 			puzzle.glove.color(0,0,5)
 			puzzle.glove.setPosition(0,1,-1)
 	
-		elif self.iterations>7:
+		elif self.iterations==8:
 			puzzle.glove.color(self.startColor)
 			puzzle.glove.setParent(model.display.camcenter)
 			proxList.remove(self.dogCenter)
