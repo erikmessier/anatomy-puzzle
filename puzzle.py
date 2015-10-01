@@ -700,7 +700,7 @@ class PuzzleScore():
 		self.update(self.events)
 		
 	def update(self, events):
-		"""Iterative score calculation"""
+		"""Iterative f calculation"""
 		"""From Alex: So, start with 100 points, if you grab and release, it's minus 10,
 		if you snap it's plus 10 if. You snap again, it's plus 20 and so on."""
 		curEvent = events[-1]
