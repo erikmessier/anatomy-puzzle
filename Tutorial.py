@@ -396,7 +396,11 @@ class TutorialData():
 	def __init__(self):
 		'''init data recording structure'''
 		self.startTime = datetime.datetime.now()
-		self.scoreFile = open('.\\tutorial log\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.csv', 'wb')
+		try:
+			self.scoreFile = open('.\\log\\tutorial\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.csv', 'wb')
+		except IOError:
+			print "No directory?"
+			raise
 		self.csv = csv.writer(self.scoreFile)
 		self.header = ['timestamp','event','event result']
 		self.events = []
