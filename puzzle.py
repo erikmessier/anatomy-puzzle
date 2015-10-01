@@ -62,7 +62,7 @@ def init():
 	keyBindings = []
 		
 	inRange = []
-	lastGrabbed = None
+	lastGrabbed = 'initValueLastGrabbed'
 	gloveLink = None
 	grabFlag = False
 	
@@ -679,20 +679,19 @@ def moveCheckers(sourceChild):
 	for bone in [b for b in bones if b != source]:
 		bone.checker.setPosition(source.centerPoint, viz.ABS_PARENT)
 
-def snap(sourceChild):
+def snap():
 	"""
 	Snap checks for any nearby bones, and mates a src bone to a dst bone
 	if they are in fact correctly placed.
 	"""
-	print sourceChild
-	if not sourceChild:
+	if not lastGrabbed:
 		print 'nothing to snap'
 		return
 	SNAP_THRESHOLD = 0.5;
 	DISTANCE_THRESHOLD = 1.5;
 	ANGLE_THRESHOLD = 45;
-	source = getBone(sourceChild.id)
-	moveCheckers(sourceChild)
+	source = getBone(lastGrabbed.id)
+	moveCheckers(lastGrabbed)
 
 	# Search through all of the checkers, and snap to the first one meeting our snap
 	# criteria
@@ -756,27 +755,26 @@ def csvToList(location):
 		print "Unknown error opening CSV file at:", location
 	return raw
 
-def grab(inRange):
+def grab():
 	"""Grab in-range objects with the pointer"""
 	global gloveLink
 	global grabFlag
 	global closestBoneIdx
-	global glove
 	global lastGrabbed
 	grabList = [b for b in proximityList if not b.group.grounded] # Needed for disabling grab of grounded bones
 	
 	if len(grabList) > 0 and not grabFlag:
-		calcClosestBone(glove,grabList)
-		target = grabList[0]
+		target = getClosestBone(glove,grabList)
 		# only play bone description sound once, so set it if it hasnt been
-		if grabList[0].grabbedFlag == 0:
+		if target.grabbedFlag == 0:
 #			playBoneDesc(grabList[0])
-			grabList[0].setGrabbedFlag(1)
+			target.setGrabbedFlag(True)
 		target.setGroupParent()
 		gloveLink = viz.grab(glove, target, viz.ABS_GLOBAL)
 #		score.event(event = 'grab', source = target.name)
 		transparency(target, 0.7)
 		lastGrabbed = target
+		print lastGrabbed
 #	elif not grabFlag:
 #		score.event(event = 'grab')
 	grabFlag = True
@@ -797,11 +795,11 @@ def release():
 def playName(boneObj):
 	"""Play audio with the same name as the bone"""
 	try:
-			viz.playSound(path + "audio_names\\" + boneObj.name + ".wav") # should be updated to path
+		viz.playSound(path + "audio_names\\" + boneObj.name + ".wav") # should be updated to path
 	except ValueError:
 		print ("the name of the audio name file was wrong")
 	
-def calcClosestBone(pointer, proxList):
+def getClosestBone(pointer, proxList):
 	"""
 	looks through proximity list and searches for the closest bone to the glove and puts it at
 	the beginning of the list
@@ -821,6 +819,7 @@ def calcClosestBone(pointer, proxList):
 				tempBone = proxList[i]
 				proxList[i] = proxList[0]
 				proxList[0] = tempBone
+	return proxList[0]
 
 def soundTask(pointer):
 	"""
@@ -904,11 +903,9 @@ def load(dataset = 'right arm'):
 
 		manager.onEnter(None, EnterProximity)
 		manager.onExit(None, ExitProximity)
-
 	
 		#Setup Key Bindings
 		bindKeys()
-
 		
 		# start the clock
 		time.clock()
@@ -937,8 +934,8 @@ def wireframeCube(dimensions):
 def bindKeys():
 	global keyBindings
 	keyBindings.append(vizact.onkeydown('o', manager.setDebug, viz.TOGGLE)) #debug shapes
-	keyBindings.append(vizact.onkeydown(' ', grab, proximityList)) #space select
-	keyBindings.append(vizact.onkeydown('65421', grab, proximityList)) #numpad enter select
-	keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, snap, lastGrabbed))
+	keyBindings.append(vizact.onkeydown(' ', grab)) #space select
+	keyBindings.append(vizact.onkeydown('65421', grab)) #numpad enter select
+	keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, snap))
 	keyBindings.append(vizact.onkeyup(' ', release))
 	keyBindings.append(vizact.onkeyup('65421', release))
