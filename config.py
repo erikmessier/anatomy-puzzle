@@ -1,8 +1,8 @@
 ﻿"""
-config.py
-
 Just a bunch of constants defining running configuration
 """
+
+# Vizard modules
 import vizshape
 
 # Where is the dataset in relation to where I am?

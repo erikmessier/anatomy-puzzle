@@ -62,19 +62,13 @@ def main():
 
 	# Launch menu system
 	menu.init()
-	puzzle.controller.setPointer(glove)
-	puzzle.controller.init()
-	puzzle.controller.setDisplay(puzzle.model.display)
+	puzzle.model.pointer = glove
 	
-	# Escape Key calls main menu
+	# Override default escape key map to call main menu
 	vizact.onkeydown(viz.KEY_ESCAPE, menu.toggle)
 
 	# Stuff to run on program termination
 	vizact.onexit(puzzle.controller.end)
-
-	# Will move this out of main and where it belongs
-	viewcube = puzzle.controller.viewCube()
-	vizact.onkeydown('65460', viewcube.toggleModes) # '4' key
 	
 
 if __name__ == '__main__':
