@@ -207,9 +207,9 @@ class GameMenu(vizinfo.InfoPanel):
 		if len(self.loadLayers) != 0:
 			print str(self.mode[0]) + ' was selected'
 			try:
-				puzzle.controller.load(self.loadLayers)
+				puzzle.controller.start(self.loadLayers)
 			except KeyError:
-				pass
+				print "Dataset does not exist!"
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
 			self.active = False
@@ -232,6 +232,7 @@ class GameMenu(vizinfo.InfoPanel):
 		main.setPanelVisible(viz.ON, animate = True)
 		self.active = False
 		main.active = True
+		
 	def toggle(self):
 		if(self.menuVisible == True):
 			self.setPanelVisible(False)
@@ -271,7 +272,7 @@ class InGameMenu(vizinfo.InfoPanel):
 			puzzle.tutorial.init()
 		else:
 			puzzle.controller.end()
-			puzzle.load(game.loadLayers)
+			puzzle.controller.load(game.loadLayers)
 		self.toggle()
 	
 	def endButton(self):

@@ -28,7 +28,7 @@ import viztask
 import vizproximity
 import config
 
-import puzzle.controller as puzzle
+import puzzle
 
 #--------------------------init classes-------------------------
 class CameraKeyboardControl(viz.EventClass): 
@@ -373,7 +373,7 @@ def loadTemple(bounding = True):
 	if bounding == True:
 		dimensions = [1,2,0.5]
 
-		boundingBox = puzzle.wireframeCube(dimensions)
+		boundingBox = puzzle.view.wireframeCube(dimensions)
 		boundingBox.setPosition(0,dimensions[1]/2,0)
 		boundingBox.alpha(0.25)
 
