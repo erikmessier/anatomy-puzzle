@@ -22,7 +22,6 @@ import config
 
 #import overHeadMenu
 
-
 def main():
 	### Configuration parameters
 	# moved to config.py

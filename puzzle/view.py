@@ -3,7 +3,7 @@ View elements of the puzzle game
 """
 
 # Vizard Modules
-import viz
+import viz, vizshape
 
 def wireframeCube(dimensions):
 	edges = [[x,y,z] for x in [-1,0,1] for y in [-1,0,1] for z in [-1,0,1] if abs(x)+abs(y)+abs(z) == 2]

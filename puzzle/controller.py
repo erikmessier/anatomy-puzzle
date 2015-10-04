@@ -19,35 +19,38 @@ import init
 import menu
 import config
 import model
+import view
 
-class PuzzleController():
+# The controller...
+controlInst = None
+
+class PuzzleController(object):
 	"""
 	Puzzle game controller base class.
 	Not intended to be used directly, derive children that feature
 	the game mode functionality you want.
 	"""
 	def __init__(self):
-		self._groups = None
-		self._meshes = None
+		#self._groups = None
+		self._meshes = []
+		self._proximityList = []
+		self._keyBindings = []
+		self._meshesById = {}
+		self._grabFlag = False
 		self._boneInfo = None
-		self._proximityList = None
 		self._inRange = None
 		self._gloveLink = None
-		self._grabFlag = None
-		self._keyBindings = None
 		self._closestBoneIdx = None
 		self._prevBoneIdx = None
 		self._lastGrabbed = None
+
+		self.viewcube = view.viewCube()
 		
-		# Will move this out of main and where it belongs
-		viewcube = puzzle.controller.viewCube()
-		vizact.onkeydown('65460', viewcube.toggleModes) # Numpad '4' key
-		
-	def loadMeshes(meshes = [], animate = False, randomize = True):
+	def loadMeshes(self, meshes = [], animate = False, randomize = True):
 		"""Load all of the files from the dataset into puzzle.mesh instances"""
 		for i, fileName in enumerate(meshes):
 			# This is the actual mesh we will see
-			b = Mesh(fileName)
+			b = model.Mesh(fileName)
 			if (not randomize or i == 0):
 				#Hardcoded keystone
 				b.setPosition([0.0,1.0,0.0])
@@ -71,20 +74,18 @@ class PuzzleController():
 					b.setPosition(targetPosition)
 					b.setEuler(targetEuler)
 			
-			model.appendMesh(b)
-#			bones.append(b)
-#			bonesByName[fileName] = b
-#			bonesById[b.id] = b
+			self._meshes.append(b)
+			self._meshesById[b.id] = b
 
-	def unloadBones():
+	def unloadBones(self):
 		"""Unload all of the bone objects to reset the puzzle game"""
-		for m in model.getMeshes():
+		for m in self._meshes:
 	#		m.textRemove()
 			m.remove(children = True)
 		
-	def transparency(source, level, includeSource = False):
+	def transparency(self, source, level, includeSource = False):
 		"""Set the transparency of all the bones"""
-		meshes = model.getMeshes()
+		meshes = self._meshes
 		if includeSource:
 			for b in meshes:
 				b.setAlpha(level)
@@ -92,33 +93,33 @@ class PuzzleController():
 			for b in [b for b in meshes if b != source]:
 				b.setAlpha(level)			
 
-	def moveCheckers(sourceChild):
+	def moveCheckers(self, sourceChild):
 		"""
 		Move all of the checker objects on each bone into position, in order to
 		see if they should be snapped.
 		"""
-		source = model.getMesh(sourceChild.id)
+		source = self._meshesById[sourceChild.id]
 		
-		for bone in [b for b in model.getMeshes() if b != source]:
+		for bone in [b for b in self._meshes if b != source]:
 			bone.checker.setPosition(source.centerPoint, viz.ABS_PARENT)
 
-	def snap():
+	def snap(self):
 		"""
 		Snap checks for any nearby bones, and mates a src bone to a dst bone
 		if they are in fact correctly placed.
 		"""
-		if not lastGrabbed:
+		if not self._lastGrabbed:
 			print 'nothing to snap'
 			return
 		SNAP_THRESHOLD = 0.5;
 		DISTANCE_THRESHOLD = 1.5;
 		ANGLE_THRESHOLD = 45;
-		source = model.getMesh(lastGrabbed.id)
-		moveCheckers(lastGrabbed)
+		source = self._meshesById[self._lastGrabbed.id]
+		self.moveCheckers(self._lastGrabbed)
 
 		# Search through all of the checkers, and snap to the first one meeting our snap
 		# criteria
-		for bone in [b for b in bones if b not in source.group.members]:
+		for bone in [b for b in self._meshes if b not in source.group.members]:
 			targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
 			targetPosition = bone.getPosition(viz.ABS_GLOBAL)
 			targetQuat = bone.getQuat(viz.ABS_GLOBAL)
@@ -132,58 +133,58 @@ class PuzzleController():
 			
 			if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) and (angleDifference < ANGLE_THRESHOLD):
 				print 'Snap! ', source, ' to ', bone
-				score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
+				self.score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
 				viz.playSound(".\\dataset\\snap.wav")
 				source.snap(bone)
-				if len(bones) == len(source.group.members):
+				if len(self._meshes) == len(source.group.members):
 					print "Assembly completed!"
 					end()
 					menu.ingame.endButton()
 				break
 		else:
 			print 'did not meet snap criteria'
-			score.event(event = 'release', source = source.name)
+			self.score.event(event = 'release', source = source.name)
 
-	def snapGroup(boneNames):
+	def snapGroup(self, boneNames):
 		"""Specify a list of bones that should be snapped together"""
 		print boneNames
 		if (len(boneNames) > 0):
 			meshes = []
-			[[meshes.append(model.getMesh(m)) for m in group] for group in boneNames]
+			[[meshes.append(self._meshesById[m]) for m in group] for group in boneNames]
 			[m.snap(meshes[0], animate = False) for m in meshes[1:]]
 
-	def grab():
+	def grab(self):
 		"""Grab in-range objects with the pointer"""
-		grabList = [b for b in proximityList if not b.group.grounded] # Needed for disabling grab of grounded bones
+		grabList = [b for b in self._proximityList if not b.group.grounded] # Needed for disabling grab of grounded bones
 		
-		if len(grabList) > 0 and not grabFlag:
-			target = getClosestBone(glove,grabList)
+		if len(grabList) > 0 and not self._grabFlag:
+			target = self.getClosestBone(model.pointer,grabList)
 			# only play bone description sound once, so set it if it hasnt been
 			if target.grabbedFlag == 0:
 	#			playBoneDesc(grabList[0])
 				target.setGrabbedFlag(True)
 			target.setGroupParent()
-			gloveLink = viz.grab(glove, target, viz.ABS_GLOBAL)
+			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 	#		score.event(event = 'grab', source = target.name)
-			transparency(target, 0.7)
-			lastGrabbed = target
-			print lastGrabbed
-	#	elif not grabFlag:
+			self.transparency(target, 0.7)
+			self._lastGrabbed = target
+			print self._lastGrabbed
+	#	elif not self._grabFlag:
 	#		score.event(event = 'grab')
-		grabFlag = True
+		self._grabFlag = True
 
-	def release():
+	def release(self):
 		"""Release grabbed object from pointer"""
-		if gloveLink:
-	#		snap(lastGrabbed)
-			transparency(lastGrabbed, 1.0)
-			gloveLink.remove()
-			gloveLink = None
+		if self._gloveLink:
+	#		snap(self._lastGrabbed)
+			self.transparency(self._lastGrabbed, 1.0)
+			self._gloveLink.remove()
+			self._gloveLink = None
 		else:
-			score.event(event = 'release')
-		grabFlag = False
+			self.score.event(event = 'release')
+		self._grabFlag = False
 		
-	def getClosestBone(pointer, proxList):
+	def getClosestBone(self, pointer, proxList):
 		"""
 		looks through proximity list and searches for the closest bone to the glove and puts it at
 		the beginning of the list
@@ -205,71 +206,76 @@ class PuzzleController():
 					proxList[0] = tempBone
 		return proxList[0]
 		
-	def load(dataset = 'right arm'):
+	def load(self, dataset = 'right arm'):
 		"""
 		Load datasets and initialize everything necessary to commence
 		the puzzle game.
 		"""
 		
-		if not RUNNING:
-			init() # Flush everything
-			
-			RUNNING = True
-			
-			# Dataset
-			self._ds = model.DatasetInterface()
+		# Dataset
+		model.ds = model.DatasetInterface()
 
-			# Proximity management
-			manager = vizproximity.Manager()
-			target = vizproximity.Target(glove)
-			manager.addTarget(target)
+		# Proximity management
+		model.proxManager = vizproximity.Manager()
+		target = vizproximity.Target(model.pointer)
+		model.proxManager.addTarget(target)
 
-			manager.onEnter(None, EnterProximity)
-			manager.onExit(None, ExitProximity)
+		model.proxManager.onEnter(None, self.EnterProximity)
+		model.proxManager.onExit(None, self.ExitProximity)
+	
+		#Setup Key Bindings
+		self.bindKeys()
 		
-			#Setup Key Bindings
-			bindKeys()
-			
-			# start the clock
-			time.clock()
-			
-			global score
-			score = PuzzleScore()
-			
-	#		viztask.schedule(soundTask(glove))
+		# start the clock
+		time.clock()
 
-			loadMeshes(ds.getOntologySet(dataset))
-			#snapGroup(smallBoneGroups)
-
-	def EnterProximity(e):
-		global proximityList
-		source = e.sensor.getSourceObject()
-		model.getMesh(source.id).mesh.color([1.0,1.0,0.5])
-		model.getMesh(source.id).setNameAudioFlag(1)
-		proximityList.append(source)
+		self.score = PuzzleScore()
 		
-	def ExitProximity(e):
+#		viztask.schedule(soundTask(glove))
+
+		self.loadMeshes(model.ds.getOntologySet(dataset))
+		#snapGroup(smallBoneGroups)
+
+	def EnterProximity(self, e):
 		source = e.sensor.getSourceObject()
-		model.getMesh(source.id).mesh.color([1.0,1.0,1.0])
-		model.getMesh(source.id).setNameAudioFlag(0)
-		proximityList.remove(source)
+		self._meshesById[source.id].mesh.color([1.0,1.0,0.5])
+		self._meshesById[source.id].setNameAudioFlag(1)
+		self._proximityList.append(source)
+		
+	def ExitProximity(self, e):
+		source = e.sensor.getSourceObject()
+		self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
+		self._meshesById[source.id].setNameAudioFlag(0)
+		self._proximityList.remove(source)
 	#	removeBoneInfo(model.getMeshsource.id))
+	
+	def end(self):
+		"""Do everything that needs to be done to end the puzzle game"""
+		print "Puzzle Quitting!"
+	#	score.close()
+		model.proxManager.clearSensors()
+		model.proxManager.clearTargets()
+		model.proxManager.remove()
+		self.unloadBones()
+		for bind in self._keyBindings:
+			bind.remove()
 
-	def bindKeys():
-		global keyBindings
-		keyBindings.append(vizact.onkeydown('o', manager.setDebug, viz.TOGGLE)) #debug shapes
-		keyBindings.append(vizact.onkeydown(' ', grab)) #space select
-		keyBindings.append(vizact.onkeydown('65421', grab)) #numpad enter select
-		keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, snap))
-		keyBindings.append(vizact.onkeyup(' ', release))
-		keyBindings.append(vizact.onkeyup('65421', release))
+	def bindKeys(self):
+		self._keyBindings.append(vizact.onkeydown('o', model.proxManager.setDebug, viz.TOGGLE)) #debug shapes
+		self._keyBindings.append(vizact.onkeydown(' ', self.grab)) #space select
+		self._keyBindings.append(vizact.onkeydown('65421', self.grab)) #numpad enter select
+		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, self.snap))
+		self._keyBindings.append(vizact.onkeyup(' ', self.release))
+		self._keyBindings.append(vizact.onkeyup('65421', self.release))
+		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
+		
 class FreePlayMode(PuzzleController):
 	def __init__(self):
 		super(FreePlayMode, self).__init__()
 
 class TestMode(PuzzleController):
 	def __init__(self):
-		super(FreePlayMode, self).__init__()
+		super(TestMode, self).__init__()
 
 			
 class PuzzleScore():
@@ -327,26 +333,17 @@ class PuzzleScore():
 
 def end():
 	"""Do everything that needs to be done to end the puzzle game"""
-	global RUNNING
-	if RUNNING:
-		print "Puzzle Quitting!"
-#		score.close()
-		manager.clearSensors()
-		manager.clearTargets()
-		manager.remove()
-		unloadBones()
-		for bind in keyBindings:
-			bind.remove()
-		RUNNING = False
+	print "Puzzle Quitting!"
+	controlInst.end()
 
 def start(dataset):
 	"""
 	Start running the puzzle game
 	"""
-	global controller
+	global controlInst
 
-	controller = FreePlayMode()
-	controller.load(dataset)
+	controlInst = FreePlayMode()
+	controlInst.load(dataset)
 
 def csvToList(location):
 	"""Read in a CSV file to a list of lists"""
@@ -369,35 +366,34 @@ def soundTask(pointer):
 		looks through proximity list and searches for the closest bone to the glove and puts it at
 		the beginning of the list, allows the bone name and bone description to be played
 	"""
-	global proximityList
-	while True:
-		yield viztask.waitTime(0.25)
-		if(len(proximityList) >0):
-			bonePos = proximityList[0].getPosition(viz.ABS_GLOBAL)
-			pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
-			shortestDist = vizmat.Distance(bonePos, pointerPos)
-			
-			for i,x in enumerate(proximityList):
-				proximityList[i].incProxCounter()  #increase count for how long glove is near bone
-				bonePos = proximityList[i].getPosition(viz.ABS_GLOBAL)
-				pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
-				tempDist = vizmat.Distance(bonePos,pointerPos)
-				#displayBoneInfo(proximityList[0])
-
-				if(tempDist < shortestDist):
-#					removeBoneInfo(proximityList[0])
-					shortestDist = tempDist
-					tempBone = proximityList[i]
-					proximityList[i] = proximityList[0]
-					proximityList[0] = tempBone
-			#tempBone = proximityList[0]
-			displayBoneInfo(proximityList[0])
-			
-			if proximityList[0].proxCounter > 2 and proximityList[0].getNameAudioFlag() == 1:
-				#yield viztask.waitTime(3.0)
-				vizact.ontimer2(0,0,playName,proximityList[0])
-				proximityList[0].clearProxCounter()
-				proximityList[0].setNameAudioFlag(0)
+#	while True:
+#		yield viztask.waitTime(0.25)
+#		if(len(proximityList) >0):
+#			bonePos = proximityList[0].getPosition(viz.ABS_GLOBAL)
+#			pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
+#			shortestDist = vizmat.Distance(bonePos, pointerPos)
+#			
+#			for i,x in enumerate(proximityList):
+#				proximityList[i].incProxCounter()  #increase count for how long glove is near bone
+#				bonePos = proximityList[i].getPosition(viz.ABS_GLOBAL)
+#				pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
+#				tempDist = vizmat.Distance(bonePos,pointerPos)
+#				#displayBoneInfo(proximityList[0])
+#
+#				if(tempDist < shortestDist):
+##					removeBoneInfo(proximityList[0])
+#					shortestDist = tempDist
+#					tempBone = proximityList[i]
+#					proximityList[i] = proximityList[0]
+#					proximityList[0] = tempBone
+#			#tempBone = proximityList[0]
+#			displayBoneInfo(proximityList[0])
+#			
+#			if proximityList[0].proxCounter > 2 and proximityList[0].getNameAudioFlag() == 1:
+#				#yield viztask.waitTime(3.0)
+#				vizact.ontimer2(0,0,playName,proximityList[0])
+#				proximityList[0].clearProxCounter()
+#				proximityList[0].setNameAudioFlag(0)
 #			if tempBone.proxCounter > 2 and tempBone.getDescAudioFlag() == 1:
 #				yield viztask.waitTime(1.5)
 #				#playBoneDesc(proximityList[0])

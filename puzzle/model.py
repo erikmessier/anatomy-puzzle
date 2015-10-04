@@ -7,6 +7,7 @@ import csv, json
 
 # Vizard Modules
 import viz
+import vizact, vizshape, vizproximity
 
 # Custom modules
 import config
@@ -16,6 +17,15 @@ display = None
 
 # Pointer instance
 pointer = None
+
+# Dataset interface
+ds = None
+
+# Proximity Manager
+proxManager = None
+
+# Bone groups
+groups = []
 
 class BoneGroup():
 	"""
@@ -173,7 +183,7 @@ class Mesh(viz.VizNode):
 	def addSensor(self):
 		"""Add a sensor to a proximity manager"""
 		sensor = vizproximity.addBoundingSphereSensor(self)
-		manager.addSensor(sensor)
+		proxManager.addSensor(sensor)
 		
 	def setGroupParent(self):
 		"""
@@ -194,7 +204,6 @@ class Mesh(viz.VizNode):
 		"""
 		Invoked by the puzzle.snap method to handle local business
 		"""
-		moveCheckers(self)
 		targetPosition = target.checker.getPosition(viz.ABS_GLOBAL)
 		targetEuler = target.checker.getEuler(viz.ABS_GLOBAL)		
 		# WARNING the full setMatrix cannot be assigned because scale is different!

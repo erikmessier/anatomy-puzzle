@@ -379,6 +379,7 @@ def snap(dog, dogTarget):
 	moveAng = vizact.spinTo(euler = dogTarget.getEuler(), time = snapTransitionTime)
 	transition = vizact.parallel(movePos, moveAng)
 	dog.addAction(transition)
+	viz.playSound(".\\dataset\\snap.wav")
 	viztask.schedule(Tutorial.mechanics())
 
 def snapCheckEnter(e, dogTarget):
