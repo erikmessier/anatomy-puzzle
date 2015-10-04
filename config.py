@@ -21,7 +21,7 @@ class DisplayMode:
 	oculus		= 2
 	label = {'Regular Computer': 0, '3D TV': 1, 'Occulus Rift': 2}
 
-dispMode = DisplayMode.computer
+dispMode = DisplayMode.oculus
 
 menuScaleConfig = { \
 	0:{'main':1.2, 'game':.75, 'ingame': 1}, \

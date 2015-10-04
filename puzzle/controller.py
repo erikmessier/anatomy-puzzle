@@ -37,6 +37,7 @@ class PuzzleController(object):
 		self._keyBindings	= []
 		self._meshesById	= {}
 		self._grabFlag	= False
+		self._imploded	= False
 		self._boneInfo	= None
 		self._inRange	= None
 		self._gloveLink	= None
@@ -171,7 +172,8 @@ class PuzzleController(object):
 				print 'Snap! ', source, ' to ', bone
 				self.score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
 				viz.playSound(".\\dataset\\snap.wav")
-				source.snap(bone)
+				source.moveTo(bone.checker.getMatrix(viz.ABS_GLOBAL))
+				bone.group.merge(source)
 				if len(self._meshes) == len(source.group.members):
 					print "Assembly completed!"
 					end()
@@ -254,6 +256,41 @@ class PuzzleController(object):
 		self._proximityList.remove(source)
 	#	removeBoneInfo(model.getMeshsource.id))
 	
+	def implode(self):
+		"""
+		move bones to solved positions
+		"""
+		target = self._meshes[0] #keystone
+		for m in self._meshes[1:]:
+			if m.getAction():
+				return
+			for bone in [b for b in self._meshes if b != m]:
+				bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
+			m.storeMat()
+			m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+		self._imploded = True
+		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
+
+	def explode(self):
+		"""
+		move bones to position before implode was called
+		"""
+		for m in self._meshes[1:]:
+			if m.getAction():
+				return
+			m.moveTo(m.loadMat(), time = 0.6)
+		self._imploded = False
+		self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
+
+	def solve(self):
+		"""
+		operator used to toggle between implode and explode
+		"""
+		if self._imploded == False:
+			self.implode()
+		else:
+			self.explode()
+
 	def end(self):
 		"""Do everything that needs to be done to end the puzzle game"""
 		print "Puzzle Quitting!"
@@ -273,6 +310,7 @@ class PuzzleController(object):
 		self._keyBindings.append(vizact.onkeyup(' ', self.release))
 		self._keyBindings.append(vizact.onkeyup('65421', self.release))
 		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
+		self._keyBindings.append(vizact.onkeydown(viz.KEY_CONTROL_R, self.solve))
 		
 class FreePlayMode(PuzzleController):
 	def __init__(self):

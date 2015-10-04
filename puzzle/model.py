@@ -146,7 +146,7 @@ class Mesh(viz.VizNode):
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
 		
 		# Turn off visibility of center and checker viznodes
-#		self.disable([viz.RENDERING])
+		self.disable([viz.RENDERING])
 		self.color([0.3,0,0])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 #		self.tooltip.disable([viz.RENDERING])
@@ -166,7 +166,12 @@ class Mesh(viz.VizNode):
 		# Group handling
 		self.group = BoneGroup([self])
 		groups.append(self.group)
+	
+	def storeMat(self):
+		self._savedMat = self.getMatrix(viz.ABS_GLOBAL)
 		
+	def loadMat(self):
+		return self._savedMat
 	
 	def incProxCounter(self):
 		"""
@@ -199,24 +204,20 @@ class Mesh(viz.VizNode):
 		"""Set bone alpha level"""
 		self.mesh.alpha(level)
 	
-	def snap(self, target, animate = True):
+	def moveTo(self, matrix, animate = True, time = 0.3):
 		"""
 		Invoked by the puzzle.snap method to handle local business
 		"""
-		targetPosition = target.checker.getPosition(viz.ABS_GLOBAL)
-		targetEuler = target.checker.getEuler(viz.ABS_GLOBAL)		
 		# WARNING the full setMatrix cannot be assigned because scale is different!
 		if (animate):
-			move = vizact.moveTo(targetPosition, time = 0.3)
-			spin = vizact.spinTo(euler = targetEuler, time = 0.3)
+			move = vizact.moveTo(matrix.getPosition(), time = time, mode = viz.ABS_GLOBAL)
+			spin = vizact.spinTo(euler = matrix.getEuler(), time = time, mode = viz.ABS_GLOBAL)
 			transition = vizact.parallel(spin, move)
 			self.addAction(transition)
 		else:
 			self.setPosition(targetPosition, viz.ABS_GLOBAL)
 			self.setEuler(targetEuler,viz.ABS_GLOBAL)
 
-		target.group.merge(self)
-		
 	def grabSequence(self):
 		"""
 		i don't even
