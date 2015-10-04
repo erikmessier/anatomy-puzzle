@@ -32,38 +32,74 @@ class PuzzleController(object):
 	"""
 	def __init__(self):
 		#self._groups = None
-		self._meshes = []
-		self._proximityList = []
-		self._keyBindings = []
-		self._meshesById = {}
-		self._grabFlag = False
-		self._boneInfo = None
-		self._inRange = None
-		self._gloveLink = None
+		self._meshes		= []
+		self._proximityList	= []
+		self._keyBindings	= []
+		self._meshesById	= {}
+		self._grabFlag	= False
+		self._boneInfo	= None
+		self._inRange	= None
+		self._gloveLink	= None
 		self._closestBoneIdx = None
-		self._prevBoneIdx = None
-		self._lastGrabbed = None
+		self._prevBoneIdx	= None
+		self._lastGrabbed	= None
 
 		self.viewcube = view.viewCube()
+		
+	def load(self, dataset = 'right arm'):
+		"""
+		Load datasets and initialize everything necessary to commence
+		the puzzle game.
+		"""
+		
+		# Dataset
+		model.ds = model.DatasetInterface()
+
+		# Proximity management
+		model.proxManager = vizproximity.Manager()
+		target = vizproximity.Target(model.pointer)
+		model.proxManager.addTarget(target)
+
+		model.proxManager.onEnter(None, self.EnterProximity)
+		model.proxManager.onExit(None, self.ExitProximity)
+	
+		#Setup Key Bindings
+		self.bindKeys()
+		
+		# start the clock
+		time.clock()
+
+		self.score = PuzzleScore()
+		
+#		viztask.schedule(soundTask(glove))
+
+		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		self.loadMeshes(self._meshesToLoad)
+
+		# Set Keystone
+		for m in [self._meshes[i] for i in range(0,1)]:
+			m.setPosition([0.0,1.5,0.0])
+			m.setEuler([0.0,90.0,180.0])
+			m.group.grounded = True
+		#snapGroup(smallBoneGroups)
 		
 	def loadMeshes(self, meshes = [], animate = False, randomize = True):
 		"""Load all of the files from the dataset into puzzle.mesh instances"""
 		for i, fileName in enumerate(meshes):
 			# This is the actual mesh we will see
 			b = model.Mesh(fileName)
-			if (not randomize or i == 0):
+			if (not randomize):
 				#Hardcoded keystone
-				b.setPosition([0.0,1.0,0.0])
+				b.setPosition([0.0,1.5,0.0])
 				b.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical
-				if (i == 0):
-					b.group.grounded = True
 			else:		
 				# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
-				angle = random.random() * 2 * math.pi
-				radius = random.random() + 1.5
+				angle	= random.random() * 2 * math.pi
+				radius	= random.random() + 1.5
 				
-				targetPosition = [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
-				targetEuler = [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
+				targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
+				targetEuler		= [0.0,90.0,180.0]
+				#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
 				
 				if (animate):
 					move = vizact.moveTo(targetPosition, time = 2)
@@ -156,10 +192,10 @@ class PuzzleController(object):
 	def grab(self):
 		"""Grab in-range objects with the pointer"""
 		grabList = [b for b in self._proximityList if not b.group.grounded] # Needed for disabling grab of grounded bones
-		
 		if len(grabList) > 0 and not self._grabFlag:
 			target = self.getClosestBone(model.pointer,grabList)
-			# only play bone description sound once, so set it if it hasnt been
+			
+			# only play bone description sound once, so set it if it hasn't been
 			if target.grabbedFlag == 0:
 	#			playBoneDesc(grabList[0])
 				target.setGrabbedFlag(True)
@@ -176,7 +212,6 @@ class PuzzleController(object):
 	def release(self):
 		"""Release grabbed object from pointer"""
 		if self._gloveLink:
-	#		snap(self._lastGrabbed)
 			self.transparency(self._lastGrabbed, 1.0)
 			self._gloveLink.remove()
 			self._gloveLink = None
@@ -205,36 +240,6 @@ class PuzzleController(object):
 					proxList[i] = proxList[0]
 					proxList[0] = tempBone
 		return proxList[0]
-		
-	def load(self, dataset = 'right arm'):
-		"""
-		Load datasets and initialize everything necessary to commence
-		the puzzle game.
-		"""
-		
-		# Dataset
-		model.ds = model.DatasetInterface()
-
-		# Proximity management
-		model.proxManager = vizproximity.Manager()
-		target = vizproximity.Target(model.pointer)
-		model.proxManager.addTarget(target)
-
-		model.proxManager.onEnter(None, self.EnterProximity)
-		model.proxManager.onExit(None, self.ExitProximity)
-	
-		#Setup Key Bindings
-		self.bindKeys()
-		
-		# start the clock
-		time.clock()
-
-		self.score = PuzzleScore()
-		
-#		viztask.schedule(soundTask(glove))
-
-		self.loadMeshes(model.ds.getOntologySet(dataset))
-		#snapGroup(smallBoneGroups)
 
 	def EnterProximity(self, e):
 		source = e.sensor.getSourceObject()
@@ -276,6 +281,66 @@ class FreePlayMode(PuzzleController):
 class TestMode(PuzzleController):
 	def __init__(self):
 		super(TestMode, self).__init__()
+
+		self._meshesDisabled = []
+	
+	def load(self, dataset = 'right arm'):
+		"""
+		Load datasets and initialize everything necessary to commence
+		the puzzle game. Customized for test mode.
+		"""
+		
+		# Dataset
+		model.ds = model.DatasetInterface()
+		
+		self._quizPanel = view.TestSnapPanel()
+		self._quizPanel.toggle()
+
+		# Proximity management
+		model.proxManager = vizproximity.Manager()
+		target = vizproximity.Target(model.pointer)
+		model.proxManager.addTarget(target)
+
+		model.proxManager.onEnter(None, self.EnterProximity)
+		model.proxManager.onExit(None, self.ExitProximity)
+	
+		#Setup Key Bindings
+		self.bindKeys()
+		
+		# start the clock
+		time.clock()
+
+		self.score = PuzzleScore()
+		
+#		viztask.schedule(soundTask(glove))
+		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		self.loadMeshes(self._meshesToLoad)
+
+		# Hide all of the meshes
+		for m in self._meshes:
+			self.disable(m)
+		
+		# Randomly select keystone(s)
+#		for _ in range(0,3):
+#			i = random.randint(0,len(self._meshesDisabled)-1)
+#			m = self._meshesDisabled[i]
+#			m.setPosition([0.0,1.5,0.0])
+#			m.setEuler([0.0,90.0,180.0])
+#			m.group.grounded = True
+#			self.enable(m)
+		#snapGroup(smallBoneGroups)
+	
+	def enable(self, mesh):
+		self._meshesDisabled.remove(mesh)
+		self._meshes.append(mesh)
+		mesh.visible(viz.ON)
+		
+	def disable(self, mesh):
+		print 'disabling', mesh
+		self._meshesDisabled.append(mesh)
+		self._meshes.remove(mesh)
+		mesh.visible(viz.OFF)
+		
 
 			
 class PuzzleScore():
@@ -336,13 +401,16 @@ def end():
 	print "Puzzle Quitting!"
 	controlInst.end()
 
-def start(dataset):
+def start(mode, dataset):
 	"""
 	Start running the puzzle game
 	"""
 	global controlInst
-
-	controlInst = FreePlayMode()
+	
+	if mode == 'Free Play':
+		controlInst = FreePlayMode()
+	elif mode == 'Quiz Mode':
+		controlInst = TestMode()
 	controlInst.load(dataset)
 
 def csvToList(location):
@@ -355,8 +423,6 @@ def csvToList(location):
 				raw.append(row)
 	except IOError:
 		print "ERROR: Unable to open CSV file at", location
-	except:
-		print "Unknown error opening CSV file at:", location
 	return raw
 
 

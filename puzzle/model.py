@@ -97,8 +97,7 @@ class Mesh(viz.VizNode):
 		
 		# We are using a 'center' viznode to make manipulation easy
 		self.center = vizshape.addCube(0.1) # An arbitrary placeholder cube
-		#super(Mesh, self).__init__(self.center.id) #This is better
-		viz.VizNode.__init__(self, self.center.id)
+		super(Mesh, self).__init__(self.center.id)
 		
 		# This is the actual mesh we will see
 		self.mesh = viz.addChild(config.DATASET_PATH + fileName + '.obj')
