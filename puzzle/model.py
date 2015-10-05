@@ -73,7 +73,6 @@ class Mesh(viz.VizNode):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
 		self.metaData = ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
-		print self.centerPoint
 		self.centerPointScaled = [a*SF for a in self.centerPoint]
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
 		print self.centerPointScaledFlipped
@@ -162,9 +161,13 @@ class Mesh(viz.VizNode):
 		self.group = BoneGroup([self])
 		groups.append(self.group)
 	
-	def enable(self):
+	def enable(self, animate = False):
 		self._enabled = True
-		self.mesh.visible(viz.ON)
+		if animate:
+			fadein = vizact.fadeTo(1.0, time = 1.0)
+			self.mesh.addAction(fadein)
+		else:
+			self.mesh.visible(viz.ON)
 		self.tooltip.visible(viz.ON)
 		proxManager.addSensor(self._sensor)
 		

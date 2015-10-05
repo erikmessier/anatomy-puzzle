@@ -33,9 +33,10 @@ class PuzzleController(object):
 	def __init__(self):
 		#self._groups = None
 		self._meshes		= []
+		self._meshesById	= {}
+		self._keystones		= []
 		self._proximityList	= []
 		self._keyBindings	= []
-		self._meshesById	= {}
 		self._grabFlag	= False
 		self._imploded	= False
 		self._boneInfo	= None
@@ -83,6 +84,7 @@ class PuzzleController(object):
 			m.setPosition([0.0,1.5,0.0])
 			m.setEuler([0.0,90.0,180.0])
 			m.group.grounded = True
+			self._keystones.append(m)
 		#snapGroup(smallBoneGroups)
 		
 	def loadMeshes(self, meshes = [], animate = False, randomize = True):
@@ -136,12 +138,12 @@ class PuzzleController(object):
 		Move all of the checker objects on each bone into position, in order to
 		see if they should be snapped.
 		"""
-		source = self._meshesById[sourceChild.id]
+		source = self._meshesById[sourceChild.id] # Just in case we pass in a node3D
 		
 		for bone in [b for b in self._meshes if b != source]:
 			bone.checker.setPosition(source.centerPoint, viz.ABS_PARENT)
 
-	def snap(self):
+	def snapCheck(self):
 		"""
 		Snap checks for any nearby bones, and mates a src bone to a dst bone
 		if they are in fact correctly placed.
@@ -149,15 +151,17 @@ class PuzzleController(object):
 		if not self._lastGrabbed:
 			print 'nothing to snap'
 			return
+		
 		SNAP_THRESHOLD = 0.5;
 		DISTANCE_THRESHOLD = 1.5;
 		ANGLE_THRESHOLD = 45;
 		source = self._meshesById[self._lastGrabbed.id]
 		self.moveCheckers(self._lastGrabbed)
-
+			
 		# Search through all of the checkers, and snap to the first one meeting our snap
 		# criteria
-		for bone in [b for b in self._meshes if b not in source.group.members]:
+		enabled = [m for m in self._meshes if m.getEnabled()]
+		for bone in [b for b in enabled if b not in source.group.members]:
 			targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
 			targetPosition = bone.getPosition(viz.ABS_GLOBAL)
 			targetQuat = bone.getQuat(viz.ABS_GLOBAL)
@@ -169,12 +173,12 @@ class PuzzleController(object):
 			proximityDistance = vizmat.Distance(targetPosition, currentPosition)
 			angleDifference = vizmat.QuatDiff(bone.getQuat(), source.getQuat())
 			
-			if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) and (angleDifference < ANGLE_THRESHOLD):
+			if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
+					and (angleDifference < ANGLE_THRESHOLD):
 				print 'Snap! ', source, ' to ', bone
 				self.score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
 				viz.playSound(".\\dataset\\snap.wav")
-				source.moveTo(bone.checker.getMatrix(viz.ABS_GLOBAL))
-				bone.group.merge(source)
+				self.snap(source, bone)				
 				if len(self._meshes) == len(source.group.members):
 					print "Assembly completed!"
 					end()
@@ -184,8 +188,17 @@ class PuzzleController(object):
 			print 'did not meet snap criteria'
 			self.score.event(event = 'release', source = source.name)
 
+	def snap(self, sourceMesh, targetMesh):
+		self.moveCheckers(sourceMesh)
+		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+		targetMesh.group.merge(sourceMesh)
+		if sourceMesh.group.grounded:
+			self._keystones.append(sourceMesh)
+
 	def snapGroup(self, boneNames):
-		"""Specify a list of bones that should be snapped together"""
+		"""
+		Specify a list of bones that should be snapped together
+		"""
 		print boneNames
 		if (len(boneNames) > 0):
 			meshes = []
@@ -197,11 +210,6 @@ class PuzzleController(object):
 		grabList = [b for b in self._proximityList if not b.group.grounded] # Needed for disabling grab of grounded bones
 		if len(grabList) > 0 and not self._grabFlag:
 			target = self.getClosestBone(model.pointer,grabList)
-			
-			# only play bone description sound once, so set it if it hasn't been
-			if target.grabbedFlag == 0:
-	#			playBoneDesc(grabList[0])
-				target.setGrabbedFlag(True)
 			target.setGroupParent()
 			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 	#		score.event(event = 'grab', source = target.name)
@@ -245,7 +253,7 @@ class PuzzleController(object):
 		return proxList[0]
 
 	def EnterProximity(self, e):
-		source = e.sensor.getSourceObject
+		source = e.sensor.getSourceObject()
 		print model.pointer
 		self._meshesById[source.id].mesh.color([1.0,1.0,0.5])
 		self._meshesById[source.id].setNameAudioFlag(1)
@@ -262,7 +270,7 @@ class PuzzleController(object):
 		"""
 		move bones to solved positions
 		"""
-		target = self._meshes[0] #keystone
+		target = self._keystones[0] #keystone
 		for m in self._meshes[1:]:
 			if m.getAction():
 				return
@@ -308,7 +316,7 @@ class PuzzleController(object):
 		self._keyBindings.append(vizact.onkeydown('o', model.proxManager.setDebug, viz.TOGGLE)) #debug shapes
 		self._keyBindings.append(vizact.onkeydown(' ', self.grab)) #space select
 		self._keyBindings.append(vizact.onkeydown('65421', self.grab)) #numpad enter select
-		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, self.snap))
+		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, self.snapCheck))
 		self._keyBindings.append(vizact.onkeyup(' ', self.release))
 		self._keyBindings.append(vizact.onkeyup('65421', self.release))
 		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
@@ -361,23 +369,58 @@ class TestMode(PuzzleController):
 			m.disable()
 		
 		# Randomly select keystone(s)
-		for _ in range(0,3):
-			i = random.randint(0,len(self._meshes)-1)
-			m = self._meshes[i]
-			m.setPosition([0.0,1.5,0.0])
-			m.setEuler([0.0,90.0,180.0])
-			m.group.grounded = True
+		rand = random.sample(self._meshes, 3)
+		self._keystones += rand
+		rand[0].enable()
+		rand[0].setPosition([0.0,1.5,0.0])
+		rand[0].setEuler([0.0,90.0,180.0])
+		rand[0].group.grounded = True
+		for m in rand[1:]:
 			m.enable()
+			self.snap(m, rand[0])
+			print 'snapping ', m.name
 		
 		# Randomly enable pieces
-		for _ in range(0,5):
-			disabled = [m for m in self._meshes if not m.getEnabled()]
-			i = random.randint(0,len(disabled)-1)
-			disabled[i].enable()
+		disabled = [m for m in self._meshes if not m.getEnabled()]
+		keystone = random.sample(self._keystones, 1)[0]
+		for m in self.getAdjacent(keystone, disabled)[:4]:
+			m.enable(animate = False)
 		#snapGroup(smallBoneGroups)
-	
+				
+	def getAdjacent(self, mesh, pool):
+		"""
+		Sort pool by distance from mesh
+		"""
+		self.moveCheckers(mesh)
+		neighbors = []
 		
+		for m in pool:
+			centerPos = m.getPosition(viz.ABS_GLOBAL)
+			checkerPos = m.checker.getPosition(viz.ABS_GLOBAL)
+			dist = vizmat.Distance(centerPos, checkerPos)	
+			neighbors.append([m,dist])
+		
+		sorted(neighbors, key = lambda a: a[1])
+		
+		return [l[0] for l in neighbors]
 
+	def snap(self, sourceMesh, targetMesh):
+		"""
+		Overridden snap that adds more bones
+		"""
+		self.moveCheckers(sourceMesh)
+		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+		targetMesh.group.merge(sourceMesh)
+		if sourceMesh.group.grounded:
+			self._keystones.append(sourceMesh)
+		# Add more bones
+		disabled = [m for m in self._meshes if not m.getEnabled()]
+		keystone = random.sample(self._keystones, 1)[0]
+		try:
+			m = self.getAdjacent(keystone, disabled)[random.randint(0,3)]
+		except ValueError:
+			m = self.getAdjacent(keystone, disabled)[0]
+		m.enable(animate = False)
 			
 class PuzzleScore():
 	"""Handles scoring for the puzzle game"""
