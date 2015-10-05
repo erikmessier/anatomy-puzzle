@@ -268,18 +268,19 @@ class InGameMenu(vizinfo.InfoPanel):
 
 	def restartButton(self):
 		if game.mode[0] == 'Movement Tutorial':
-			puzzle.tutorial.tutorial.end()
+			puzzle.tutorial.Tutorial.end()
 			puzzle.tutorial.init()
 		else:
 			puzzle.controller.end()
-			puzzle.controller.load(game.loadLayers)
+			puzzle.controller.start(game.loadLayers)
 		self.toggle()
 	
 	def endButton(self):
 		if game.mode[0] == 'Movement Tutorial':
 			puzzle.tutorial.Tutorial.end()
 			puzzle.tutorial.recordData.close()
-		puzzle.controller.end()
+		else:
+			puzzle.controller.controlInst.end()
 		self.toggle()
 		self.active = False
 		main.active = True

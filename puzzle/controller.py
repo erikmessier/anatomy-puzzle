@@ -44,6 +44,7 @@ class PuzzleController(object):
 		self._prevBoneIdx = None
 		self._lastGrabbed = None
 		self._imploded = False
+		self.closeMesh = None
 
 		self.viewcube = view.viewCube()
 		
@@ -239,11 +240,12 @@ class PuzzleController(object):
 		#snapGroup(smallBoneGroups)
 
 	def EnterProximity(self, e):
-		source = e.sensor.getSourceObject()
+		source = e.sensor.getSourceObject
+		print model.pointer
 		self._meshesById[source.id].mesh.color([1.0,1.0,0.5])
 		self._meshesById[source.id].setNameAudioFlag(1)
 		self._proximityList.append(source)
-		
+	
 	def ExitProximity(self, e):
 		source = e.sensor.getSourceObject()
 		self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
@@ -372,7 +374,12 @@ class PuzzleScore():
 def end():
 	"""Do everything that needs to be done to end the puzzle game"""
 	print "Puzzle Quitting!"
-	controlInst.end()
+	global controlInst
+	try:
+		controlInst.end()
+	except AttributeError:
+		print 'Not initialized'
+	del(controlInst)
 
 def start(dataset):
 	"""

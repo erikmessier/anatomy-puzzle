@@ -14,8 +14,6 @@ import datetime
 import random
 
 #custom
-import init
-import menu	
 import controller as puzzle
 import config
 import model
@@ -34,8 +32,8 @@ def init():
 	gloveLink = None
 	snapTransitionTime = 0.3
 	animateOutline = 1.25
-	tasks = viztask.Scheduler
 	canvas = viz.addGUICanvas()
+	tasks = viztask.Scheduler
 	Tutorial = InterfaceTutorial(canvas)
 	recordData = TutorialData()
 		
@@ -50,6 +48,7 @@ class InterfaceTutorial():
 		self.canvas = canvas
 		self.origPosVec = config.positionVector
 		self.origOrienVec = config.orientationVector
+		
 		#creating directions panel
 #		viz.mouse.setVisible(False)
 #		directions = vizinfo.InfoPanel('', fontSize = 10, parent = canvas, align = viz.ALIGN_LEFT_TOP, title = 'Tutorial', icon = False)
@@ -148,7 +147,7 @@ class InterfaceTutorial():
 		"""
 		while True:
 			yield viztask.waitKeyDown(' ')
-			grab()
+			grab(self.outlineCenter, self.dogCenter)
 			yield viztask.waitKeyUp(' ')
 			release(self)
 			
@@ -183,26 +182,26 @@ class InterfaceTutorial():
 		before preforming the next action."""
 		if self.iterations ==0:
 			#setting conditions for position transformations along single axis
-			model.pointer.setParent(viz.WORLD)
+#			model.pointer.setParent(viz.WORLD)
 			config.orientationVector = [0,0,0]
 			proxList.append(self.dogCenter)
 	
-		if self.iterations ==3:
-			#setting conditions for position transformations along all axes
-			proxList.remove(self.dogCenter)
+#		elif self.iterations ==3:
+#			#setting conditions for position transformations along all axes
+#			proxList.remove(self.dogCenter)
 	
-		elif self.iterations==4:
-			#setting conditinos for angular transformations
-			proxList.append(self.dogCenter)
-			config.orientationVector = self.origOrienVec
-			config.positionVector = [0,0,0]
-			model.pointer.setPosition(0,1,-1)
-			model.pointer.color(0,0,5)
+#		elif self.iterations==4:
+#			#setting conditinos for angular transformations
+#			proxList.append(self.dogCenter)
+#			config.orientationVector = self.origOrienVec
+#			config.positionVector = [0,0,0]
+##			model.pointer.setPosition(0,1,-1)
+##			model.pointer.color(0,0,5)
 	
-		elif self.iterations==8:
+		elif self.iterations==3:
 			#setting conditions for positional and angular transformations
-			model.pointer.color(self.startColor)
-			model.pointer.setParent(model.display.camcenter)
+#			model.pointer.color(self.startColor)
+#			model.pointer.setParent(model.display.camcenter)
 			proxList.remove(self.dogCenter)
 			config.orientationVector = self.origOrienVec
 			config.positionVector = self.origPosVec
@@ -234,66 +233,66 @@ class InterfaceTutorial():
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 	
-		elif self.iterations>2 and self.iterations<=3:
-			#ALL AXES POS TRANS
-			config.positionVector = self.origPosVec
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
-			randomPos = [0,1,-1]
-			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
-			yield viztask.waitTime(1)
-			yield viztask.addAction(self.outlineCenter, self.movePos)
-		
-		elif self.iterations>3 and self.iterations<=4:
-			#X AXIS ANG TRANS
-			config.orientationVector = [.01,0,0]
-			model.pointer.setEuler(0,0,0)
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about x-axis')
-			thisEuler = [0,0,0]
-			thisEuler[1] = random.randint(-100,100)
-			self.moveAng = vizact.spinTo(euler = thisEuler, time = animateOutline, mode = viz.REL_GLOBAL)
-			yield viztask.waitTime(1)
-			yield viztask.addAction(self.outlineCenter, self.moveAng)
+#		elif self.iterations>2 and self.iterations<=3:
+#			#ALL AXES POS TRANS
+#			config.positionVector = self.origPosVec
+#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
+#			randomPos = [0,1,-1]
+#			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
+#			yield viztask.waitTime(1)
+#			yield viztask.addAction(self.outlineCenter, self.movePos)
+#		
+#		elif self.iterations>3 and self.iterations<=4:
+#			#X AXIS ANG TRANS
+#			config.orientationVector = [.01,0,0]
+#			model.pointer.setEuler(0,0,0)
+#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about x-axis')
+#			thisEuler = [0,0,0]
+#			thisEuler[1] = random.randint(-100,100)
+#			self.moveAng = vizact.spinTo(euler = thisEuler, time = animateOutline, mode = viz.REL_GLOBAL)
+#			yield viztask.waitTime(1)
+#			yield viztask.addAction(self.outlineCenter, self.moveAng)
+#	
+#		elif self.iterations>4 and self.iterations<=5:
+#			#Y AXIS ANG TRANS
+#			config.orientationVector = [0,.01,0]
+#			model.pointer.setEuler(0,0,0)
+#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about y-axis')
+#			thisEuler = [0,0,0]
+#			thisEuler[0] = random.randint(-100,100)
+#			self.moveAng = vizact.spinTo(euler = thisEuler, time = animateOutline, mode = viz.REL_GLOBAL)
+#			yield viztask.waitTime(1)
+#			yield viztask.addAction(self.outlineCenter, self.moveAng)
+#	
+#		elif self.iterations>5 and self.iterations<=6:
+#			#Z AXIS ANG TRANS
+#			config.orientationVector = [0,0,.01]
+#			model.pointer.setEuler(0,0,0)
+#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about z-axis')
+#			thisEuler = [0,0,0]
+#			thisEuler[2] = random.randint(-100,100)
+#			self.moveAng = vizact.spinTo(euler = thisEuler, time = animateOutline, mode = viz.REL_GLOBAL)
+#			yield viztask.waitTime(1)
+#			yield viztask.addAction(self.outlineCenter, self.moveAng)
+#		
+#		elif self.iterations>6 and self.iterations<=7:
+#			#ALL AXES ANG TRANS
+#			config.orientationVector = self.origOrienVec
+#			model.pointer.setEuler(0,0,0)
+#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about all axis')
+#			randomEuler = [random.randint(-100,100),random.randint(-100,100),random.randint(-100,100)]
+#			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
+#			yield viztask.waitTime(1)
+#			yield viztask.addAction(self.outlineCenter, self.moveAng)
 	
-		elif self.iterations>4 and self.iterations<=5:
-			#Y AXIS ANG TRANS
-			config.orientationVector = [0,.01,0]
-			model.pointer.setEuler(0,0,0)
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about y-axis')
-			thisEuler = [0,0,0]
-			thisEuler[0] = random.randint(-100,100)
-			self.moveAng = vizact.spinTo(euler = thisEuler, time = animateOutline, mode = viz.REL_GLOBAL)
-			yield viztask.waitTime(1)
-			yield viztask.addAction(self.outlineCenter, self.moveAng)
-	
-		elif self.iterations>5 and self.iterations<=6:
-			#Z AXIS ANG TRANS
-			config.orientationVector = [0,0,.01]
-			model.pointer.setEuler(0,0,0)
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about z-axis')
-			thisEuler = [0,0,0]
-			thisEuler[2] = random.randint(-100,100)
-			self.moveAng = vizact.spinTo(euler = thisEuler, time = animateOutline, mode = viz.REL_GLOBAL)
-			yield viztask.waitTime(1)
-			yield viztask.addAction(self.outlineCenter, self.moveAng)
-		
-		elif self.iterations>6 and self.iterations<=7:
-			#ALL AXES ANG TRANS
-			config.orientationVector = self.origOrienVec
-			model.pointer.setEuler(0,0,0)
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about all axis')
-			randomEuler = [random.randint(-100,100),random.randint(-100,100),random.randint(-100,100)]
-			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
-			yield viztask.waitTime(1)
-			yield viztask.addAction(self.outlineCenter, self.moveAng)
-	
-		elif self.iterations>7 and self.iterations<=12:
+		elif self.iterations>2 and self.iterations<=9:
 			#ALL AXES POS AND ANG TRANS
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'change pos and euler')
 			randomPos = [random.randrange(-1,1,1),random.randrange(0,2,1),random.randrange(-1,1,1)]
-			randomEuler = [random.randint(-90,90),random.randint(-90,90),random.randint(-90,90)]
+#			randomEuler = [random.randint(-90,90),random.randint(-90,90),random.randint(-90,90)]
 			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
-			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
-			transition = vizact.parallel(self.movePos, self.moveAng)
+#			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
+			transition = vizact.parallel(self.movePos)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, transition)
 
@@ -338,7 +337,7 @@ def ExitProximity(e, glove, startColor):
 		model.pointer.color(startColor)
 		proxList.remove(source)
 
-def grab():
+def grab(outline, dog):
 	"""
 	If the glove is not already linked to something, and the glove is within proximity of an object, link the 
 	object to the glove
@@ -346,6 +345,8 @@ def grab():
 	global gloveLink
 	global grabFlag
 	global glove
+	if outline.getAction() or dog.getAction():
+		return
 	if not gloveLink and len(proxList)>0:
 		target = proxList[0]
 		gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
