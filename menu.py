@@ -201,28 +201,29 @@ class GameMenu(vizinfo.InfoPanel):
 		for i in self.checkBox.keys():
 			if self.checkBox[i].get() == 1:
 				self.loadLayers.append(i)
+				
 		for i in self.radioButtons.keys():
 			if self.radioButtons[i].get() == 1:
 				self.mode.append(i)
-		if len(self.loadLayers) != 0:
-			print str(self.mode[0]) + ' was selected'
-			try:
-				puzzle.controller.start(self.loadLayers)
-			except KeyError:
-				print "Dataset does not exist!"
-			self.setPanelVisible(viz.OFF)
-			self.canvas.setCursorVisible(viz.OFF)
-			self.active = False
-			ingame.active = True
-		elif self.mode[0] == 'Movement Tutorial':
+
+		if self.mode[0] == 'Movement Tutorial':
 			puzzle.tutorial.init()
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
 			self.active = False
 			ingame.active = True
-		else: 
+			
+		else:
 			print str(self.mode[0]) + ' was selected'
-			print 'No Layer Was Selected!'
+			try:
+				puzzle.controller.start(self.mode[0], self.loadLayers)
+			except KeyError:
+				print "Dataset does not exist!"
+				
+			self.setPanelVisible(viz.OFF)
+			self.canvas.setCursorVisible(viz.OFF)
+			self.active = False
+			ingame.active = True
 	
 	def setDataset(self, name):
 		self.dataset = name

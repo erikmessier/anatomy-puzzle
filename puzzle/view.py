@@ -50,7 +50,8 @@ class TestSnapPanel(vizdlg.Panel):
 	def setFields(self, source, target):
 		self.sourceText.message(source)
 		self.targetText.message(target)
-	def toggleTestPanel(self):
+		
+	def toggle(self):
 		self.visible(viz.TOGGLE)
 
 class TestGrabPanel(vizdlg.Panel):
