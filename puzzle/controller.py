@@ -356,28 +356,24 @@ class TestMode(PuzzleController):
 
 		# Hide all of the meshes
 		for m in self._meshes:
-			self.disable(m)
+			m.disable()
 		
 		# Randomly select keystone(s)
-#		for _ in range(0,3):
-#			i = random.randint(0,len(self._meshesDisabled)-1)
-#			m = self._meshesDisabled[i]
-#			m.setPosition([0.0,1.5,0.0])
-#			m.setEuler([0.0,90.0,180.0])
-#			m.group.grounded = True
-#			self.enable(m)
+		for _ in range(0,3):
+			i = random.randint(0,len(self._meshes)-1)
+			m = self._meshes[i]
+			m.setPosition([0.0,1.5,0.0])
+			m.setEuler([0.0,90.0,180.0])
+			m.group.grounded = True
+			m.enable()
+		
+		# Randomly enable pieces
+		for _ in range(0,5):
+			disabled = [m for m in self._meshes if not m.getEnabled()]
+			i = random.randint(0,len(disabled)-1)
+			disabled[i].enable()
 		#snapGroup(smallBoneGroups)
 	
-	def enable(self, mesh):
-		self._meshesDisabled.remove(mesh)
-		self._meshes.append(mesh)
-		mesh.visible(viz.ON)
-		
-	def disable(self, mesh):
-		print 'disabling', mesh
-		self._meshesDisabled.append(mesh)
-		self._meshes.remove(mesh)
-		mesh.visible(viz.OFF)
 		
 
 			
