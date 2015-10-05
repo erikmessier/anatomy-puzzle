@@ -21,7 +21,7 @@ class DisplayMode:
 	oculus		= 2
 	label = {'Regular Computer': 0, '3D TV': 1, 'Occulus Rift': 2}
 
-dispMode = DisplayMode.oculus
+dispMode = DisplayMode.computer
 
 menuScaleConfig = { \
 	0:{'main':1.2, 'game':.75, 'ingame': 1}, \
@@ -55,7 +55,7 @@ class PointerMode:
 	spaceMouse	= 1
 	label = {'Keyboard Control': 0, 'SpaceMouse Control': 1}
 
-pointerMode = PointerMode.spaceMouse
+pointerMode = PointerMode.keyboard
 
 """
 Dictionary of lists:

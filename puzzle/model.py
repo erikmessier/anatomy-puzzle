@@ -146,27 +146,37 @@ class Mesh(viz.VizNode):
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
 		
 		# Turn off visibility of center and checker viznodes
-		self.disable([viz.RENDERING])
+		self.center.disable([viz.RENDERING])
 		self.color([0.3,0,0])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
-#		self.tooltip.disable([viz.RENDERING])
-		#self.dialogueBox.disable([viz.RENDERING])
-#		self.dialogue.disable([viz.RENDERING])
 		
-		self.scale = SF
-#		self.phys = self.collideSphere()
+		self.scale		= SF
+		self._enabled	= True
 
-		
-		self.nameAudioFlag = 1    #defualt: 1, 1 allows name to be played, 0 does not allow name playback
-		self.descAudioFlag = 1		#default: 1, 1 allows description to be played, 0 does not allow dec playback
-		self.grabbedFlag = 0
-		self.proxCounter = 0
-		
+		self.nameAudioFlag	= 1    #defualt: 1, 1 allows name to be played, 0 does not allow name playback
+		self.descAudioFlag	= 1		#default: 1, 1 allows description to be played, 0 does not allow dec playback
+		self.grabbedFlag	= 0
+		self.proxCounter	= 0
 		
 		# Group handling
 		self.group = BoneGroup([self])
 		groups.append(self.group)
 	
+	def enable(self):
+		self._enabled = True
+		self.mesh.visible(viz.ON)
+		self.tooltip.visible(viz.ON)
+		proxManager.addSensor(self._sensor)
+		
+	def disable(self):
+		self._enabled = False
+		self.mesh.visible(viz.OFF)
+		self.tooltip.visible(viz.OFF)
+		proxManager.removeSensor(self._sensor)
+	
+	def getEnabled(self):
+		return self._enabled
+		
 	def storeMat(self):
 		self._savedMat = self.getMatrix(viz.ABS_GLOBAL)
 		
@@ -186,8 +196,8 @@ class Mesh(viz.VizNode):
 	
 	def addSensor(self):
 		"""Add a sensor to a proximity manager"""
-		sensor = vizproximity.addBoundingSphereSensor(self)
-		proxManager.addSensor(sensor)
+		self._sensor = vizproximity.addBoundingSphereSensor(self)
+		proxManager.addSensor(self._sensor)
 		
 	def setGroupParent(self):
 		"""
