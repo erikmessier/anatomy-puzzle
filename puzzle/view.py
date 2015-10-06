@@ -4,17 +4,23 @@ View elements of the puzzle game
 
 # Vizard Modules
 import viz
-import vizdlg, vizshape
+import vizdlg, vizshape, vizact, sys, os.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
+#custom module
+import config
+import menu
 
 class TestSnapPanel(vizdlg.Panel):
 	"""
-	blah blah
+	test panel that test snap directions are sent to
 	"""
 	def __init__(self):
 		#init canvas and create themes for the test panel
-		self.canvas = viz.addGUICanvas()
-		self.canvas.setPosition(3.8,2.3,0)
+		self.canvas = viz.addGUICanvas(parent = viz.ABS_GLOBAL)
+#		self.canvas = menu.canvas
 		viz.mouse.setVisible(False)
+		self.name = 'test'
 		self._theme = viz.Theme()
 		self._theme.borderColor = (0.1,0.1,0.1,1)
 		self._theme.backColor = (0.4,0.4,0.4,1)
@@ -25,27 +31,45 @@ class TestSnapPanel(vizdlg.Panel):
 		self._theme.highTextColor = (1,1,1,1)
 		
 		#initialize test panel
-		vizdlg.Panel.__init__(self, parent = self.canvas, theme = self._theme, align = viz.ALIGN_RIGHT_TOP, fontSize = 10)
+		vizdlg.Panel.__init__(self, parent = self.canvas, theme = self._theme, align = viz.ALIGN_CENTER, fontSize = 10)
 		self.visible(viz.OFF)
+		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
+		
 		#title
 		title = vizdlg.TitleBar('INSTRUCTIONS')
 		self.addItem(title, align = viz.ALIGN_CENTER_TOP)
 		
 		#bones to be snapped. source snapped to target.
 		source = ''
-		self.sourceText = viz.addTextbox()
+		self.sourceText = viz.addTextbox(parent = self.canvas)
 		target = ''
-		self.targetText = viz.addTextbox()
+		self.targetText = viz.addTextbox(parent = self.canvas)
 		
 		#instructions 
-		self.Instruct1 = self.addItem(viz.addText('Snap the: '), align = viz.ALIGN_CENTER_TOP)
+		self.Instruct1 = self.addItem(viz.addText('Snap the: ', parent = self.canvas), align = viz.ALIGN_CENTER_TOP)
 		self.sourceCommand = self.addItem(self.sourceText, align = viz.ALIGN_CENTER_TOP)
-		self.Instruct2 = self.addItem(viz.addText('To the: '), align = viz.ALIGN_CENTER_TOP)
+		self.Instruct2 = self.addItem(viz.addText('To the: ', parent = self.canvas), align = viz.ALIGN_CENTER_TOP)
 		self.targetCommand = self.addItem(self.targetText, align = viz.ALIGN_CENTER_TOP)
 		
 		#render canvas
+		#render canvas
 		bb = self.getBoundingBox()
-		self.canvas.setRenderWorldOverlay([bb.height, bb.width], fov = bb.height*.1, distance = 5)
+		self.canvas.setRenderWorld([bb.height, bb.width],[3, 3*1.333])
+		#on esc toggle menu (doesn't interfere with in-game menu)
+		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
+		self.canvas.setPosition(2,4,5)
+		self.canvas.resolution(self.canvas.getResolution())
+#		self.canvas.billboard(viz.BILLBOARD_VIEW_POS)
+#		self.canvas.setBackdrop(viz.ALIGN_LEFT_TOP)
+#		self.canvas.alignment(viz.ALIGN_LEFT_CENTER)
+#		
+#		if config.dispMode == config.DisplayMode.oculus:
+#			self.oculusPanelPos = self.canvas.getPosition()
+#			self.oculusPanelPos[0] = 1
+#			self.canvas.setPosition(self.oculusPanelPos)
+#		
+#		vizact.onbuttondown(viz.KEY_ESCAPE, self.toggle)
+
 		
 	def setFields(self, source, target):
 		self.sourceText.message(source)

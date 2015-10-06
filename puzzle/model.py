@@ -107,6 +107,7 @@ class Mesh(viz.VizNode):
 		
 		# Tooltip
 		self.tooltip = viz.addText(self.nameFormatted)
+		self.tooltip.color(0,5,1)
 		self.tooltip.billboard(viz.BILLBOARD_VIEW)
 		self.tooltip.setScale(0.001,0.001,0.001) #small scale for bounding box calc
 		
@@ -130,7 +131,7 @@ class Mesh(viz.VizNode):
 		
 		# Setup heirarchy for proper movement behavior
 		self.mesh.setParent(self)
-		self.tooltip.setParent(self)
+		self.tooltip.setParent(viz.ABS_GLOBAL)
 		self.checker.setParent(self.mesh)
 		
 		# Offset mesh to lie in center of center viznode
@@ -140,9 +141,20 @@ class Mesh(viz.VizNode):
 		self.addSensor()
 		
 		# Tooltip formatting
-		self.tooltip.setScale(0.1,0.1,0.1) #set to prefered scale
-		self.tooltip.setPosition(0,0,.5)
+		self.tooltip.setScale(0.3,0.3,0.3)#set to prefered scale
+		self.tooltip.setPosition(0,2.2,0)
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
+		self.tooltip.visible(viz.OFF)
+		
+		#Line between tooltip and mesh centerPoint
+#		viz.startLayer(viz.LINES)
+#		viz.vertexColor(viz.BLUE)
+#		viz.lineWidth(5)
+#		viz.vertex(self.getPosition(viz.ABS_GLOBAL))
+#		viz.vertex(self.tooltip.getPosition(viz.ABS_GLOBAL))
+#		self.nameLine = viz.endLayer()
+#		self.nameLine.dynamic()
+#		self.nameLine.visible(viz.OFF)
 		
 		# Turn off visibility of center and checker viznodes
 		self.center.disable([viz.RENDERING])

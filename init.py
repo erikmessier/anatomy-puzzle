@@ -241,7 +241,8 @@ class DisplayInstance():
 		if self.displayMode == 0:
 			viz.setMultiSample(4)
 			viz.fov(60)
-			viz.go() #viz.FULLSCREEN
+			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
+			viz.window.setFullscreenMonitor(1)
 
 		elif self.displayMode == 1:
 			viz.setMultiSample(4)
@@ -252,6 +253,7 @@ class DisplayInstance():
 			
 			#viz.setMultiSample(4)
 			viz.go(viz.STEREO_HORZ)
+			viz.setMultiSample(16)
 			
 			KEYS = {
 			'reset'	: 'r'

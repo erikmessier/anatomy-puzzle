@@ -23,6 +23,7 @@ def init():
 	global main
 	global game
 	global ingame
+	global canvas
 
 	canvas = viz.addGUICanvas()
 #	canvas.setRenderWorldOverlay([2000,2000],60,1)
@@ -65,7 +66,7 @@ class MainMenu(vizinfo.InfoPanel):
 		
 		#rendering
 		bb = self.getBoundingBox()
-		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 3)
+		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
@@ -194,6 +195,10 @@ class GameMenu(vizinfo.InfoPanel):
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 		
+		#rendering
+		bb = self.getBoundingBox()
+		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
+		
 	def start(self):
 		self.mode = []
 		self.loadLayers = []
@@ -219,6 +224,7 @@ class GameMenu(vizinfo.InfoPanel):
 				puzzle.controller.start(self.mode[0], self.loadLayers)
 			except KeyError:
 				print "Dataset does not exist!"
+				raise
 				
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
