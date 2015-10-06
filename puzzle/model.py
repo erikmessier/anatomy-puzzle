@@ -165,10 +165,15 @@ class Mesh(viz.VizNode):
 		self._enabled = True
 		if animate:
 			fadein = vizact.fadeTo(1.0, time = 1.0)
+			self.mesh.alpha(0.0)
+			self.mesh.visible(viz.ON)
 			self.mesh.addAction(fadein)
+			#self.tooltip.alpha(0.0)
+			#self.tooltip.visible(viz.ON)
+			#self.tooltip.addAction(fadein)
 		else:
 			self.mesh.visible(viz.ON)
-		self.tooltip.visible(viz.ON)
+			#self.tooltip.visible(viz.ON)
 		proxManager.addSensor(self._sensor)
 		
 	def disable(self):
