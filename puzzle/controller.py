@@ -466,15 +466,15 @@ class TestMode(PuzzleController):
 		Snap checks for any nearby bones, and mates a src bone to a dst bone
 		if they are in fact correctly placed.
 		"""
-		if not self._lastGrabbed:
+		if not self._quizSource:
 			print 'nothing to snap'
 			return
 		
 		SNAP_THRESHOLD = 0.5;
 		DISTANCE_THRESHOLD = 1.5;
 		ANGLE_THRESHOLD = 45;
-		source = self._meshesById[self._lastGrabbed.id]
-		self.moveCheckers(self._lastGrabbed)
+		source = self._meshesById[self._quizSource.id]
+		self.moveCheckers(self._quizSource)
 			
 		# Search through all of the checkers, and snap to the first one meeting our snap
 		# criteria
