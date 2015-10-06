@@ -279,7 +279,7 @@ class InGameMenu(vizinfo.InfoPanel):
 			puzzle.tutorial.init()
 		else:
 			puzzle.controller.end()
-			puzzle.controller.start(game.loadLayers)
+			puzzle.controller.start(game.mode[0],game.loadLayers)
 		self.toggle()
 	
 	def endButton(self):
@@ -287,7 +287,7 @@ class InGameMenu(vizinfo.InfoPanel):
 			puzzle.tutorial.Tutorial.end()
 			puzzle.tutorial.recordData.close()
 		else:
-			puzzle.controller.controlInst.end()
+			puzzle.controller.end()
 		self.toggle()
 		self.active = False
 		main.active = True

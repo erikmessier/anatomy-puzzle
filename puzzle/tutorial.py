@@ -287,7 +287,7 @@ class InterfaceTutorial():
 	
 		elif self.iterations>3 and self.iterations<=9:
 			#ALL AXES POS AND ANG TRANS
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'change pos and euler')
+			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
 			randomPos = [random.randrange(-1,1,1),random.randrange(0,2,1),random.randrange(-1,1,1)]
 #			randomEuler = [random.randint(-90,90),random.randint(-90,90),random.randint(-90,90)]
 			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
