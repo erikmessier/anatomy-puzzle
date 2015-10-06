@@ -233,14 +233,14 @@ class InterfaceTutorial():
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 	
-#		elif self.iterations>2 and self.iterations<=3:
-#			#ALL AXES POS TRANS
-#			config.positionVector = self.origPosVec
-#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
-#			randomPos = [0,1,-1]
-#			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
-#			yield viztask.waitTime(1)
-#			yield viztask.addAction(self.outlineCenter, self.movePos)
+		elif self.iterations>2 and self.iterations<=3:
+			#ALL AXES POS TRANS
+			config.positionVector = self.origPosVec
+			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
+			randomPos = [0,1,-1]
+			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
+			yield viztask.waitTime(1)
+			yield viztask.addAction(self.outlineCenter, self.movePos)
 #		
 #		elif self.iterations>3 and self.iterations<=4:
 #			#X AXIS ANG TRANS
@@ -285,7 +285,7 @@ class InterfaceTutorial():
 #			yield viztask.waitTime(1)
 #			yield viztask.addAction(self.outlineCenter, self.moveAng)
 	
-		elif self.iterations>2 and self.iterations<=9:
+		elif self.iterations>3 and self.iterations<=9:
 			#ALL AXES POS AND ANG TRANS
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'change pos and euler')
 			randomPos = [random.randrange(-1,1,1),random.randrange(0,2,1),random.randrange(-1,1,1)]

@@ -54,7 +54,7 @@ class PointerMode:
 	spaceMouse	= 1
 	label = {'Keyboard Control': 0, 'SpaceMouse Control': 1}
 
-pointerMode = PointerMode.spaceMouse
+pointerMode = PointerMode.keyboard
 
 """
 Dictionary of lists:
@@ -91,4 +91,4 @@ a SpaceMouse, see the code to enable wx/ad/ze control of the glove instead.
 Position and Orientation Vectors Scales for spacemouse control 
 """
 positionVector = [.0001,.0001,.0001]
-orientationVector = [.01,.01,.01]
+orientationVector = [0,0,0]
