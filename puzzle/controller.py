@@ -145,6 +145,23 @@ class PuzzleController(object):
 		for bone in [b for b in self._meshes if b != source]:
 			bone.checker.setPosition(source.centerPoint, viz.ABS_PARENT)
 
+	def getAdjacent(self, mesh, pool):
+		"""
+		Sort pool by distance from mesh
+		"""
+		self.moveCheckers(mesh)
+		neighbors = []
+		
+		for m in pool:
+			centerPos = m.getPosition(viz.ABS_GLOBAL)
+			checkerPos = m.checker.getPosition(viz.ABS_GLOBAL)
+			dist = vizmat.Distance(centerPos, checkerPos)	
+			neighbors.append([m,dist])
+		
+		sorted(neighbors, key = lambda a: a[1])
+		
+		return [l[0] for l in neighbors]
+		
 	def snapCheck(self):
 		"""
 		Snap checks for any nearby bones, and mates a src bone to a dst bone
@@ -162,7 +179,18 @@ class PuzzleController(object):
 			
 		# Search through all of the checkers, and snap to the first one meeting our snap
 		# criteria
+		
 		enabled = [m for m in self._meshes if m.getEnabled()]
+		if self._snapAttempts >= 3 and not self._lastGrabbed.group.grounded:
+			targetMesh = self.getAdjacent(self._lastGrabbed, enabled)[0]
+			self.snap(self._lastGrabbed, targetMesh)
+			viz.playSound(".\\dataset\\snap.wav")
+			print 'Three unsuccessful snap attempts, snapping now!'
+			self._snapAttempts = 0
+			return
+		elif self._lastGrabbed.group.grounded:
+			print 'That bone is grounded. Returning!'
+			return
 		for bone in [b for b in enabled if b not in source.group.members]:
 			targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
 			targetPosition = bone.getPosition(viz.ABS_GLOBAL)
@@ -187,7 +215,7 @@ class PuzzleController(object):
 					menu.ingame.endButton()
 				break
 		else:
-			print 'did not meet snap criteria'
+			print 'Did not meet snap criteria!'
 			self._snapAttempts += 1
 			self.score.event(event = 'release', source = source.name)
 
@@ -343,7 +371,18 @@ class TestMode(PuzzleController):
 		
 		self._meshesDisabled	= []
 		self._keystoneAdjacent	= {}
+		
+		self._quizSource = None
+		self._quizTarget = None
 	
+	def implode(self):
+		"""Override to disable"""
+		pass
+		
+	def explode(self):
+		"""Override to disable"""
+		pass
+		
 	def load(self, dataset = 'right arm'):
 		"""
 		Load datasets and initialize everything necessary to commence
@@ -394,34 +433,24 @@ class TestMode(PuzzleController):
 			print 'snapping ', m.name
 		
 		# Randomly enable some adjacent meshes
-		disabled = [m for m in self._meshes if not m.getEnabled()]
 		keystone = random.sample(self._keystones, 1)[0]
 		self._keystoneAdjacent.update({keystone:[]})
-		for m in self.getAdjacent(keystone, disabled)[:4]:
+		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
 			print m
 			m.enable(animate = False)
-			self._keystoneAdjacent[keystone].append(m)
+		self.pickSnapPair()
 		#snapGroup(smallBoneGroups)
-		self.quizSource = keystone
-		self.quizTarget = random.sample(self._keystoneAdjacent[self.quizSource],1)[0]
-		self._quizPanel.setFields(self.quizSource.name, self.quizTarget.name)
-
-	def getAdjacent(self, mesh, pool):
-		"""
-		Sort pool by distance from mesh
-		"""
-		self.moveCheckers(mesh)
-		neighbors = []
+	
+	def getDisabled(self):
+		return [m for m in self._meshes if not m.getEnabled()]
 		
-		for m in pool:
-			centerPos = m.getPosition(viz.ABS_GLOBAL)
-			checkerPos = m.checker.getPosition(viz.ABS_GLOBAL)
-			dist = vizmat.Distance(centerPos, checkerPos)	
-			neighbors.append([m,dist])
+	def getEnabled(self):
+		return [m for m in self._meshes if m.getEnabled() if not m.group.grounded]
 		
-		sorted(neighbors, key = lambda a: a[1])
-		
-		return [l[0] for l in neighbors]
+	def pickSnapPair(self):
+		self._quizTarget = random.sample(self._keystones, 1)[0]
+		self._quizSource = random.sample(self.getAdjacent(self._quizTarget, self.getEnabled())[:5],1)[0]
+		self._quizPanel.setFields(self._quizSource.name, self._quizTarget.name)
 
 	def snapCheck(self):
 		"""
@@ -441,7 +470,14 @@ class TestMode(PuzzleController):
 		# Search through all of the checkers, and snap to the first one meeting our snap
 		# criteria
 		enabled = [m for m in self._meshes if m.getEnabled()]
-		for bone in [b for b in enabled if b not in source.group.members]:
+		if self._snapAttempts >= 3:
+			self.snap(self._quizSource, self._quizTarget)
+			viz.playSound(".\\dataset\\snap.wav")
+			print 'Three unsuccessful snap attempts, snapping now!'
+			self._snapAttempts = 0
+			self.pickSnapPair()
+			return
+		for bone in [b for b in [self._quizTarget] if b not in source.group.members]:
 			targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
 			targetPosition = bone.getPosition(viz.ABS_GLOBAL)
 			targetQuat = bone.getQuat(viz.ABS_GLOBAL)
@@ -458,7 +494,8 @@ class TestMode(PuzzleController):
 				print 'Snap! ', source, ' to ', bone
 				self.score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
 				viz.playSound(".\\dataset\\snap.wav")
-				self.snap(source, bone)				
+				self.snap(source, bone)
+				self.pickSnapPair()
 				if len(self._meshes) == len(source.group.members):
 					print "Assembly completed!"
 					end()
@@ -473,6 +510,7 @@ class TestMode(PuzzleController):
 		"""
 		Overridden snap that adds more bones
 		"""
+		print "snapping ", sourceMesh, " to ", targetMesh
 		self.moveCheckers(sourceMesh)
 		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
 		targetMesh.group.merge(sourceMesh)
@@ -480,7 +518,7 @@ class TestMode(PuzzleController):
 			self._keystones.append(sourceMesh)
 		if add:
 			# Add more bones
-			disabled = [m for m in self._meshes if not m.getEnabled()]
+			disabled = self.getDisabled()
 			keystone = random.sample(self._keystones, 1)[0]
 			try:
 				m = self.getAdjacent(keystone, disabled)[random.randint(0,3)]

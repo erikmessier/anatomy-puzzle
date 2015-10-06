@@ -242,7 +242,7 @@ class DisplayInstance():
 			viz.setMultiSample(4)
 			viz.fov(60)
 			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
-			viz.window.setFullscreenMonitor(1)
+			viz.window.setFullscreenMonitor(2)
 
 		elif self.displayMode == 1:
 			viz.setMultiSample(4)
