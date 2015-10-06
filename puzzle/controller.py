@@ -206,8 +206,14 @@ class PuzzleController(object):
 			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 	#		score.event(event = 'grab', source = target.name)
 			self.transparency(target, 0.7)
+			self._meshesById[target.id].mesh.color(0,1,0.5)
+			self._meshesById[target.id].tooltip.visible(viz.ON)
+#			self._meshesById[target.id].nameLine.visible(viz.ON)
+			if target != self._lastGrabbed and self._lastGrabbed:
+				self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,1.0])
+				self._meshesById[self._lastGrabbed.id].tooltip.visible(viz.OFF)
+#				self._meshesById[self._lastGrabbed.id].nameLine.visible(viz.OFF)
 			self._lastGrabbed = target
-			print self._lastGrabbed
 	#	elif not self._grabFlag:
 	#		score.event(event = 'grab')
 		self._grabFlag = True
@@ -245,16 +251,17 @@ class PuzzleController(object):
 		return proxList[0]
 
 	def EnterProximity(self, e):
-		source = e.sensor.getSourceObject
-		print model.pointer
-		self._meshesById[source.id].mesh.color([1.0,1.0,0.5])
-		self._meshesById[source.id].setNameAudioFlag(1)
+		source = e.sensor.getSourceObject()
+		if source != self._lastGrabbed:
+			self._meshesById[source.id].mesh.color([1.0,1.0,0.5])
+			self._meshesById[source.id].setNameAudioFlag(1)
 		self._proximityList.append(source)
 	
 	def ExitProximity(self, e):
 		source = e.sensor.getSourceObject()
-		self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
-		self._meshesById[source.id].setNameAudioFlag(0)
+		if source != self._lastGrabbed:
+			self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
+			self._meshesById[source.id].setNameAudioFlag(0)
 		self._proximityList.remove(source)
 	#	removeBoneInfo(model.getMeshsource.id))
 	
