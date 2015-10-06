@@ -211,7 +211,6 @@ class PuzzleController(object):
 				self.snap(source, bone)				
 				if len(self._meshes) == len(source.group.members):
 					print "Assembly completed!"
-					end()
 					menu.ingame.endButton()
 				break
 		else:
@@ -238,18 +237,25 @@ class PuzzleController(object):
 
 	def grab(self):
 		"""Grab in-range objects with the pointer"""
-		grabList = [b for b in self._proximityList if not b.group.grounded] # Needed for disabling grab of grounded bones
+		grabList = self._proximityList # Needed for disabling grab of grounded bones
 		if len(grabList) > 0 and not self._grabFlag:
 			target = self.getClosestBone(model.pointer,grabList)
-			target.setGroupParent()
-			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
-	#		score.event(event = 'grab', source = target.name)
-			self.transparency(target, 0.7)
-			self._meshesById[target.id].mesh.color(0,1,0.5)
-			self._meshesById[target.id].tooltip.visible(viz.ON)
-#			self._meshesById[target.id].nameLine.visible(viz.ON)
+			if target.group.grounded:
+				self._meshesById[target.id].mesh.color(0,1,0.5)
+				self._meshesById[target.id].tooltip.visible(viz.ON)
+			else:
+				target.setGroupParent()
+				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
+		#		score.event(event = 'grab', source = target.name)
+				self.transparency(target, 0.7)
+				self._meshesById[target.id].mesh.color(0,1,0.5)
+				self._meshesById[target.id].tooltip.visible(viz.ON)
+	#			self._meshesById[target.id].nameLine.visible(viz.ON)
 			if target != self._lastGrabbed and self._lastGrabbed:
 				self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,1.0])
+				for m in self._proximityList: 
+					if m == self._lastGrabbed:
+						self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,0.5])
 				self._meshesById[self._lastGrabbed.id].tooltip.visible(viz.OFF)
 #				self._meshesById[self._lastGrabbed.id].nameLine.visible(viz.OFF)
 			self._lastGrabbed = target
@@ -291,6 +297,7 @@ class PuzzleController(object):
 
 	def EnterProximity(self, e):
 		source = e.sensor.getSourceObject()
+		model.pointer.color([4.0,1.5,1.5])
 		obj = self._meshesById[source.id]
 		if source != self._lastGrabbed:
 			obj.mesh.color([1.0,1.0,0.5])
@@ -299,6 +306,8 @@ class PuzzleController(object):
 	
 	def ExitProximity(self, e):
 		source = e.sensor.getSourceObject()
+		if len(self._proximityList):
+			model.pointer.color([1.0,1.0,1.0])
 		if source != self._lastGrabbed:
 			self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
 			self._meshesById[source.id].setNameAudioFlag(0)
