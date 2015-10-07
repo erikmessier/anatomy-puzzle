@@ -41,7 +41,7 @@ def main():
 
 	glovePhys = glove.collideSphere()
 	glove.setPosition([0,1,0])
-	glove.setScale([2,2,2])
+	glove.setScale([1,1,1])
 
 	# Initialize environment this will load the coliseum and sky
 	sky = viz.addChild('sky_day.osgb')

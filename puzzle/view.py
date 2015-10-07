@@ -42,8 +42,10 @@ class TestSnapPanel(vizdlg.Panel):
 		#bones to be snapped. source snapped to target.
 		source = 'a'*20
 		self.sourceText = viz.addTextbox(parent = self.canvas)
+		self.sourceText.setLength(1.5)
 		target = 'a'*20
 		self.targetText = viz.addTextbox(parent = self.canvas)
+		self.targetText.setLength(1.5)
 		
 		#instructions 
 		self.Instruct1 = self.addItem(viz.addText('Snap the: ', parent = self.canvas), align = viz.ALIGN_CENTER_TOP)
@@ -54,9 +56,9 @@ class TestSnapPanel(vizdlg.Panel):
 		#render canvas
 		#render canvas
 		bb = self.getBoundingBox()
-		self.canvas.setRenderWorld([bb.height, bb.width],[3, 3*1.333])
+		self.canvas.setRenderWorld([bb.height, bb.width],[4, 3*1.333])
 		#on esc toggle menu (doesn't interfere with in-game menu)
-		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
+#		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
 		self.canvas.setPosition(0,2,5)
 		self.canvas.resolution(self.canvas.getResolution())
 #		self.canvas.billboard(viz.BILLBOARD_VIEW_POS)

@@ -383,7 +383,7 @@ class DatasetInterface():
 			reader.next()
 			for line in reader:
 				if not FMAPartOfElement.has_key(line[0]):
-					FMAPartOfElement[line[0]] = {'concept':line[0],'name':line[1],'filenames':[]}
+					FMAPartOfElement[line[0]] = {'concept':line[0],'name':line[1],'filenames':[line[2]]}
 				else:
 					FMAPartOfElement[line[0]]['filenames'].append(line[2])
 		return FMAPartOfElement

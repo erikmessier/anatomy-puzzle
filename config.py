@@ -21,11 +21,11 @@ class DisplayMode:
 	oculus		= 2
 	label = {'Regular Computer': 0, '3D TV': 1, 'Occulus Rift': 2}
 
-dispMode = DisplayMode.computer
+dispMode = DisplayMode.oculus
 menuScaleConfig = { \
 	0:{'main':1.2, 'game':.75, 'ingame': 1, 'test':2}, \
 	1:{'main':.5, 'game':.3, 'ingame': 1, 'test': 1}, \
-	2:{'main':1, 'game':1, 'ingame': 1, 'test': 2}}
+	2:{'main':1, 'game':0.75, 'ingame': 1, 'test': 2}}
 menuScale = menuScaleConfig[dispMode]
 
 ##############################
@@ -90,5 +90,5 @@ a SpaceMouse, see the code to enable wx/ad/ze control of the glove instead.
 """
 Position and Orientation Vectors Scales for spacemouse control 
 """
-positionVector = [.0001,.0001,.0001]
+positionVector = [.00005,.00005,.00005]
 orientationVector = [0,0,0]

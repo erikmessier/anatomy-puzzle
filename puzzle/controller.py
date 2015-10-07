@@ -95,6 +95,7 @@ class PuzzleController(object):
 		for i, fileName in enumerate(meshes):
 			# This is the actual mesh we will see
 			b = model.Mesh(fileName)
+			print b.name
 			if (not randomize):
 				#Hardcoded keystone
 				b.setPosition([0.0,1.5,0.0])

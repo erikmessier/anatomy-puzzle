@@ -64,9 +64,9 @@ class MainMenu(vizinfo.InfoPanel):
 		self.exit = self.addItem(viz.addButtonLabel('Exit'), fontSize = 50)
 		vizact.onbuttondown(self.exit, self.exitButton)
 		
-		#rendering
-		bb = self.getBoundingBox()
-		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
+#		#rendering
+#		bb = self.getBoundingBox()
+#		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])

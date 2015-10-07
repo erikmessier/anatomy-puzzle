@@ -241,9 +241,9 @@ class DisplayInstance():
 		if self.displayMode == 0:
 			viz.setMultiSample(4)
 			viz.fov(60)
-			viz.go()
-#			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
-#			viz.window.setFullscreenMonitor(2)
+#			viz.go()
+			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
+			viz.window.setFullscreenMonitor(1)
 
 		elif self.displayMode == 1:
 			viz.setMultiSample(4)
@@ -293,14 +293,18 @@ class DisplayInstance():
 				viewlink.preMultLinkable(self.hmd.getSensor())
 				camlink = viz.link(self.camcenter,navigationNode)
 				
+				#set initial positions
+				camlink.preEuler([0,0,0])
+				camlink.preTrans([0,0,-3.25])
+				
 
 			#2D display
 			else:
 				camlink = viz.link(self.camcenter,viz.MainView)
 			
-			#set initial positions
-			camlink.preEuler([0,30,0])
-			camlink.preTrans([0,0,-5])
+				#set initial positions
+				camlink.preEuler([0,30,0])
+				camlink.preTrans([0,0,-5])
 
 			
 			#instantiate control class
@@ -475,7 +479,7 @@ def pointerInput(mode, pointer,arena):
 #		MainViewShadow.disable(viz.RENDERING)
 #		viz.link(viz.MainView, MainViewShadow)
 		
-		#make glove (pointer) child of MainViewShadow
+		#make glove () child of MainViewShadow
 		
 		#fixedRotation = viz.link(MainViewShadow,pointer)
 		#fixedRotation.setMask(viz.LINK_ORI)
