@@ -31,7 +31,8 @@ class PuzzleController(object):
 	the game mode functionality you want.
 	"""
 	def __init__(self):
-		#self._groups = None
+		self.modeName = ''
+		
 		self._meshes		= []
 		self._meshesById	= {}
 		self._keystones		= []
@@ -74,7 +75,7 @@ class PuzzleController(object):
 		# start the clock
 		time.clock()
 
-		self.score = PuzzleScore()
+		self.score = PuzzleScore(self.modeName)
 		
 #		viztask.schedule(soundTask(glove))
 
@@ -186,6 +187,8 @@ class PuzzleController(object):
 			self.snap(self._lastGrabbed, targetMesh)
 			viz.playSound(".\\dataset\\snap.wav")
 			print 'Three unsuccessful snap attempts, snapping now!'
+			self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
+				source = source.name, destination = targetMesh.name)
 			self._snapAttempts = 0
 			return
 		elif self._lastGrabbed.group.grounded:
@@ -206,7 +209,7 @@ class PuzzleController(object):
 			if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
 					and (angleDifference < ANGLE_THRESHOLD):
 				print 'Snap! ', source, ' to ', bone
-				self.score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
+				self.score.event(event = 'snap', description = 'Successful snap', source = source.name, destination = bone.name)
 				viz.playSound(".\\dataset\\snap.wav")
 				self.snap(source, bone)				
 				if len(self._meshes) == len(source.group.members):
@@ -216,7 +219,7 @@ class PuzzleController(object):
 		else:
 			print 'Did not meet snap criteria!'
 			self._snapAttempts += 1
-			self.score.event(event = 'release', source = source.name)
+			self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = source.name)
 
 	def snap(self, sourceMesh, targetMesh):
 		self.moveCheckers(sourceMesh)
@@ -236,7 +239,9 @@ class PuzzleController(object):
 			[m.snap(meshes[0], animate = False) for m in meshes[1:]]
 
 	def grab(self):
-		"""Grab in-range objects with the pointer"""
+		"""
+		Grab in-range objects with the pointer
+		"""
 		grabList = self._proximityList # Needed for disabling grab of grounded bones
 		if len(grabList) > 0 and not self._grabFlag:
 			target = self.getClosestBone(model.pointer,grabList)
@@ -246,36 +251,33 @@ class PuzzleController(object):
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
-		#		score.event(event = 'grab', source = target.name)
+				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
 				self.transparency(target, 0.7)
 				self._meshesById[target.id].mesh.color(0,1,0.5)
 				self._meshesById[target.id].tooltip.visible(viz.ON)
-	#			self._meshesById[target.id].nameLine.visible(viz.ON)
 			if target != self._lastGrabbed and self._lastGrabbed:
 				self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,1.0])
 				for m in self._proximityList: 
 					if m == self._lastGrabbed:
 						self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,0.5])
 				self._meshesById[self._lastGrabbed.id].tooltip.visible(viz.OFF)
-#				self._meshesById[self._lastGrabbed.id].nameLine.visible(viz.OFF)
 			self._lastGrabbed = target
-	#	elif not self._grabFlag:
-	#		score.event(event = 'grab')
 		self._grabFlag = True
 
 	def release(self):
-		"""Release grabbed object from pointer"""
+		"""
+		Release grabbed object from pointer
+		"""
 		if self._gloveLink:
 			self.transparency(self._lastGrabbed, 1.0)
 			self._gloveLink.remove()
 			self._gloveLink = None
-		else:
 			self.score.event(event = 'release')
 		self._grabFlag = False
-		
+
 	def getClosestBone(self, pointer, proxList):
 		"""
-		looks through proximity list and searches for the closest bone to the glove and puts it at
+		Looks through proximity list and searches for the closest bone to the glove and puts it at
 		the beginning of the list
 		"""
 		if(len(proxList) >0):
@@ -312,11 +314,10 @@ class PuzzleController(object):
 			self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
 			self._meshesById[source.id].setNameAudioFlag(0)
 		self._proximityList.remove(source)
-	#	removeBoneInfo(model.getMeshsource.id))
 	
 	def implode(self):
 		"""
-		move bones to solved positions
+		Move bones to solved positions
 		"""
 		target = self._keystones[0] #keystone
 		for m in self._meshes[1:]:
@@ -331,7 +332,7 @@ class PuzzleController(object):
 
 	def explode(self):
 		"""
-		move bones to position before implode was called
+		Move bones to position before implode was called
 		"""
 		for m in self._meshes[1:]:
 			if m.getAction():
@@ -342,7 +343,7 @@ class PuzzleController(object):
 
 	def solve(self):
 		"""
-		operator used to toggle between implode and explode
+		Operator used to toggle between implode and explode
 		"""
 		if self._imploded == False:
 			self.implode()
@@ -350,9 +351,11 @@ class PuzzleController(object):
 			self.explode()
 
 	def end(self):
-		"""Do everything that needs to be done to end the puzzle game"""
+		"""
+		Do everything that needs to be done to end the puzzle game
+		"""
 		print "Puzzle Quitting!"
-	#	score.close()
+		self.score.close()
 		model.proxManager.clearSensors()
 		model.proxManager.clearTargets()
 		model.proxManager.remove()
@@ -370,13 +373,15 @@ class PuzzleController(object):
 		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_CONTROL_R, self.solve))
 		
-class FreePlayMode(PuzzleController):
+class FreePlay(PuzzleController):
 	def __init__(self):
-		super(FreePlayMode, self).__init__()
+		super(FreePlay, self).__init__()
+		self.modeName = 'freeplay'
 
-class TestMode(PuzzleController):
+class TestPlay(PuzzleController):
 	def __init__(self):
-		super(TestMode, self).__init__()
+		super(TestPlay, self).__init__()
+		self.modeName = 'testplay'
 		
 		self._meshesDisabled	= []
 		self._keystoneAdjacent	= {}
@@ -418,7 +423,7 @@ class TestMode(PuzzleController):
 		# start the clock
 		time.clock()
 
-		self.score = PuzzleScore()
+		self.score = PuzzleScore(self.modeName)
 		
 #		viztask.schedule(soundTask(glove))
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
@@ -458,8 +463,12 @@ class TestMode(PuzzleController):
 		
 	def pickSnapPair(self):
 		self._quizTarget = random.sample(self._keystones, 1)[0]
+		if len(self.getEnabled()) == 0:
+			return
 		self._quizSource = random.sample(self.getAdjacent(self._quizTarget, self.getEnabled())[:5],1)[0]
 		self._quizPanel.setFields(self._quizSource.name, self._quizTarget.name)
+		self.score.event(event = 'pickpair', description = 'Picked new pair of bones to snap', \
+			source = self._quizSource.name, destination = self._quizTarget.name)
 
 	def snapCheck(self):
 		"""
@@ -474,15 +483,17 @@ class TestMode(PuzzleController):
 		DISTANCE_THRESHOLD = 1.5;
 		ANGLE_THRESHOLD = 45;
 		source = self._meshesById[self._quizSource.id]
-		self.moveCheckers(self._quizSource)
+		self.moveCheckers(source)
 			
 		# Search through all of the checkers, and snap to the first one meeting our snap
 		# criteria
 		enabled = [m for m in self._meshes if m.getEnabled()]
 		if self._snapAttempts >= 3:
-			self.snap(self._quizSource, self._quizTarget)
+			self.snap(source, self._quizTarget)
 			viz.playSound(".\\dataset\\snap.wav")
 			print 'Three unsuccessful snap attempts, snapping now!'
+			self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
+				source = source.name, destination = self._quizTarget.name)
 			self._snapAttempts = 0
 			self.pickSnapPair()
 			return
@@ -501,7 +512,7 @@ class TestMode(PuzzleController):
 			if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
 					and (angleDifference < ANGLE_THRESHOLD):
 				print 'Snap! ', source, ' to ', bone
-				self.score.event(event = 'release', source = source.name, destination = bone.name, snap = True)
+				self.score.event(event = 'snap', description = 'Successful snap', source = source.name, destination = bone.name)
 				viz.playSound(".\\dataset\\snap.wav")
 				self.snap(source, bone)
 				self.pickSnapPair()
@@ -511,9 +522,9 @@ class TestMode(PuzzleController):
 					menu.ingame.endButton()
 				break
 		else:
-			print 'did not meet snap criteria'
+			print 'Did not meet snap criteria'
 			self._snapAttempts += 1
-			self.score.event(event = 'release', source = source.name)
+			self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = source.name)
 			
 	def snap(self, sourceMesh, targetMesh, add = True):
 		"""
@@ -528,25 +539,29 @@ class TestMode(PuzzleController):
 		if add:
 			# Add more bones
 			disabled = self.getDisabled()
+			if len(disabled) == 0:
+				return
 			keystone = random.sample(self._keystones, 1)[0]
 			try:
 				m = self.getAdjacent(keystone, disabled)[random.randint(0,3)]
-			except ValueError:
+			except (ValueError, IndexError):
 				m = self.getAdjacent(keystone, disabled)[0]
 			m.enable(animate = True)
 			
 class PuzzleScore():
-	"""Handles scoring for the puzzle game"""
-	def __init__(self):
+	"""
+	Handles scoring for the puzzle game
+	"""
+	def __init__(self, modeName):
 		"""Init score datastructure, open up csv file"""
 		self.startTime = datetime.datetime.now()
-		self.scoreFile = open('.\\log\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.csv', 'wb')
+		self.scoreFile = open('.\\log\\'+ modeName + '\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.csv', 'wb')
 		self.csv = csv.writer(self.scoreFile)
 		
 		# Starting score
 		self.score = 100
 		
-		self.header = ['timestamp','event','source','destination','snap']
+		self.header = ['timestamp','event','description','source','destination']
 		self.events = []
 		
 		self.csv.writerow(self.header)
@@ -555,31 +570,32 @@ class PuzzleScore():
 		self.textbox.setPosition(0.8,0.1)
 		self.textbox.message('Score: ' + str(self.score))
 	
-	def event(self, event = "release", source = None, destination = None, snap = False):
-		"""Record an event in the score history"""
+	def event(self, event = None, description = None, source = None, destination = None):
+		"""
+		Record an event in the score history
+		"""
 		print 'Score event!'
-		currentEvent = dict(zip(self.header,[time.clock(), event, source, destination, snap]))
+		currentEvent = dict(zip(self.header,[time.clock(), event, description, source, destination]))
 		self.events.append(currentEvent)
 		self.csv.writerow([self.events[-1][column] for column in self.header])
 		
 		self.update(self.events)
 		
 	def update(self, events):
-		"""Iterative f calculation"""
-		"""From Alex: So, start with 100 points, if you grab and release, it's minus 10,
-		if you snap it's plus 10 if. You snap again, it's plus 20 and so on."""
+		"""
+		Iterative score calculation
+		"""
 		curEvent = events[-1]
-		
-		if (curEvent['event'] == 'release'):
-			if curEvent['snap']:
-				self.score += 10
-			elif len(events) > 2:
-				if events[-3]['source'] == curEvent['source']:
-					pass
-				elif curEvent['source'] != None:
-					self.score -= 10
-			elif curEvent['source'] != None:
-				self.score -= 10
+#		
+#		if curEvent['snap']:
+#			self.score += 10
+#		elif len(events) > 2:
+#			if events[-3]['source'] == curEvent['source']:
+#				pass
+#			elif curEvent['source'] != None:
+#				self.score -= 10
+#		elif curEvent['source'] != None:
+#			self.score -= 10
 		
 		self.textbox.message('Score: ' + str(self.score))
 	
@@ -596,7 +612,7 @@ def end():
 		controlInst.end()
 	except AttributeError:
 		print 'Not initialized'
-	del(controlInst)
+#	del(controlInst)
 
 def start(mode, dataset):
 	"""
@@ -605,9 +621,9 @@ def start(mode, dataset):
 	global controlInst
 	
 	if mode == 'Free Play':
-		controlInst = FreePlayMode()
+		controlInst = FreePlay()
 	elif mode == 'Quiz Mode':
-		controlInst = TestMode()
+		controlInst = TestPlay()
 	controlInst.load(dataset)
 
 def csvToList(location):

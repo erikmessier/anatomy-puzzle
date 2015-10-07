@@ -346,6 +346,7 @@ def grab(outline, dog):
 	global grabFlag
 	global glove
 	if outline.getAction() or dog.getAction():
+		recordData.event(event = 'grab', result = 'Did Not Pick Up')
 		return
 	if not gloveLink and len(proxList)>0:
 		target = proxList[0]
