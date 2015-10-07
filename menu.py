@@ -17,13 +17,13 @@ import viztip
 #custom modules
 import config
 import puzzle
-import Tutorial
 
 def init():
 	"""Create global menu instance"""
 	global main
 	global game
 	global ingame
+	global canvas
 
 	canvas = viz.addGUICanvas()
 #	canvas.setRenderWorldOverlay([2000,2000],60,1)
@@ -66,7 +66,7 @@ class MainMenu(vizinfo.InfoPanel):
 		
 		#rendering
 		bb = self.getBoundingBox()
-		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 3)
+		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
@@ -195,6 +195,10 @@ class GameMenu(vizinfo.InfoPanel):
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 		
+		#rendering
+		bb = self.getBoundingBox()
+		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
+		
 	def start(self):
 		self.mode = []
 		self.loadLayers = []
@@ -202,28 +206,30 @@ class GameMenu(vizinfo.InfoPanel):
 		for i in self.checkBox.keys():
 			if self.checkBox[i].get() == 1:
 				self.loadLayers.append(i)
+				
 		for i in self.radioButtons.keys():
 			if self.radioButtons[i].get() == 1:
 				self.mode.append(i)
-		if len(self.loadLayers) != 0:
+
+		if self.mode[0] == 'Movement Tutorial':
+			puzzle.tutorial.init()
+			self.setPanelVisible(viz.OFF)
+			self.canvas.setCursorVisible(viz.OFF)
+			self.active = False
+			ingame.active = True
+			
+		else:
 			print str(self.mode[0]) + ' was selected'
 			try:
-				puzzle.load(self.loadLayers)
+				puzzle.controller.start(self.mode[0], self.loadLayers)
 			except KeyError:
-				pass
+				print "Dataset does not exist!"
+				raise
+				
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
 			self.active = False
 			ingame.active = True
-		elif self.mode[0] == 'Movement Tutorial':
-			Tutorial.init()
-			self.setPanelVisible(viz.OFF)
-			self.canvas.setCursorVisible(viz.OFF)
-			self.active = False
-			ingame.active = True
-		else: 
-			print str(self.mode[0]) + ' was selected'
-			print 'No Layer Was Selected!'
 	
 	def setDataset(self, name):
 		self.dataset = name
@@ -233,6 +239,7 @@ class GameMenu(vizinfo.InfoPanel):
 		main.setPanelVisible(viz.ON, animate = True)
 		self.active = False
 		main.active = True
+		
 	def toggle(self):
 		if(self.menuVisible == True):
 			self.setPanelVisible(False)
@@ -268,19 +275,19 @@ class InGameMenu(vizinfo.InfoPanel):
 
 	def restartButton(self):
 		if game.mode[0] == 'Movement Tutorial':
-			Tutorial.tutorial.end()
-			puzzle.glove.setPosition(Tutorial.tutorial.gloveStart)
-			Tutorial.init()
+			puzzle.tutorial.Tutorial.end()
+			puzzle.tutorial.init()
 		else:
-			puzzle.end()
-			puzzle.load(game.loadLayers)
+			puzzle.controller.end()
+			puzzle.controller.start(game.mode[0],game.loadLayers)
 		self.toggle()
 	
 	def endButton(self):
 		if game.mode[0] == 'Movement Tutorial':
-			Tutorial.tutorial.end()
-			Tutorial.recordData.close()
-		puzzle.end()
+			puzzle.tutorial.Tutorial.end()
+			puzzle.tutorial.recordData.close()
+		else:
+			puzzle.controller.end()
 		self.toggle()
 		self.active = False
 		main.active = True

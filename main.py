@@ -19,24 +19,20 @@ import init
 import menu	
 import puzzle
 import config
-import model
 
 #import overHeadMenu
-
 
 def main():
 	### Configuration parameters
 	# moved to config.py
 
-
 	### Game startup
 	#overwrite escape key
 	viz.setOption('viz.default_key.quit','0')
- 
+	
 	# Physics
 	viz.phys.enable()
 	#viz.phys.setGravity(0,0,0)
-
 
 	# Initialize pointer tool
 	# Unused?
@@ -57,7 +53,7 @@ def main():
 	device = init.pointerInput(config.pointerMode, glove, sky)
 
 	# Initialize display
-	model.display = init.DisplayInstance(config.dispMode,config.camMode,device,glove)
+	puzzle.model.display = init.DisplayInstance(config.dispMode,config.camMode,device,glove)
 	#init.display(config.dispMode)
 
 	# Initialize camera controls
@@ -65,19 +61,13 @@ def main():
 
 	# Launch menu system
 	menu.init()
-	puzzle.setPointer(glove)
-	puzzle.init()
-	puzzle.setDisplay(model.display)
+	puzzle.model.pointer = glove
 	
-	# Escape Key calls main menu
+	# Override default escape key map to call main menu
 	vizact.onkeydown(viz.KEY_ESCAPE, menu.toggle)
 
 	# Stuff to run on program termination
-	vizact.onexit(puzzle.end)
-
-	# Will move this out of main and where it belongs
-	viewcube = puzzle.viewCube()
-	vizact.onkeydown('65460', viewcube.toggleModes) # '4' key
+	vizact.onexit(puzzle.controller.end)
 	
 
 if __name__ == '__main__':
