@@ -17,7 +17,7 @@ import random
 import controller as puzzle
 import config
 import model
-
+import menu
 def init():
 	global proxList
 	global snapTransitionTime
@@ -210,7 +210,7 @@ class InterfaceTutorial():
 			# X AXIS POS TRANSFORMATION
 			config.positionVector = [.0001,0,0]
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along x-axis')
-			randomPos = [random.randrange(-1,2,2), 0,0]
+			randomPos = [4*(random.random()-0.5), 0,0]
 			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
@@ -219,7 +219,7 @@ class InterfaceTutorial():
 			#Y AXIS POS TRANS
 			config.positionVector = [0,.0001,0]
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along y-axis')
-			randomPos = [0, random.randrange(-1,2,2),0]
+			randomPos = [0, 2*(random.random()-0.5),0]
 			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
@@ -228,7 +228,7 @@ class InterfaceTutorial():
 			#Z AXIS POS TRANS
 			config.positionVector = [0,0,.0001]
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along z-axis')
-			randomPos = [0,0,random.randrange(-1,2,2)]
+			randomPos = [0,0,4*(random.random()-0.5)]
 			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
@@ -288,7 +288,7 @@ class InterfaceTutorial():
 		elif self.iterations>3 and self.iterations<=9:
 			#ALL AXES POS AND ANG TRANS
 			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
-			randomPos = [random.randrange(-1,1,1),random.randrange(0,2,1),random.randrange(-1,1,1)]
+			randomPos = [4*(random.random()-0.5),2*(random.random()-0.5),4*(random.random()-0.5)]
 #			randomEuler = [random.randint(-90,90),random.randint(-90,90),random.randint(-90,90)]
 			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
 #			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
@@ -298,6 +298,7 @@ class InterfaceTutorial():
 
 		else:
 			#END
+			menu.ingame.toggle()
 			config.orientationVector = self.origOrienVec
 			config.positionVector = self.origPosVec
 			recordData.event(event = 'FINISHED', result = 'FINISHED')

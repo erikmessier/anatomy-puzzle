@@ -288,7 +288,8 @@ class InGameMenu(vizinfo.InfoPanel):
 			puzzle.tutorial.recordData.close()
 		else:
 			puzzle.controller.end()
-		self.toggle()
+		self.setPanelVisible(False)
+		self.menuVisible = False
 		self.active = False
 		main.active = True
 		main.menuVisible = True

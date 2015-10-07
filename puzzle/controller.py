@@ -190,36 +190,35 @@ class PuzzleController(object):
 			self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
 				source = source.name, destination = targetMesh.name)
 			self._snapAttempts = 0
-			return
 		elif self._lastGrabbed.group.grounded:
 			print 'That bone is grounded. Returning!'
-			return
-		for bone in [b for b in enabled if b not in source.group.members]:
-			targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
-			targetPosition = bone.getPosition(viz.ABS_GLOBAL)
-			targetQuat = bone.getQuat(viz.ABS_GLOBAL)
-			
-			currentPosition = source.getPosition(viz.ABS_GLOBAL)
-			currentQuat = source.getQuat(viz.ABS_GLOBAL)		
-			
-			snapDistance = vizmat.Distance(targetSnap, currentPosition)
-			proximityDistance = vizmat.Distance(targetPosition, currentPosition)
-			angleDifference = vizmat.QuatDiff(bone.getQuat(), source.getQuat())
-			
-			if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
-					and (angleDifference < ANGLE_THRESHOLD):
-				print 'Snap! ', source, ' to ', bone
-				self.score.event(event = 'snap', description = 'Successful snap', source = source.name, destination = bone.name)
-				viz.playSound(".\\dataset\\snap.wav")
-				self.snap(source, bone)				
-				if len(self._meshes) == len(source.group.members):
-					print "Assembly completed!"
-					menu.ingame.endButton()
-				break
 		else:
-			print 'Did not meet snap criteria!'
-			self._snapAttempts += 1
-			self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = source.name)
+			for bone in [b for b in enabled if b not in source.group.members]:
+				targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
+				targetPosition = bone.getPosition(viz.ABS_GLOBAL)
+				targetQuat = bone.getQuat(viz.ABS_GLOBAL)
+				
+				currentPosition = source.getPosition(viz.ABS_GLOBAL)
+				currentQuat = source.getQuat(viz.ABS_GLOBAL)		
+				
+				snapDistance = vizmat.Distance(targetSnap, currentPosition)
+				proximityDistance = vizmat.Distance(targetPosition, currentPosition)
+				angleDifference = vizmat.QuatDiff(bone.getQuat(), source.getQuat())
+				
+				if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
+						and (angleDifference < ANGLE_THRESHOLD):
+					print 'Snap! ', source, ' to ', bone
+					self.score.event(event = 'snap', description = 'Successful snap', source = source.name, destination = bone.name)
+					viz.playSound(".\\dataset\\snap.wav")
+					self.snap(source, bone)				
+					break
+			else:
+				print 'Did not meet snap criteria!'
+				self._snapAttempts += 1
+				self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = source.name)
+		if len(self._meshes) == len(source.group.members):
+			print "Assembly completed!"
+			menu.ingame.endButton()
 
 	def snap(self, sourceMesh, targetMesh):
 		self.moveCheckers(sourceMesh)
@@ -496,36 +495,36 @@ class TestPlay(PuzzleController):
 				source = source.name, destination = self._quizTarget.name)
 			self._snapAttempts = 0
 			self.pickSnapPair()
-			return
-		for bone in [b for b in [self._quizTarget] if b not in source.group.members]:
-			targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
-			targetPosition = bone.getPosition(viz.ABS_GLOBAL)
-			targetQuat = bone.getQuat(viz.ABS_GLOBAL)
-			
-			currentPosition = source.getPosition(viz.ABS_GLOBAL)
-			currentQuat = source.getQuat(viz.ABS_GLOBAL)		
-			
-			snapDistance = vizmat.Distance(targetSnap, currentPosition)
-			proximityDistance = vizmat.Distance(targetPosition, currentPosition)
-			angleDifference = vizmat.QuatDiff(bone.getQuat(), source.getQuat())
-			
-			if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
-					and (angleDifference < ANGLE_THRESHOLD):
-				print 'Snap! ', source, ' to ', bone
-				self.score.event(event = 'snap', description = 'Successful snap', source = source.name, destination = bone.name)
-				viz.playSound(".\\dataset\\snap.wav")
-				self.snap(source, bone)
-				self.pickSnapPair()
-				if len(self._meshes) == len(source.group.members):
-					print "Assembly completed!"
-					end()
-					menu.ingame.endButton()
-				break
 		else:
-			print 'Did not meet snap criteria'
-			self._snapAttempts += 1
-			self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = source.name)
-			
+			for bone in [b for b in [self._quizTarget] if b not in source.group.members]:
+				targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
+				targetPosition = bone.getPosition(viz.ABS_GLOBAL)
+				targetQuat = bone.getQuat(viz.ABS_GLOBAL)
+				
+				currentPosition = source.getPosition(viz.ABS_GLOBAL)
+				currentQuat = source.getQuat(viz.ABS_GLOBAL)		
+				
+				snapDistance = vizmat.Distance(targetSnap, currentPosition)
+				proximityDistance = vizmat.Distance(targetPosition, currentPosition)
+				angleDifference = vizmat.QuatDiff(bone.getQuat(), source.getQuat())
+				
+				if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
+						and (angleDifference < ANGLE_THRESHOLD):
+					print 'Snap! ', source, ' to ', bone
+					self.score.event(event = 'snap', description = 'Successful snap', source = source.name, destination = bone.name)
+					viz.playSound(".\\dataset\\snap.wav")
+					self.snap(source, bone)
+					self.pickSnapPair()
+					break
+			else:
+				print 'Did not meet snap criteria'
+				self._snapAttempts += 1
+				self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = source.name)
+		if len(self._meshes) == len(source.group.members):
+			print "Assembly completed!"
+			end()
+			menu.ingame.endButton()
+				
 	def snap(self, sourceMesh, targetMesh, add = True):
 		"""
 		Overridden snap that adds more bones

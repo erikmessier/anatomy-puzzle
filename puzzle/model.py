@@ -60,6 +60,7 @@ class BoneGroup():
 	def merge(self, source):
 		"""Merge group members into this group and delete"""
 		self.members += source.group.members
+		self.members = list(set(self.members))
 		#del source.group
 		for b in source.group.members:
 			b.setGroup(self)
