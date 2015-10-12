@@ -124,7 +124,7 @@ class PuzzleController(object):
 	def unloadBones(self):
 		"""Unload all of the bone objects to reset the puzzle game"""
 		for m in self._meshes:
-	#		m.textRemove()
+			m.textRemove()
 			m.remove(children = True)
 		
 	def transparency(self, source, level, includeSource = False):
@@ -247,20 +247,23 @@ class PuzzleController(object):
 			target = self.getClosestBone(model.pointer,grabList)
 			if target.group.grounded:
 				self._meshesById[target.id].mesh.color(0,1,0.5)
-				self._meshesById[target.id].tooltip.visible(viz.ON)
+				if menuMode != 'Quiz Mode': #quick fix for tool tip not being displayed in quiz mode(global menuMode is declared in def start)
+					self._meshesById[target.id].tooltip.visible(viz.ON)
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
 				self.transparency(target, 0.7)
 				self._meshesById[target.id].mesh.color(0,1,0.5)
-				self._meshesById[target.id].tooltip.visible(viz.ON)
+				if menuMode != 'Quiz Mode':
+					self._meshesById[target.id].tooltip.visible(viz.ON)
 			if target != self._lastGrabbed and self._lastGrabbed:
 				self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,1.0])
 				for m in self._proximityList: 
 					if m == self._lastGrabbed:
 						self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,0.5])
-				self._meshesById[self._lastGrabbed.id].tooltip.visible(viz.OFF)
+				if menuMode != 'Quiz Mode':
+					self._meshesById[self._lastGrabbed.id].tooltip.visible(viz.OFF)
 			self._lastGrabbed = target
 		self._grabFlag = True
 
@@ -555,7 +558,7 @@ class PuzzleScore():
 	def __init__(self, modeName):
 		"""Init score datastructure, open up csv file"""
 		self.startTime = datetime.datetime.now()
-		self.scoreFile = open('.\\log\\'+ modeName + '\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.csv', 'wb')
+		self.scoreFile = open('.\\log\\'+ modeName + '\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.Fcsv', 'wb')
 		self.csv = csv.writer(self.scoreFile)
 		
 		# Starting score
@@ -566,9 +569,9 @@ class PuzzleScore():
 		
 		self.csv.writerow(self.header)
 		
-		self.textbox = viz.addTextbox()
-		self.textbox.setPosition(0.8,0.1)
-		self.textbox.message('Score: ' + str(self.score))
+#		self.textbox = viz.addTextbox()
+#		self.textbox.setPosition(0.8,0.1)
+#		self.textbox.message('Score: ' + str(self.score))
 	
 	def event(self, event = None, description = None, source = None, destination = None):
 		"""
@@ -597,7 +600,7 @@ class PuzzleScore():
 #		elif curEvent['source'] != None:
 #			self.score -= 10
 		
-		self.textbox.message('Score: ' + str(self.score))
+#		self.textbox.message('Score: ' + str(self.score))
 	
 	def close(self):
 		"""Close open file"""
@@ -619,6 +622,9 @@ def start(mode, dataset):
 	Start running the puzzle game
 	"""
 	global controlInst
+	global menuMode
+	
+	menuMode = mode
 	
 	if mode == 'Free Play':
 		controlInst = FreePlay()
