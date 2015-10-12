@@ -131,7 +131,7 @@ class Mesh(viz.VizNode):
 		
 		# Setup heirarchy for proper movement behavior
 		self.mesh.setParent(self)
-		self.tooltip.setParent(viz.ABS_GLOBAL)
+		self.tooltip.setParent(self.center)
 		self.checker.setParent(self.mesh)
 		
 		# Offset mesh to lie in center of center viznode
@@ -141,8 +141,8 @@ class Mesh(viz.VizNode):
 		self.addSensor()
 		
 		# Tooltip formatting
-		self.tooltip.setScale(0.3,0.3,0.3)#set to prefered scale
-		self.tooltip.setPosition(0,2.2,0)
+		self.tooltip.setScale(0.1,0.1,0.1)#set to prefered scale
+		self.tooltip.setPosition(0,0,-1)
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
 		self.tooltip.visible(viz.OFF)
 		
