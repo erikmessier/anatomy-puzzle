@@ -20,6 +20,7 @@ output:
 -3D TV w/ Wii Motion capture support (to be implemented)
 -combinations of the above if possible.
 """
+import oculus
 
 import viz
 import vizact
@@ -241,20 +242,19 @@ class DisplayInstance():
 		if self.displayMode == 0:
 			viz.setMultiSample(4)
 			viz.fov(60)
-#			viz.go()
-			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
 			viz.window.setFullscreenMonitor(1)
+			viz.window.setSize([1280,720])
+			viz.go()
+#			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
 
 		elif self.displayMode == 1:
 			viz.setMultiSample(4)
 			viz.go(viz.STEREO_HORZ | viz.FULLSCREEN)
 			
 		elif self.displayMode == 2:
-			import oculus
-			
-			#viz.setMultiSample(4)
 			viz.go(viz.STEREO_HORZ)
 			viz.setMultiSample(16)
+			viz.window.setSize([1280,720])
 			
 			KEYS = {
 			'reset'	: 'r'
@@ -286,7 +286,6 @@ class DisplayInstance():
 		
 	#		#occulus Rift enabled
 			if(self.displayMode == 2):
-				import oculus
 				self.hmd = oculus.Rift()
 				navigationNode = viz.addGroup()
 				viewlink = viz.link(navigationNode, viz.MainView)

@@ -13,6 +13,7 @@
 # System modules
 import viz
 import vizact
+import time
 
 # Custom modules
 import init
@@ -65,7 +66,13 @@ def main():
 	
 	# Override default escape key map to call main menu
 	vizact.onkeydown(viz.KEY_ESCAPE, menu.toggle)
-
+	
+	# Record moviefilms
+	viz.setOption('viz.AVIRecorder.maxWidth', '1280')
+	viz.setOption('viz.AVIRecorder.maxHeight', '720')
+	vizact.onkeydown(viz.KEY_F11, viz.window.startRecording, 'D:\\recording.avi')
+	vizact.onkeydown(viz.KEY_F12, viz.window.stopRecording)
+	
 	# Stuff to run on program termination
 	vizact.onexit(puzzle.controller.end)
 	
