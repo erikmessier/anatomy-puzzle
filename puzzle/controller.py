@@ -169,65 +169,83 @@ class PuzzleController(object):
 		Snap checks for any nearby bones, and mates a src bone to a dst bone
 		if they are in fact correctly placed.
 		"""
-		if not self._lastGrabbed:
+		SNAP_THRESHOLD	= 0.5;
+		DISTANCE_THRESHOLD = 1.5;
+		ANGLE_THRESHOLD	= 45;
+		sourceMesh		= self.getSnapSource()
+		targetMesh		= self.getSnapTarget()
+		searchMeshes	= self.getSnapSearch()
+
+		if not sourceMesh:
 			print 'nothing to snap'
 			return
 		
-		SNAP_THRESHOLD = 0.5;
-		DISTANCE_THRESHOLD = 1.5;
-		ANGLE_THRESHOLD = 45;
-		source = self._meshesById[self._lastGrabbed.id]
-		self.moveCheckers(self._lastGrabbed)
+		self.moveCheckers(sourceMesh)
 			
 		# Search through all of the checkers, and snap to the first one meeting our snap
 		# criteria
 		
-		enabled = [m for m in self._meshes if m.getEnabled()]
-		if self._snapAttempts >= 3 and not self._lastGrabbed.group.grounded:
-			targetMesh = self.getAdjacent(self._lastGrabbed, enabled)[0]
-			self.snap(self._lastGrabbed, targetMesh)
+		if self._snapAttempts >= 3 and not sourceMesh.group.grounded:
+			self.snap(sourceMesh, targetMesh, children = True)
 			viz.playSound(".\\dataset\\snap.wav")
 			print 'Three unsuccessful snap attempts, snapping now!'
 			self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
-				source = source.name, destination = targetMesh.name)
+				source = sourceMesh.name, destination = targetMesh.name)
 			self._snapAttempts = 0
-		elif self._lastGrabbed.group.grounded:
-			print 'That bone is grounded. Returning!'
+			if self.modeName == 'testplay':
+				self.pickSnapPair()
+		elif sourceMesh.group.grounded:
+			print 'That object is grounded. Returning!'
 		else:
-			for bone in [b for b in enabled if b not in source.group.members]:
+			for bone in [b for b in searchMeshes if b not in sourceMesh.group.members]:
 				targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
 				targetPosition = bone.getPosition(viz.ABS_GLOBAL)
 				targetQuat = bone.getQuat(viz.ABS_GLOBAL)
 				
-				currentPosition = source.getPosition(viz.ABS_GLOBAL)
-				currentQuat = source.getQuat(viz.ABS_GLOBAL)		
+				currentPosition = sourceMesh.getPosition(viz.ABS_GLOBAL)
+				currentQuat = sourceMesh.getQuat(viz.ABS_GLOBAL)		
 				
 				snapDistance = vizmat.Distance(targetSnap, currentPosition)
 				proximityDistance = vizmat.Distance(targetPosition, currentPosition)
-				angleDifference = vizmat.QuatDiff(bone.getQuat(), source.getQuat())
+				angleDifference = vizmat.QuatDiff(bone.getQuat(), sourceMesh.getQuat())
 				
 				if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
 						and (angleDifference < ANGLE_THRESHOLD):
-					print 'Snap! ', source, ' to ', bone
-					self.score.event(event = 'snap', description = 'Successful snap', source = source.name, destination = bone.name)
+					print 'Snap! ', sourceMesh, ' to ', bone
+					self.score.event(event = 'snap', description = 'Successful snap', source = sourceMesh.name, destination = bone.name)
 					viz.playSound(".\\dataset\\snap.wav")
-					self.snap(source, bone)				
+					self.snap(sourceMesh, bone, children = True)
 					break
 			else:
 				print 'Did not meet snap criteria!'
 				self._snapAttempts += 1
-				self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = source.name)
-		if len(self._meshes) == len(source.group.members):
+				self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = sourceMesh.name)
+		if len(self._meshes) == len(sourceMesh.group.members):
 			print "Assembly completed!"
+			end()
 			menu.ingame.endButton()
 
-	def snap(self, sourceMesh, targetMesh):
+	def snap(self, sourceMesh, targetMesh, children = False):
 		self.moveCheckers(sourceMesh)
+		if children:
+			sourceMesh.setGroupParent()
 		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
 		targetMesh.group.merge(sourceMesh)
 		if sourceMesh.group.grounded:
 			self._keystones.append(sourceMesh)
-
+	
+	def getSnapSource(self):
+		"""Define source object for snapcheck"""
+		return self._lastGrabbed
+	
+	def getSnapTarget(self):
+		"""Define target object for snapcheck"""
+		return self.getAdjacent(self._lastGrabbed, self.getEnabled())[0]
+		
+	def getSnapSearch(self):
+		"""Define list of objects to search for snapcheck"""
+		return self.getEnabled()
+	
 	def snapGroup(self, boneNames):
 		"""
 		Specify a list of bones that should be snapped together
@@ -277,6 +295,15 @@ class PuzzleController(object):
 			self._gloveLink = None
 			self.score.event(event = 'release')
 		self._grabFlag = False
+	
+	def getDisabled(self):
+		return [m for m in self._meshes if not m.getEnabled()]
+		
+	def getEnabled(self, includeGrounded = True):
+		if includeGrounded:
+			return [m for m in self._meshes if m.getEnabled()]
+		else:
+			return [m for m in self._meshes if m.getEnabled() if not m.group.grounded]		
 
 	def getClosestBone(self, pointer, proxList):
 		"""
@@ -371,6 +398,7 @@ class PuzzleController(object):
 		self._keyBindings.append(vizact.onkeydown(' ', self.grab)) #space select
 		self._keyBindings.append(vizact.onkeydown('65421', self.grab)) #numpad enter select
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, self.snapCheck))
+		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_L, self.snapCheck))
 		self._keyBindings.append(vizact.onkeyup(' ', self.release))
 		self._keyBindings.append(vizact.onkeyup('65421', self.release))
 		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
@@ -457,100 +485,53 @@ class TestPlay(PuzzleController):
 			m.enable(animate = False)
 		self.pickSnapPair()
 		#snapGroup(smallBoneGroups)
-	
-	def getDisabled(self):
-		return [m for m in self._meshes if not m.getEnabled()]
-		
-	def getEnabled(self):
-		return [m for m in self._meshes if m.getEnabled() if not m.group.grounded]
 		
 	def pickSnapPair(self):
 		self._quizTarget = random.sample(self._keystones, 1)[0]
-		if len(self.getEnabled()) == 0:
+		enabled = self.getEnabled(includeGrounded = False)
+		if len(enabled) == 0:
 			return
-		self._quizSource = random.sample(self.getAdjacent(self._quizTarget, self.getEnabled())[:5],1)[0]
+		self._quizSource = random.sample(self.getAdjacent(self._quizTarget, enabled)[:5],1)[0]
 		self._quizPanel.setFields(self._quizSource.name, self._quizTarget.name)
 		self.score.event(event = 'pickpair', description = 'Picked new pair of bones to snap', \
 			source = self._quizSource.name, destination = self._quizTarget.name)
-
-	def snapCheck(self):
-		"""
-		Snap checks for any nearby bones, and mates a src bone to a dst bone
-		if they are in fact correctly placed.
-		"""
-		if not self._quizSource:
-			print 'nothing to snap'
-			return
-		
-		SNAP_THRESHOLD = 0.5;
-		DISTANCE_THRESHOLD = 1.5;
-		ANGLE_THRESHOLD = 45;
-		source = self._meshesById[self._quizSource.id]
-		self.moveCheckers(source)
-			
-		# Search through all of the checkers, and snap to the first one meeting our snap
-		# criteria
-		enabled = [m for m in self._meshes if m.getEnabled()]
-		if self._snapAttempts >= 3:
-			self.snap(source, self._quizTarget)
-			viz.playSound(".\\dataset\\snap.wav")
-			print 'Three unsuccessful snap attempts, snapping now!'
-			self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
-				source = source.name, destination = self._quizTarget.name)
-			self._snapAttempts = 0
-			self.pickSnapPair()
-		else:
-			for bone in [b for b in [self._quizTarget] if b not in source.group.members]:
-				targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
-				targetPosition = bone.getPosition(viz.ABS_GLOBAL)
-				targetQuat = bone.getQuat(viz.ABS_GLOBAL)
 				
-				currentPosition = source.getPosition(viz.ABS_GLOBAL)
-				currentQuat = source.getQuat(viz.ABS_GLOBAL)		
-				
-				snapDistance = vizmat.Distance(targetSnap, currentPosition)
-				proximityDistance = vizmat.Distance(targetPosition, currentPosition)
-				angleDifference = vizmat.QuatDiff(bone.getQuat(), source.getQuat())
-				
-				if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
-						and (angleDifference < ANGLE_THRESHOLD):
-					print 'Snap! ', source, ' to ', bone
-					self.score.event(event = 'snap', description = 'Successful snap', source = source.name, destination = bone.name)
-					viz.playSound(".\\dataset\\snap.wav")
-					self.snap(source, bone)
-					self.pickSnapPair()
-					break
-			else:
-				print 'Did not meet snap criteria'
-				self._snapAttempts += 1
-				self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = source.name)
-		if len(self._meshes) == len(source.group.members):
-			print "Assembly completed!"
-			end()
-			menu.ingame.endButton()
-				
-	def snap(self, sourceMesh, targetMesh, add = True):
-		"""
-		Overridden snap that adds more bones
-		"""
-		print "snapping ", sourceMesh, " to ", targetMesh
+	def snap(self, sourceMesh, targetMesh, children = False, add = True):
+		"""Overridden snap that supports adding more bones"""
 		self.moveCheckers(sourceMesh)
+		if children:
+			sourceMesh.setGroupParent()
 		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
 		targetMesh.group.merge(sourceMesh)
 		if sourceMesh.group.grounded:
 			self._keystones.append(sourceMesh)
 		if add:
-			# Add more bones
-			disabled = self.getDisabled()
-			if len(disabled) == 0:
-				return
-			keystone = random.sample(self._keystones, 1)[0]
-			try:
-				m = self.getAdjacent(keystone, disabled)[random.randint(0,3)]
-			except (ValueError, IndexError):
-				m = self.getAdjacent(keystone, disabled)[0]
-			m.enable(animate = True)
-			
+			self.addMesh()
+		
+	def addMesh(self):
+		"""Add more meshes"""
+		disabled = self.getDisabled()
+		if len(disabled) == 0:
+			return
+		keystone = random.sample(self._keystones, 1)[0]
+		try:
+			m = self.getAdjacent(keystone, disabled)[random.randint(0,3)]
+		except (ValueError, IndexError):
+			m = self.getAdjacent(keystone, disabled)[0]
+		m.enable(animate = True)
+	
+	def getSnapSource(self):
+		"""Define source object for snapcheck"""
+		return self._quizSource
+	
+	def getSnapTarget(self):
+		"""Define target object for snapcheck"""
+		return self._quizTarget
+		
+	def getSnapSearch(self):
+		"""Define list of objects to search for snapcheck"""
+		return [self._quizTarget]
+		
 class PuzzleScore():
 	"""
 	Handles scoring for the puzzle game
