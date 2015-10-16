@@ -1,4 +1,5 @@
-﻿"""
+﻿
+"""
 ########################################
 #      STEREOSCOPIC ANATOMY GAME
 ########################################
@@ -20,6 +21,7 @@ import init
 import menu	
 import puzzle
 import config
+
 
 #import overHeadMenu
 
@@ -79,3 +81,4 @@ def main():
 
 if __name__ == '__main__':
 	main()
+	

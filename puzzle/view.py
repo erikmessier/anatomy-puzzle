@@ -4,12 +4,15 @@ View elements of the puzzle game
 
 # Vizard Modules
 import viz
+import viztask
+import vizmat
 import vizdlg, vizshape, vizact, sys, os.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
 #custom module
 import config
 import menu
+import model
 
 class TestSnapPanel(vizdlg.Panel):
 	"""
@@ -17,7 +20,9 @@ class TestSnapPanel(vizdlg.Panel):
 	"""
 	def __init__(self):
 		#init canvas and create themes for the test panel
-		self.canvas = viz.addGUICanvas(parent = viz.ABS_GLOBAL)
+		self.canvas = viz.addGUICanvas(align = viz.ALIGN_CENTER_CENTER)
+		self.canvas.setPosition(0,0,0)
+		self.viewStartEuler = [0,0,0]
 #		self.canvas = menu.canvas
 		viz.mouse.setVisible(False)
 		self.name = 'test'
@@ -27,17 +32,18 @@ class TestSnapPanel(vizdlg.Panel):
 		self._theme.lightBackColor = (0.6,0.6,0.6,1)
 		self._theme.darkBackColor = (0.2,0.2,0.2,1)
 		self._theme.highBackColor = (0.2,0.2,0.2,1)
-		self._theme.textColor = (1,1,1,1)
+		self._theme.textColor = (2,0,0,1)
 		self._theme.highTextColor = (1,1,1,1)
 		
 		#initialize test panel
-		vizdlg.Panel.__init__(self, parent = self.canvas, theme = self._theme, align = viz.ALIGN_CENTER, fontSize = 10)
+		vizdlg.Panel.__init__(self, parent = self.canvas, theme = self._theme, align = viz.ALIGN_CENTER_TOP, fontSize = 15)
 		self.visible(viz.OFF)
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
+		self.alpha(0.6)
 		
-		#title
-		title = vizdlg.TitleBar('INSTRUCTIONS')
-		self.addItem(title, align = viz.ALIGN_CENTER_TOP)
+#		#title
+#		title = vizdlg.TitleBar('INSTRUCTIONS')
+#		self.addItem(title, align = viz.ALIGN_CENTER_TOP)
 		
 		#bones to be snapped. source snapped to target.
 		source = 'a'*20
@@ -54,23 +60,39 @@ class TestSnapPanel(vizdlg.Panel):
 		self.targetCommand = self.addItem(self.targetText, align = viz.ALIGN_CENTER_TOP)
 		
 		#render canvas
-		#render canvas
-		bb = self.getBoundingBox()
-		self.canvas.setRenderWorld([bb.height, bb.width],[4, 3*1.333])
-		#on esc toggle menu (doesn't interfere with in-game menu)
-#		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
-		self.canvas.setPosition(0,2,5)
-		self.canvas.resolution(self.canvas.getResolution())
-#		self.canvas.billboard(viz.BILLBOARD_VIEW_POS)
-#		self.canvas.setBackdrop(viz.ALIGN_LEFT_TOP)
-#		self.canvas.alignment(viz.ALIGN_LEFT_CENTER)
-#		
-#		if config.dispMode == config.DisplayMode.oculus:
-#			self.oculusPanelPos = self.canvas.getPosition()
-#			self.oculusPanelPos[0] = 1
-#			self.canvas.setPosition(self.oculusPanelPos)
-#		
-#		vizact.onbuttondown(viz.KEY_ESCAPE, self.toggle)
+		
+		if config.dispMode == config.DisplayMode.monitor:
+			self.canvas.billboard(viz.BILLBOARD_YAXIS)
+			self.canvas.setPosition(-2,0,0)
+			self.canvas.setBackdrop(viz.ALIGN_CENTER_TOP)
+			
+			vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
+			
+
+		if config.dispMode == config.DisplayMode.oculus:
+
+			bb = self.canvas.getBoundingBox()
+			self.canvas.setRenderWorldOverlay([bb.width*1, bb.height*1], fov = bb.height, distance = 0.18)
+			self.canvas.setPosition(0,0,0)
+			self.canvas.setEuler(0,15,0)
+#			self.canvas.setPosition(0, 5, 1)
+#			viztask.schedule(self.updatePanelPos())
+
+
+
+
+
+
+
+
+#			bb = self.canvas.getScale()
+#			self.canvas.setRenderWorld([a*.004 for a in bb], [a*.004 for a in bb])
+#			self.canvas.setPosition(0,3,-2)
+#			self.canvas.setBackdrop(viz.ALIGN_CENTER_TOP)
+##			self.canvas.setEuler(-25, 0, 0)
+#			self.canvas.setParent(model.display.camcenter)
+#			
+##			viztask.schedule(self.updatePanelAngle())
 
 		
 	def setFields(self, source, target):
@@ -79,9 +101,31 @@ class TestSnapPanel(vizdlg.Panel):
 		
 	def toggle(self):
 		self.visible(viz.TOGGLE)
+		
+#	def updatePanelAngle(self):
+#		while True:
+#				yield viztask.waitTime(.01)
+#				dispCentEuler = model.display.camcenter.getEuler()
+#				quatDiff = vizmat.QuatDiff(model.display.camcenter.getQuat(), self.canvas.getQuat())
+#				
+#				
+#	def updatePanelPos(self):
+#		while True:
+#			yield viztask.waitTime(0.01)
+#			newViewEuler = viz.MainView.getEuler()
+#			panPos = self.canvas.getPosition()
+#			eulerDiff = newViewEuler[1] - self.viewStartEuler[1]
+#			if panPos[1] == 3.6:
+#				return
+##			print eulerDiff
+#			if eulerDiff < 0:
+#				self.canvas.setPosition(0, 5 + 3.6*(eulerDiff/15),1)
+#			if eulerDiff > 0:
+#				self.canvas.setPosition(0, 5 + 3.6*(eulerDiff/15),1)
+#			
 
 class TestGrabPanel(vizdlg.Panel):
-	"""blah"""
+	"""prompts user for the bone that should be picked up, grabbed"""
 	def __init__(self):
 		pass
 
