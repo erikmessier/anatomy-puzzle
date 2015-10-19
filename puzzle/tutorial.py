@@ -136,7 +136,6 @@ class InterfaceTutorial():
 			self.dogCenter.visible(viz.ON)
 			self.outlineCenter.visible(viz.ON)
 			self.dogTargetMold.visible(viz.ON)
-			self.mainAxes = vizshape.addAxes()
 			self.outlineAxes = vizshape.addAxes(parent = self.outlineCenter)
 			self.dogAxes = vizshape.addAxes(parent = self.dogCenter)
 			
