@@ -22,10 +22,6 @@ class TestSnapPanel(vizdlg.Panel):
 		#init canvas and create themes for the test panel
 		self.canvas = viz.addGUICanvas(align = viz.ALIGN_CENTER_CENTER)
 		self.canvas.setPosition(0,0,0)
-		self.viewAngle = viz.MainView.getEuler()
-		self.viewPosition = viz.MainView.getPosition()
-		self.positionFlag = True
-#		self.canvas = menu.canvas
 		viz.mouse.setVisible(False)
 		self.name = 'test'
 		self._theme = viz.Theme()
@@ -34,7 +30,7 @@ class TestSnapPanel(vizdlg.Panel):
 		self._theme.lightBackColor = (0.6,0.6,0.6,1)
 		self._theme.darkBackColor = (0.2,0.2,0.2,1)
 		self._theme.highBackColor = (0.2,0.2,0.2,1)
-		self._theme.textColor = (2,0,0,1)
+		self._theme.textColor = (1,1,1,1)
 		self._theme.highTextColor = (1,1,1,1)
 		
 		#initialize test panel
@@ -44,8 +40,8 @@ class TestSnapPanel(vizdlg.Panel):
 		self.alpha(0.6)
 		
 #		#title
-#		title = vizdlg.TitleBar('INSTRUCTIONS')
-#		self.addItem(title, align = viz.ALIGN_CENTER_TOP)
+		title = vizdlg.TitleBar('INSTRUCTIONS')
+		self.addItem(title, align = viz.ALIGN_CENTER_TOP)
 		
 		#bones to be snapped. source snapped to target.
 		source = 'a'*20
@@ -68,35 +64,19 @@ class TestSnapPanel(vizdlg.Panel):
 			self.canvas.setPosition(-2,0,0)
 			self.canvas.setBackdrop(viz.ALIGN_CENTER_TOP)
 			
-			vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
-			
 
 		if config.dispMode == config.DisplayMode.oculus:
 
 			bb = self.canvas.getBoundingBox()
-			self.canvas.setRenderWorldOverlay([bb.width*1, bb.height*1], fov = bb.height, distance = 0.18)
-			self.canvas.setPosition(0,0,0)
+			self.canvas.setRenderWorldOverlay([bb.width*1, bb.height*1], fov = bb.height, distance = 0.2)
+			self.canvas.setPosition(0,0.05,0)
+			self.canvasViewPos = self.canvas.getPosition()
 			self.canvas.setEuler(0,15,0)
 			self.canvas.setPosition(0, -5, 0)
-			viztask.schedule(self.updateWinowAngle())
+			self.canvasHidePos = self.canvas.getPosition()
 			viztask.schedule(self.updatePanelPos())
 			
-
-
-
-
-
-
-
-#			bb = self.canvas.getScale()
-#			self.canvas.setRenderWorld([a*.004 for a in bb], [a*.004 for a in bb])
-#			self.canvas.setPosition(0,3,-2)
-#			self.canvas.setBackdrop(viz.ALIGN_CENTER_TOP)
-##			self.canvas.setEuler(-25, 0, 0)
-#			self.canvas.setParent(model.display.camcenter)
-#			
-##			viztask.schedule(self.updatePanelAngle())
-
+		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
 		
 	def setFields(self, source, target):
 		self.sourceText.message(source)
@@ -105,27 +85,34 @@ class TestSnapPanel(vizdlg.Panel):
 	def toggle(self):
 		self.visible(viz.TOGGLE)
 		
-	def updateWinowAngle(self):
-		while True:
-			yield viztask.waitTime(0.01)
-			self.viewAngle = viz.MainView.getEuler
 	def updatePanelPos(self):
 		while True:
 			yield viztask.waitTime(0.01)
-			newViewEuler = viz.MainView.getEuler()
-			panPos = self.canvas.getPosition()
-			eulerDiff = newViewEuler[1] - self.viewStartEuler[1]
-			if abs(eulerDiff) < 35:
-				self.positionFlag =	True
-			if self.positionFlag:
-				if self.viewStartPosition[1] - panPos[1] <= self.viewStartPosition[1]:
-					if eulerDiff > 0:
-						self.canvas.setPosition(0, -5 + 5*(eulerDiff/40),0)
-				elif abs(eulerDiff) >= 40:
-					self.canvas.setPosition(0,0,0)
-					self.positionFlag = False
-			if eulerDiff < 0:
-				self.canvas.setPosition(0, -5 + 5*(eulerDiff/40),0)
+			canvasCurrentPos = self.canvas.getPosition()
+			viewAngle = model.display.hmd.getSensor().getEuler(viz.ABS_GLOBAL)
+			if viewAngle[1] >= 25:
+				self.canvas.setPosition(self.canvasViewPos)
+			elif viewAngle[1] <= 20:
+				self.canvas.setPosition(self.canvasHidePos)
+			else:
+				pass
+			
+			
+			
+#			newViewEuler = viz.MainView.getEuler()
+#			panPos = self.canvas.getPosition()
+#			eulerDiff = newViewEuler[1] - self.viewAngle[1]
+#			if abs(eulerDiff) < 35:
+#				self.positionFlag =	False
+#			if not self.positionFlag:
+#				if self.viewPosition[1] - panPos[1] <= self.viewPosition[1]:
+#					if eulerDiff > 0:
+#						self.canvas.setPosition(0, -5 + 5*(eulerDiff/40),0)
+#				elif abs(eulerDiff) >= 40:
+#					self.canvas.setPosition(0,0,0)
+#					self.positionFlag = True
+#			if eulerDiff < 0:
+#				self.canvas.setPosition(0, -5 + 5*(eulerDiff/40),0)
 
 class TestGrabPanel(vizdlg.Panel):
 	"""prompts user for the bone that should be picked up, grabbed"""
