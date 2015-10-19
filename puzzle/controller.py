@@ -169,16 +169,16 @@ class PuzzleController(object):
 		Snap checks for any nearby bones, and mates a src bone to a dst bone
 		if they are in fact correctly placed.
 		"""
+		if not self.getSnapSource():
+			print 'nothing to snap'
+			return
+
 		SNAP_THRESHOLD	= 0.5;
 		DISTANCE_THRESHOLD = 1.5;
 		ANGLE_THRESHOLD	= 45;
 		sourceMesh		= self.getSnapSource()
 		targetMesh		= self.getSnapTarget()
 		searchMeshes	= self.getSnapSearch()
-
-		if not sourceMesh:
-			print 'nothing to snap'
-			return
 		
 		self.moveCheckers(sourceMesh)
 			
@@ -215,6 +215,8 @@ class PuzzleController(object):
 					self.score.event(event = 'snap', description = 'Successful snap', source = sourceMesh.name, destination = bone.name)
 					viz.playSound(".\\dataset\\snap.wav")
 					self.snap(sourceMesh, bone, children = True)
+					if self.modeName == 'testplay':
+						self.pickSnapPair()
 					break
 			else:
 				print 'Did not meet snap criteria!'
@@ -539,13 +541,13 @@ class PuzzleScore():
 	def __init__(self, modeName):
 		"""Init score datastructure, open up csv file"""
 		self.startTime = datetime.datetime.now()
-		self.scoreFile = open('.\\log\\'+ modeName + '\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.Fcsv', 'wb')
+		self.scoreFile = open('.\\log\\'+ modeName + '\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.csv', 'wb')
 		self.csv = csv.writer(self.scoreFile)
 		
 		# Starting score
 		self.score = 100
 		
-		self.header = ['timestamp','event','description','source','destination']
+		self.header = ['timestamp','event name','description','source','destination']
 		self.events = []
 		
 		self.csv.writerow(self.header)
@@ -570,24 +572,37 @@ class PuzzleScore():
 		Iterative score calculation
 		"""
 		curEvent = events[-1]
-#		
-#		if curEvent['snap']:
-#			self.score += 10
-#		elif len(events) > 2:
-#			if events[-3]['source'] == curEvent['source']:
-#				pass
-#			elif curEvent['source'] != None:
-#				self.score -= 10
-#		elif curEvent['source'] != None:
-#			self.score -= 10
 		
+		if curEvent['event name'] == 'snap' or curEvent['event name'] == 'autosnap':
+			scoreWeights = [10, 5, 2, 0] # 10pt for first attempt, 5 for second attempt, etc...
+			snapCount = 0
+			i = -2
+
+			while True: # How many snaps did it take?
+				if events[i] == 'snap' or events[i] == 'autosnap':
+					self.score += scoreWeights[snapCount]
+					break
+				if events[i] == 'snapfail':
+					snapCount += 1
+				if -i > len(events) - 1:
+					break
+				i -= 1
+				
+		print self.score
 #		self.textbox.message('Score: ' + str(self.score))
+
+	def close(self):
+		"""
+		Close CSV file
+		"""
+		self.csv.close()
 
 def end():
 	"""Do everything that needs to be done to end the puzzle game"""
 	print "Puzzle Quitting!"
 	global controlInst
-	controlInst.end()
+	if controlInst:
+		controlInst.end()
 #	except AttributeError:
 #		print 'Not initialized'
 #	del(controlInst)
