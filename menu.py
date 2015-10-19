@@ -200,9 +200,12 @@ class GameMenu(vizinfo.InfoPanel):
 		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
 		
 	def start(self):
+		"""
+		Start the game
+		"""
 		self.mode = []
 		self.loadLayers = []
-		'''Which subsets were selected'''
+		# Which subsets were selected
 		for i in self.checkBox.keys():
 			if self.checkBox[i].get() == 1:
 				self.loadLayers.append(i)
@@ -213,23 +216,13 @@ class GameMenu(vizinfo.InfoPanel):
 
 		if self.mode[0] == 'Movement Tutorial':
 			puzzle.tutorial.init()
-			self.setPanelVisible(viz.OFF)
-			self.canvas.setCursorVisible(viz.OFF)
-			self.active = False
-			ingame.active = True
-			
 		else:
-			print str(self.mode[0]) + ' was selected'
-			try:
-				puzzle.controller.start(self.mode[0], self.loadLayers)
-			except KeyError:
-				print "Dataset does not exist!"
-				raise
+			puzzle.controller.start(self.mode[0], self.loadLayers)
 				
-			self.setPanelVisible(viz.OFF)
-			self.canvas.setCursorVisible(viz.OFF)
-			self.active = False
-			ingame.active = True
+		self.setPanelVisible(viz.OFF)
+		self.canvas.setCursorVisible(viz.OFF)
+		self.active = False
+		ingame.active = True
 	
 	def setDataset(self, name):
 		self.dataset = name
@@ -251,7 +244,9 @@ class GameMenu(vizinfo.InfoPanel):
 			self.menuVisible = True
 
 class InGameMenu(vizinfo.InfoPanel):
-	"""In-game menu to be shown when games are running"""
+	"""
+	In-game menu to be shown when games are running
+	"""
 	def __init__(self,canvas):
 		vizinfo.InfoPanel.__init__(self, '',title='In Game',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent=canvas)
 		

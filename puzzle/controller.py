@@ -124,7 +124,7 @@ class PuzzleController(object):
 	def unloadBones(self):
 		"""Unload all of the bone objects to reset the puzzle game"""
 		for m in self._meshes:
-			m.textRemove()
+			print 'removing ', m.name
 			m.remove(children = True)
 		
 	def transparency(self, source, level, includeSource = False):
@@ -384,8 +384,8 @@ class PuzzleController(object):
 		"""
 		Do everything that needs to be done to end the puzzle game
 		"""
-		print "Puzzle Quitting!"
-		self.score.close()
+		print "Puzzle instance ending!"
+#		self.score.close()
 		model.proxManager.clearSensors()
 		model.proxManager.clearTargets()
 		model.proxManager.remove()
@@ -582,20 +582,14 @@ class PuzzleScore():
 #			self.score -= 10
 		
 #		self.textbox.message('Score: ' + str(self.score))
-	
-	def close(self):
-		"""Close open file"""
-		self.scoreFile.close()
-		self.textbox.remove()
 
 def end():
 	"""Do everything that needs to be done to end the puzzle game"""
 	print "Puzzle Quitting!"
 	global controlInst
-	try:
-		controlInst.end()
-	except AttributeError:
-		print 'Not initialized'
+	controlInst.end()
+#	except AttributeError:
+#		print 'Not initialized'
 #	del(controlInst)
 
 def start(mode, dataset):
@@ -611,7 +605,11 @@ def start(mode, dataset):
 		controlInst = FreePlay()
 	elif mode == 'Quiz Mode':
 		controlInst = TestPlay()
-	controlInst.load(dataset)
+	try:
+		controlInst.load(dataset)
+	except KeyError:
+		print "Dataset does not exist!"
+		raise
 
 def csvToList(location):
 	"""Read in a CSV file to a list of lists"""

@@ -1,23 +1,23 @@
-﻿#builtin
+﻿# Builtin
+import csv
+import time, datetime
+import random
+
+# Vizard
 import viz
 import vizact
-import vizinfo
-import vizdlg
+import vizinfo, vizdlg
 import vizproximity
 import viztask
 import vizshape
 import vizmat
 
-import csv
-import time
-import datetime
-import random
-
-#custom
+# Custom
 import controller as puzzle
 import config
 import model
 import menu
+
 def init():
 	global proxList
 	global snapTransitionTime
@@ -38,6 +38,11 @@ def init():
 	recordData = TutorialData()
 		
 class InterfaceTutorial():
+	"""
+	This game mode is intended to instruct novice users in the use of the SpaceMouse
+	interface hardware. The mechanics of this tutorial are heavily inspired by the
+	'teapot trainer' tutorial that ships with the SpaceMouse device.
+	"""
 	def __init__(self, canvas):
 		
 		sf = 0.5
@@ -81,11 +86,14 @@ class InterfaceTutorial():
 		self.dogCenter = vizshape.addSphere(0.1, pos = (self.dogStart))
 		self.dogSnapSensor = vizproximity.Sensor(vizproximity.Sphere(0.35, center = [0,1,0]), source = self.dogCenter)
 		self.outlineCenter = vizshape.addSphere(0.1, pos = (self.dogStart))
+
 		self.dogCenter.setPosition([0,-.35,0])
 		self.outlineCenter.setPosition([0,-.35,0])
+
 		self.centerStart = self.dogCenter.getPosition()
 		self.dogGrab = viz.grab(self.dogCenter, self.dog)
 		self.outlineGrab = viz.grab(self.outlineCenter, self.dogOutline)
+
 		self.dogCenter.color(5,0,0)
 		self.outlineCenter.color(0,5,0)
 		self.dogCenter.visible(viz.OFF)
@@ -421,11 +429,12 @@ class TutorialData():
 		self.header = ['timestamp','event','event result']
 		self.events = []
 		self.csv.writerow(self.header)
+		
 	def event(self, event = "release", result = 'Did Not Snap'):
 		'''record event'''
-#		print 'EVENT!'
 		currentEvent = dict(zip(self.header,[time.clock(), event, result]))
 		self.events.append(currentEvent)
 		self.csv.writerow([self.events[-1][column] for column in self.header])
+		
 	def close(self):
 		self.scoreFile.close()
