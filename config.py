@@ -21,11 +21,11 @@ class DisplayMode:
 	oculus		= 2
 	label = {'Regular Computer': 0, '3D TV': 1, 'Occulus Rift': 2}
 
-dispMode = DisplayMode.monitor
+dispMode = DisplayMode.oculus
 menuScaleConfig = { \
 	0:{'main':1.2, 'game':.75, 'ingame': 1, 'test':2}, \
 	1:{'main':.5, 'game':.3, 'ingame': 1, 'test': 1}, \
-	2:{'main':1, 'game':0.75, 'ingame': 1, 'test': 2}}
+	2:{'main':1, 'game':0.75, 'ingame': 1, 'test': 1.2}}
 menuScale = menuScaleConfig[dispMode]
 
 ##############################

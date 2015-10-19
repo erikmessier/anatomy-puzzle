@@ -4,12 +4,15 @@ View elements of the puzzle game
 
 # Vizard Modules
 import viz
+import viztask
+import vizmat
 import vizdlg, vizshape, vizact, sys, os.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
 #custom module
 import config
 import menu
+import model
 
 class TestSnapPanel(vizdlg.Panel):
 	"""
@@ -17,8 +20,8 @@ class TestSnapPanel(vizdlg.Panel):
 	"""
 	def __init__(self):
 		#init canvas and create themes for the test panel
-		self.canvas = viz.addGUICanvas(parent = viz.ABS_GLOBAL)
-#		self.canvas = menu.canvas
+		self.canvas = viz.addGUICanvas(align = viz.ALIGN_CENTER_CENTER)
+		self.canvas.setPosition(0,0,0)
 		viz.mouse.setVisible(False)
 		self.name = 'test'
 		self._theme = viz.Theme()
@@ -31,11 +34,12 @@ class TestSnapPanel(vizdlg.Panel):
 		self._theme.highTextColor = (1,1,1,1)
 		
 		#initialize test panel
-		vizdlg.Panel.__init__(self, parent = self.canvas, theme = self._theme, align = viz.ALIGN_CENTER, fontSize = 10)
+		vizdlg.Panel.__init__(self, parent = self.canvas, theme = self._theme, align = viz.ALIGN_CENTER_TOP, fontSize = 15)
 		self.visible(viz.OFF)
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
+		self.alpha(0.6)
 		
-		#title
+#		#title
 		title = vizdlg.TitleBar('INSTRUCTIONS')
 		self.addItem(title, align = viz.ALIGN_CENTER_TOP)
 		
@@ -54,24 +58,25 @@ class TestSnapPanel(vizdlg.Panel):
 		self.targetCommand = self.addItem(self.targetText, align = viz.ALIGN_CENTER_TOP)
 		
 		#render canvas
-		#render canvas
-		bb = self.getBoundingBox()
-		self.canvas.setRenderWorld([bb.height, bb.width],[4, 3*1.333])
-		#on esc toggle menu (doesn't interfere with in-game menu)
-#		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
-		self.canvas.setPosition(0,2,5)
-		self.canvas.resolution(self.canvas.getResolution())
-#		self.canvas.billboard(viz.BILLBOARD_VIEW_POS)
-#		self.canvas.setBackdrop(viz.ALIGN_LEFT_TOP)
-#		self.canvas.alignment(viz.ALIGN_LEFT_CENTER)
-#		
-#		if config.dispMode == config.DisplayMode.oculus:
-#			self.oculusPanelPos = self.canvas.getPosition()
-#			self.oculusPanelPos[0] = 1
-#			self.canvas.setPosition(self.oculusPanelPos)
-#		
-#		vizact.onbuttondown(viz.KEY_ESCAPE, self.toggle)
+		
+		if config.dispMode == config.DisplayMode.monitor:
+			self.canvas.billboard(viz.BILLBOARD_YAXIS)
+			self.canvas.setPosition(-2,0,0)
+			self.canvas.setBackdrop(viz.ALIGN_CENTER_TOP)
+			
 
+		if config.dispMode == config.DisplayMode.oculus:
+
+			bb = self.canvas.getBoundingBox()
+			self.canvas.setRenderWorldOverlay([bb.width*1, bb.height*1], fov = bb.height, distance = 0.2)
+			self.canvas.setPosition(0,0.05,0)
+			self.canvasViewPos = self.canvas.getPosition()
+			self.canvas.setEuler(0,15,0)
+			self.canvas.setPosition(0, -5, 0)
+			self.canvasHidePos = self.canvas.getPosition()
+			viztask.schedule(self.updatePanelPos())
+			
+		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
 		
 	def setFields(self, source, target):
 		self.sourceText.message(source)
@@ -79,9 +84,38 @@ class TestSnapPanel(vizdlg.Panel):
 		
 	def toggle(self):
 		self.visible(viz.TOGGLE)
+		
+	def updatePanelPos(self):
+		while True:
+			yield viztask.waitTime(0.01)
+			canvasCurrentPos = self.canvas.getPosition()
+			viewAngle = model.display.hmd.getSensor().getEuler(viz.ABS_GLOBAL)
+			if viewAngle[1] >= 25:
+				self.canvas.setPosition(self.canvasViewPos)
+			elif viewAngle[1] <= 20:
+				self.canvas.setPosition(self.canvasHidePos)
+			else:
+				pass
+			
+			
+			
+#			newViewEuler = viz.MainView.getEuler()
+#			panPos = self.canvas.getPosition()
+#			eulerDiff = newViewEuler[1] - self.viewAngle[1]
+#			if abs(eulerDiff) < 35:
+#				self.positionFlag =	False
+#			if not self.positionFlag:
+#				if self.viewPosition[1] - panPos[1] <= self.viewPosition[1]:
+#					if eulerDiff > 0:
+#						self.canvas.setPosition(0, -5 + 5*(eulerDiff/40),0)
+#				elif abs(eulerDiff) >= 40:
+#					self.canvas.setPosition(0,0,0)
+#					self.positionFlag = True
+#			if eulerDiff < 0:
+#				self.canvas.setPosition(0, -5 + 5*(eulerDiff/40),0)
 
 class TestGrabPanel(vizdlg.Panel):
-	"""blah"""
+	"""prompts user for the bone that should be picked up, grabbed"""
 	def __init__(self):
 		pass
 
