@@ -242,9 +242,9 @@ class DisplayInstance():
 		if self.displayMode == 0:
 			viz.setMultiSample(4)
 			viz.fov(60)
-			viz.window.setFullscreenMonitor(1)
 			viz.window.setSize([1280,720])
 			viz.go()
+			viz.window.setFullscreenMonitor(1)
 #			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
 
 		elif self.displayMode == 1:
@@ -264,6 +264,12 @@ class DisplayInstance():
 			#do not use ? makes things worse.
 			#viz.setOption('viz.glFinish',1)
 		
+		elif self.displayMode == 3:
+			viz.setMultiSample(4)
+			viz.fov(60)
+			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
+			viz.window.setFullscreenMonitor(2)
+
 		# Initial direction of main view
 		viz.MainView.setEuler([0,0,0])
 		viz.MainView.setPosition([0,0,-3], viz.REL_LOCAL)
@@ -358,9 +364,9 @@ def loadColiseum():
 	colosseum.setScale([sf,sf,sf])
 	colosseum.setPosition([-37.5*sf , 0, 0]) #center colisseum
 
-	pedistal = viz.addChild('.\\dataset\\environment\\capital.OSGB')
-	pedistal.setScale([100,100,100])
-	pedistal.setPosition([0,-7.26,0]) #Found by testing
+#	pedistal = viz.addChild('.\\dataset\\environment\\capital.OSGB')
+#	pedistal.setScale([100,100,100])
+#	pedistal.setPosition([0,-7.26,0]) #Found by testing
 
 def loadTemple(bounding = True):
 	"""loads temple enviornment"""
@@ -371,7 +377,7 @@ def loadTemple(bounding = True):
 	temple = viz.addChild('.\\dataset\\environment\\temple.OSGB')
 	temple.setEuler([0,90,0])
 	temple.setScale([sf,sf,sf])
-	temple.setPosition([0,-2.8, 0]) #Found by testing
+	temple.setPosition([0,-1.569, 0]) #Found by measuring
 
 #	pedistal = viz.addChild('.\\dataset\\environment\\Column.OSGB')
 #	pedistal.setScale([3.0,3.0,3.0])

@@ -84,7 +84,9 @@ class PuzzleController(object):
 
 		# Set Keystone
 		for m in [self._meshes[i] for i in range(0,1)]:
-			m.setPosition([0.0,1.5,0.0])
+			cp = m.centerPointScaled
+			cp = [cp[0], -cp[2] + 0.150, cp[1]]
+			m.setPosition(cp, viz.ABS_GLOBAL)
 			m.setEuler([0.0,90.0,180.0])
 			m.group.grounded = True
 			self._keystones.append(m)
@@ -94,8 +96,10 @@ class PuzzleController(object):
 		"""Load all of the files from the dataset into puzzle.mesh instances"""
 		for i, fileName in enumerate(meshes):
 			# This is the actual mesh we will see
+			if not model.ds.getConceptByFile(fileName):
+				print "WARNING, UNKNOWN FILE ", fileName
+				continue
 			b = model.Mesh(fileName)
-			print b.name
 			if (not randomize):
 				#Hardcoded keystone
 				b.setPosition([0.0,1.5,0.0])

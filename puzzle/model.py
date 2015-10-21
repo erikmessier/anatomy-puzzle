@@ -70,13 +70,12 @@ class Mesh(viz.VizNode):
 	Bone object is a customized version of VizNode that is design to accomodate
 	obj files from the BodyParts3D database.
 	"""
-	def __init__(self, fileName, SF = 1.0/200):
+	def __init__(self, fileName, SF = 1.0/500):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
 		self.metaData = ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
 		self.centerPointScaled = [a*SF for a in self.centerPoint]
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
-		print self.centerPointScaledFlipped
 		
 		self.name = self.metaData['name']
 
@@ -96,7 +95,7 @@ class Mesh(viz.VizNode):
 #				self.info += bd + ' '
 		
 		# We are using a 'center' viznode to make manipulation easy
-		self.center = vizshape.addCube(0.1) # An arbitrary placeholder cube
+		self.center = vizshape.addCube(0.001) # An arbitrary placeholder cube
 		super(Mesh, self).__init__(self.center.id)
 		
 		# This is the actual mesh we will see
@@ -104,7 +103,7 @@ class Mesh(viz.VizNode):
 		self.mesh.setScale([SF,SF,SF])
 		
 		# This is the viznode that will be moved around to check distances for snapping
-		self.checker = vizshape.addCube(10.0)
+		self.checker = vizshape.addCube(0.001)
 		
 		# Tooltip
 		self.tooltip = viz.addText(self.nameFormatted)
@@ -326,8 +325,15 @@ class Mesh(viz.VizNode):
 
 class DatasetInterface():
 	def __init__(self):
-		self.partOfElement = self.parseOntology('partof_element_parts.txt')
+		self.partOfElement = self.parseElementOntology('partof_element_parts.txt')
+		self.isAElement = self.parseElementOntology('isa_element_parts.txt')
 		self.allMetaData  = self.parseMetaData() # Dictionary of dictionary with concept ID as key
+		self.indexByName = {}
+		
+		names = [self.partOfElement[n]['name'] for n in self.partOfElement.keys()]
+		self.indexByName.update(dict(zip(names, self.partOfElement.values())))
+		names = [self.isAElement[n]['name'] for n in self.isAElement.keys()]
+		self.indexByName.update(dict(zip(names, self.isAElement.values())))
 		
 	def getConceptByFile(self, file):
 		filenames = [self.allMetaData[n]['filename'] for n in self.allMetaData.keys()]
@@ -336,23 +342,21 @@ class DatasetInterface():
 			return indexByFile[file]['concept']
 		except KeyError:
 			print 'Unknown filename ' + file
+			return None
 	
 	def getOntologySet(self, searchValue):
 		"""
 		Currently only supports seach by name
 		"""
-		names = [self.partOfElement[n]['name'] for n in self.partOfElement.keys()]
-		indexByName = dict(zip(names, self.partOfElement.values()))
 		if type(searchValue) == str:
-			searchValue = searchValue.split('\0')
-		set = []
+			searchValue = [searchValue]
+		modelSet = []
 		for v in searchValue:
 			try:
-				set.extend(indexByName[v]['filenames'])
+				modelSet.extend(self.indexByName[v]['filenames'])
 			except KeyError:
-				print 'Unknown name ' + searchValue
-		print set
-		return set
+				print 'Unknown name ' + str(searchValue)
+		return set(modelSet)
 		
 	def getMetaData(self, concept = None, file = None):
 		"""
@@ -365,28 +369,28 @@ class DatasetInterface():
 			except KeyError:
 				print 'Unknown FMA concept id ' + concept
 				return
-			# silly vizard uses XZY coordinates instead of XYZ coordinates
+			# silly dataset uses right-handed coordinate system
 			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
 			return thisMD
 		elif file:
 			thisMD = self.allMetaData[self.getConceptByFile(file)]
-			# silly vizard uses XZY coordinates instead of XYZ coordinates
+			# silly dataset uses right-handed coordinate system
 			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
 			return thisMD
 		else:
 			print 'No search criteria specified'
 		
-	def parseOntology(self, filename):
-		FMAPartOfElement = {}
+	def parseElementOntology(self, filename):
+		elementOntology = {}
 		with open(config.DATASET_PATH + filename, 'rb') as f:
 			reader = csv.reader(f, delimiter = '\t')
 			reader.next()
 			for line in reader:
-				if not FMAPartOfElement.has_key(line[0]):
-					FMAPartOfElement[line[0]] = {'concept':line[0],'name':line[1],'filenames':[line[2]]}
+				if not elementOntology.has_key(line[0]):
+					elementOntology[line[0]] = {'concept':line[0],'name':line[1],'filenames':[line[2]]}
 				else:
-					FMAPartOfElement[line[0]]['filenames'].append(line[2])
-		return FMAPartOfElement
+					elementOntology[line[0]]['filenames'].append(line[2])
+		return elementOntology
 		
 	def parseMetaData(self):
 		with open(config.DATASET_PATH + 'metadata.json','rb') as f:
