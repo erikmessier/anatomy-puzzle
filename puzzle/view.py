@@ -68,7 +68,7 @@ class TestSnapPanel(vizdlg.Panel):
 		if config.dispMode == config.DisplayMode.oculus:
 
 			bb = self.canvas.getBoundingBox()
-			self.canvas.setRenderWorldOverlay([bb.width*1, bb.height*1], fov = bb.height, distance = 0.2)
+			self.canvas.setRenderWorldOverlay([bb.width*1, bb.height*1], fov = bb.height, distance = 0.4)
 			self.canvas.setPosition(0,0.05,0)
 			self.canvasViewPos = self.canvas.getPosition()
 			self.canvas.setEuler(0,15,0)
