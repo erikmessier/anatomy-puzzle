@@ -69,7 +69,7 @@ layers = { \
 	'Axial':['skull', 'skeletal system of thorax'], \
 	'Upper Appen.': ['right free upper limb', 'left free upper limb', 'right hand'], \
 	'Lower Appen.': ['right free lower limb', 'left free lower limb', 'pelvic girdle', 'pelvis'], \
-	'Tissues': ['bone organ', 'muscle organ', 'organ']}
+	'Tissues': ['bone organ', 'muscle organ']}
 
 
 """
