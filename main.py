@@ -37,7 +37,7 @@ def main():
 
 	# Initialize pointer tool
 	# Unused?
-	glove = viz.addChild('glove.cfg')
+	glove = viz.addChild('.\\dataset\\Hand\\handPoint_Reduced.ply')
 	glove.disable([viz.PHYSICS, viz.DYNAMICS])
 
 	glovePhys = glove.collideSphere()
@@ -63,15 +63,17 @@ def main():
 	# Launch menu system
 	menu.init()
 	puzzle.model.pointer = glove
+	puzzle.model.pointer.setScale(0.015, 0.015, 0.015)
+	puzzle.model.pointer.setEuler(0, -115, 0)
 	
 	# Override default escape key map to call main menu
 	vizact.onkeydown(viz.KEY_ESCAPE, menu.toggle)
 	
-	# Record moviefilms
-	viz.setOption('viz.AVIRecorder.maxWidth', '1280')
-	viz.setOption('viz.AVIRecorder.maxHeight', '720')
-	vizact.onkeydown(viz.KEY_F11, viz.window.startRecording, 'D:\\recording.avi')
-	vizact.onkeydown(viz.KEY_F12, viz.window.stopRecording)
+#	# Record moviefilms
+#	viz.setOption('viz.AVIRecorder.maxWidth', '1280')
+#	viz.setOption('viz.AVIRecorder.maxHeight', '720')
+#	vizact.onkeydown(viz.KEY_F11, viz.window.startRecording, 'D:\\recording.avi')
+#	vizact.onkeydown(viz.KEY_F12, viz.window.stopRecording)
 	
 	# Stuff to run on program termination
 	vizact.onexit(puzzle.controller.end)
