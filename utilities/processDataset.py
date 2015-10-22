@@ -53,4 +53,4 @@ print str(knownFiles) + ' files were parsed.'
 print str(unknownFiles) + ' files were not found. Possibly assembly names.'
 
 with open(DATASET_PATH + 'metadata.json','wb') as f:
-	json.dump(metadata, f, indent = 1)
+	json.dump(metadata, f)
