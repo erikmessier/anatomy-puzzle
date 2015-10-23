@@ -22,7 +22,7 @@ class DisplayMode:
 	fullscreen	= 3
 	label = {'Regular Computer': 0, '3D TV': 1, 'Occulus Rift': 2, 'Full Screen': 3}
 
-dispMode = DisplayMode.fullscreen
+dispMode = DisplayMode.monitor
 
 menuScaleConfig = { \
 	0:{'main':1.2, 'game':.75, 'ingame': 1, 'test':2}, \
@@ -69,9 +69,12 @@ layers = { \
 	'Axial':['skull', 'skeletal system of thorax'], \
 	'Upper Appen.': ['right free upper limb', 'left free upper limb', 'right hand'], \
 	'Lower Appen.': ['right free lower limb', 'left free lower limb', 'pelvic girdle', 'pelvis'], \
-	'Tissues': ['bone organ', 'muscle organ']}
-
-
+	'Tissues': ['bone organ', 'muscle organ', 'neck', 'muscle of free upper limb']}
+#
+class Datasets:
+	byRegion = {'Head': {'Bones': ['skull', 'neck'], 'Muscles': ['muscle of head']}, \
+	'Thorax': {'Bones': ['skeletal system of thorax'], 'Muscles': ['muscle of thorax']}, \
+	'Upper Appen.': {'Bones': ['right arm', 'left arm'], 'Muscles': ['muscle of free upper limb']}}
 """
 Available modes for selection
 """

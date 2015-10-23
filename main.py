@@ -63,7 +63,7 @@ def main():
 	# Launch menu system
 	menu.init()
 	puzzle.model.pointer = glove
-	puzzle.model.pointer.setScale(0.015, 0.015, 0.015)
+	puzzle.model.pointer.setScale(0.012, 0.012, 0.012)
 	puzzle.model.pointer.setEuler(0, -115, 0)
 	
 	# Override default escape key map to call main menu
