@@ -177,8 +177,8 @@ class ModeMenu(vizinfo.InfoPanel):
 class LayerMenu(vizinfo.InfoPanel):
 	"""Layer selection menu"""
 	def __init__(self,canvas):
-		vizinfo.InfoPanel.__init__(self, '',title = 'Game Menu',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
-		self.layers = config.layers
+		vizinfo.InfoPanel.__init__(self, '',title = 'Layer Selection',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
+		self.layers = config.Datasets.byRegion
 		self.modes = config.modes
 		self.name = 'game'
 		self.canvas = canvas
@@ -204,13 +204,16 @@ class LayerMenu(vizinfo.InfoPanel):
 		#creating dict of checkboxes for layers
 		self.checkBox = {}
 		
-		for cb in [cb for l in self.layers.values() for cb in l]:
-			self.checkBox[cb] = viz.addCheckbox(parent = canvas)
+		for key in self.layers.keys():
+			self.checkBox[key] = {}
+		for key in self.layers.keys():
+			for cb in self.layers[key].keys():
+				self.checkBox[key][cb] = viz.addCheckbox(parent = canvas)
 		
 		#populate panels with layers and checkboxes
 		for i in self.layers:
 			for j in self.layers[i]:
-				layPan[i].addRow([viz.addText(j), self.checkBox[j]])
+				layPan[i].addRow([viz.addText(j), self.checkBox[i][j]])
 			tp.addPanel(i, layPan[i], align = viz.ALIGN_LEFT_TOP)
 		
 		###################################
@@ -255,9 +258,11 @@ class LayerMenu(vizinfo.InfoPanel):
 		self.loadLayers = []
 		# Which subsets were selected
 		for i in self.checkBox.keys():
-			if self.checkBox[i].get() == 1:
-				self.loadLayers.append(i)
-				
+			for j in self.checkBox[i].keys():
+				if self.checkBox[i][j].get() == 1:
+					for k in self.layers[i][j]:
+						self.loadLayers.append(k)
+	
 		for i in mode.radioButtons.keys():
 			if mode.radioButtons[i].get() == 1:
 				self.mode.append(i)

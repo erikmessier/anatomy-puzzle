@@ -67,14 +67,16 @@ Dictionary of lists:
 """
 layers = { \
 	'Axial':['skull', 'skeletal system of thorax'], \
-	'Upper Appen.': ['right free upper limb', 'left free upper limb', 'right hand'], \
+	'Upper Appen.': ['right arm', 'left free upper limb', 'right hand'], \
 	'Lower Appen.': ['right free lower limb', 'left free lower limb', 'pelvic girdle', 'pelvis'], \
 	'Tissues': ['bone organ', 'muscle organ', 'neck', 'muscle of free upper limb']}
 #
 class Datasets:
-	byRegion = {'Head': {'Bones': ['skull', 'neck'], 'Muscles': ['muscle of head']}, \
-	'Thorax': {'Bones': ['skeletal system of thorax'], 'Muscles': ['muscle of thorax']}, \
-	'Upper Appen.': {'Bones': ['right arm', 'left arm'], 'Muscles': ['muscle of free upper limb']}}
+	byRegion = {\
+	'Head':			{'Bones': ['skull', 'neck'], 'Muscles': ['muscle of head']}, \
+	'Thorax':		{'Bones': ['skeletal system of thorax'], 'Muscles': ['muscle of thorax']}, \
+	'Upper Appen.':	{'Bones': ['right free upper limb', 'left free upper limb'], 'Muscles': ['muscle of free upper limb']}, \
+	'Lower Appen.': {'Bones': ['right free lower limb', 'left free lower limb', 'pelvic girdle', 'pelvis'], 'Muscles': ['muscle of leg', 'muscle of pelvic girdle', 'muscle of pelvis']}}
 """
 Available modes for selection
 """
