@@ -27,6 +27,19 @@ proxManager = None
 # Bone groups
 groups = []
 
+# Static classes
+layers = { \
+	'bone':		{name: 'Bone',	fma: ['bone organ']},
+	'muscle':	{name: 'Muscle',	fma: ['muscle organ']},
+	'other':	{name: 'Other',	fma: []}}
+
+regions = { \
+	'head':		{name: 'Head',	fma: ['head']},
+	'thorax':	{name: 'Thorax',	fma: ['body proper']},
+	'upperApp':	{name: 'Upper Appendicular',	fma: ['right upper limb', 'left upper limb']},
+	'lowerApp':	{name: 'Lower Appendicular',	fma: ['right lower limb', 'left lower limb']},
+	'other':	{name: 'Other',	fma: []}}
+
 class BoneGroup():
 	"""
 	BoneGroup object manages a group of bones that need to stay
@@ -395,6 +408,26 @@ class DatasetInterface():
 	def parseMetaData(self):
 		with open(config.DATASET_PATH + 'metadata.json','rb') as f:
 			return json.load(f)
+	
+	def getMembership(self, concept):
+		layerFiles	= {}
+		regionFiles	= {}
+		
+		for l in layers:
+			layerFiles[l.name] = self.getOntologySet[l.fma]
+			
+		for r in regions:
+			regionFiles[r.name] = self.getOntologySet[r.fma]
+
+		# Determine which layer
+		if concept.filename in boneFiles:
+			thisLayer = layers.bone
+		elif concept.filename in muscleFiles:
+			metadata[concept]['layer'] = layers.muscle
+		else:
+			metadata[concept]['layer'] = layers.other
+				
+		# Determine which region
 
 class Ontology():
 	partOfElement = 0

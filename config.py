@@ -67,8 +67,8 @@ Dictionary of lists:
 """
 layers = { \
 	'Axial':['skull', 'skeletal system of thorax'], \
-	'Upper Appen.': ['right free upper limb', 'left free upper limb', 'right hand'], \
-	'Lower Appen.': ['right free lower limb', 'left free lower limb', 'pelvic girdle', 'pelvis'], \
+	'Upper Appen.': ['right upper limb', 'left upper limb', 'right hand'], \
+	'Lower Appen.': ['right lower limb', 'left lower limb', 'pelvic girdle', 'pelvis'], \
 	'Tissues': ['bone organ', 'muscle organ']}
 
 
