@@ -46,7 +46,7 @@ class InterfaceTutorial():
 	def __init__(self, canvas):
 		
 		sf = 0.5
-		model.pointer.setEuler(0,0,0)
+#		model.pointer.setEuler(0,0,0)
 		model.pointer.setPosition(0,0,0)
 		self.gloveStart = model.pointer.getPosition()
 		self.iterations = 0
@@ -330,7 +330,7 @@ def EnterProximity(e, gloveTarget, gloveObject):
 	if target == gloveObject:
 		for t in targets:
 			if t == gloveTarget:
-				gloveObject.color(0,0,5)
+				gloveObject.color(4,1,1)
 				proxList.append(source)
 
 def ExitProximity(e, glove, startColor):
@@ -343,7 +343,7 @@ def ExitProximity(e, glove, startColor):
 	source = e.sensor.getSourceObject()
 	target = e.target.getSourceObject()
 	if target == glove:
-		model.pointer.color(startColor)
+		model.pointer.color(1,1,1)
 		proxList.remove(source)
 
 def grab(outline, dog):

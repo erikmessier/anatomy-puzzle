@@ -37,7 +37,7 @@ def main():
 
 	# Initialize pointer tool
 	# Unused?
-	glove = viz.addChild('.\\dataset\\Hand\\handPoint_Reduced.ply')
+	glove = viz.addChild('.\\dataset\\Hand\\handPoint_reduced.ply')
 	glove.disable([viz.PHYSICS, viz.DYNAMICS])
 
 	glovePhys = glove.collideSphere()

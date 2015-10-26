@@ -177,7 +177,7 @@ class ModeMenu(vizinfo.InfoPanel):
 class LayerMenu(vizinfo.InfoPanel):
 	"""Layer selection menu"""
 	def __init__(self,canvas):
-		vizinfo.InfoPanel.__init__(self, '',title = 'Layer Selection',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
+		vizinfo.InfoPanel.__init__(self, '',title = 'Layer Selection',fontSize = 75,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
 		self.layers = config.Datasets.byRegion
 		self.modes = config.modes
 		self.name = 'game'
@@ -215,6 +215,24 @@ class LayerMenu(vizinfo.InfoPanel):
 			for j in self.layers[i]:
 				layPan[i].addRow([viz.addText(j), self.checkBox[i][j]])
 			tp.addPanel(i, layPan[i], align = viz.ALIGN_LEFT_TOP)
+			
+		
+		#############################################
+		"""CREATE TOTAL LAYER SELECTION CHECKBOXES"""
+		#############################################
+		
+		#creating grib panel to put checkboxes on
+		gp = vizdlg.GridPanel(parent = canvas, fontSize = 10)
+		
+		#creating checkboxes
+		self.selectAllOf = {}
+		
+		for i in self.layers[self.layers.keys()[1]].keys():
+			self.selectAllOf[i] = viz.addCheckbox(parent = canvas)
+		
+		#adding checkboxes to panel
+		for i in self.layers[self.layers.keys()[1]].keys():
+			gp.addRow([viz.addText('Load All ' + i, fontSize = 5), self.selectAllOf[i]])
 		
 		###################################
 		'''CREATE START AND STOP BUTTONS'''
@@ -239,6 +257,9 @@ class LayerMenu(vizinfo.InfoPanel):
 		#add tab panel to info panel
 		tp.setCellPadding(5)
 		self.addItem(tp, align = viz.ALIGN_LEFT_TOP)
+		
+		#add grid panel to info panel
+		self.addItem(gp, align = viz.ALIGN_LEFT_TOP)
 	
 		#start and back buttons
 		self.addItem(setGrid, align = viz.ALIGN_RIGHT_TOP)
@@ -256,10 +277,24 @@ class LayerMenu(vizinfo.InfoPanel):
 		"""
 		self.mode = []
 		self.loadLayers = []
+		dontLoad = []
+		ignoreLayer = False
 		# Which subsets were selected
+		for i in self.selectAllOf.keys():
+			if self.selectAllOf[i].get() == 1:
+				dontLoad.append(i)
+				for j in self.layers.values():
+					for k in j[i]:
+						self.loadLayers.append(k)
+		
 		for i in self.checkBox.keys():
 			for j in self.checkBox[i].keys():
-				if self.checkBox[i][j].get() == 1:
+				if [n == j for n in dontLoad]:
+					ignoreLayer == True
+				else:
+					ignoreLayer == False
+
+				if self.checkBox[i][j].get() == 1 and not ignoreLayer:
 					for k in self.layers[i][j]:
 						self.loadLayers.append(k)
 	

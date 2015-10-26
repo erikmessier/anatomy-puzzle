@@ -49,6 +49,9 @@ class PuzzleController(object):
 		self._grabFlag		= False
 		self._snapAttempts	= 0
 		self._imploded		= False
+		
+		self._pointerTexture = model.pointer.getTexture()
+		self._pointerOrigColor = model.pointer.getColor()
 
 		self.viewcube = view.viewCube()
 		
@@ -344,8 +347,8 @@ class PuzzleController(object):
 	
 	def ExitProximity(self, e):
 		source = e.sensor.getSourceObject()
-		if len(self._proximityList):
-			model.pointer.color([1.0,1.0,1.0])
+		if len(self._proximityList) and not self._gloveLink:
+			model.pointer.color(1,1,1)
 		if source != self._lastGrabbed:
 			self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
 			self._meshesById[source.id].setNameAudioFlag(0)
