@@ -285,7 +285,7 @@ class PuzzleController(object):
 				if menuMode != 'Quiz Mode':
 					self._meshesById[target.id].tooltip.visible(viz.ON)
 			if target != self._lastGrabbed and self._lastGrabbed:
-				self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,1.0])
+				self._lastGrabbed.color(reset = True)
 				for m in self._proximityList: 
 					if m == self._lastGrabbed:
 						self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,0.5])
@@ -350,8 +350,9 @@ class PuzzleController(object):
 		if len(self._proximityList) and not self._gloveLink:
 			model.pointer.color(1,1,1)
 		if source != self._lastGrabbed:
-			self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
-			self._meshesById[source.id].setNameAudioFlag(0)
+			thisMesh = self._meshesById[source.id]
+			thisMesh.color(reset = True)
+			thisMesh.setNameAudioFlag(0)
 		self._proximityList.remove(source)
 	
 	def implode(self):

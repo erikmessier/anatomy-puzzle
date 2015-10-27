@@ -58,7 +58,7 @@ class PointerMode:
 	spaceMouse	= 1
 	label = {'Keyboard Control': 0, 'SpaceMouse Control': 1}
 
-pointerMode = PointerMode.keyboard
+pointerMode = PointerMode.spaceMouse
 
 """
 Dictionary of lists:
@@ -109,3 +109,10 @@ Position and Orientation Vectors Scales for spacemouse control
 """
 positionVector = [.00005,.00005,.00005]
 orientationVector = [0,0,0]
+
+
+# Colors of the various tissue layes
+
+colors = { \
+	'muscle organ':	(1.0, 0.5, 0.5), \
+	'bone organ':	(1.0, 1.0, 0.9)}

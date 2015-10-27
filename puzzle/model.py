@@ -158,7 +158,7 @@ class Mesh(viz.VizNode):
 		
 		# Turn off visibility of center and checker viznodes
 		self.center.disable([viz.RENDERING])
-		self.color([0.3,0,0])
+		self.mesh.color(self.metaData['color'])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 		
 		self.scale		= SF
@@ -233,6 +233,12 @@ class Mesh(viz.VizNode):
 	def setAlpha(self, level):
 		"""Set bone alpha level"""
 		self.mesh.alpha(level)
+		
+	def color(self, value = (1,1,1), reset = False):
+		if reset:
+			self.mesh.color(self.metaData['color'])
+		else:
+			self.mesh.color(value)
 	
 	def moveTo(self, matrix, animate = True, time = 0.3):
 		"""
@@ -362,7 +368,7 @@ class DatasetInterface():
 					try:
 						filenames[-1].extend(self.indexByName[conceptName]['filenames'])
 					except KeyError:
-						print 'Unknown name ', str(searchValue), '!'
+						print 'Unknown name ', str(conceptName), '!'
 						continue
 				filenames[-1] = set(filenames[-1])
 				print filenames
@@ -373,7 +379,6 @@ class DatasetInterface():
 		"""
 		Returns all associated metadata with a particular entity in a dictionary
 		"""
-		metaData = {}
 		if concept:
 			try:
 				thisMD = self.allMetaData[concept]
@@ -382,15 +387,26 @@ class DatasetInterface():
 				return
 			# silly dataset uses right-handed coordinate system
 			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
-			return thisMD
 		elif file:
 			thisMD = self.allMetaData[self.getConceptByFile(file)]
 			# silly dataset uses right-handed coordinate system
 			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
-			return thisMD
 		else:
 			print 'No search criteria specified'
+			return
+			
+		thisMD['color'] = self.getColor(thisMD['filename'])
+		return thisMD
 		
+	
+	def getColor(self, filename):
+		for conceptName in config.colors.keys():
+			if filename in self.indexByName[conceptName]['filenames']:
+				return config.colors[conceptName]
+				break
+		else:
+			return (1,1,1)
+			
 	def parseElementOntology(self, filename):
 		elementOntology = {}
 		with open(config.DATASET_PATH + filename, 'rb') as f:
@@ -406,9 +422,6 @@ class DatasetInterface():
 	def parseMetaData(self):
 		with open(config.DATASET_PATH + 'metadata.json','rb') as f:
 			return json.load(f)
-
-class Ontology():
-	partOfElement = 0
 	
 def rightToLeft(center):
 	"""Convert from right handed coordinate system to left handed"""
