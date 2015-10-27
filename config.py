@@ -4,6 +4,7 @@ Just a bunch of constants defining running configuration
 
 # Vizard modules
 import vizshape
+import collections
 
 # Where is the dataset in relation to where I am?
 DATASET_PATH = '.\\dataset\\full\\'
@@ -57,7 +58,7 @@ class PointerMode:
 	spaceMouse	= 1
 	label = {'Keyboard Control': 0, 'SpaceMouse Control': 1}
 
-pointerMode = PointerMode.spaceMouse
+pointerMode = PointerMode.keyboard
 
 """
 Dictionary of lists:
@@ -65,24 +66,30 @@ Dictionary of lists:
 - format in dictionary: {superset: [subset, subset, etc.]}
 - format in menu: superset is label for tab panel, subsets can be selected using check boxes from the tab panel.
 """
-layers = { \
-	'Axial':['skull', 'skeletal system of thorax'], \
-	'Upper Appen.': ['right arm', 'left free upper limb', 'right hand'], \
-	'Lower Appen.': ['right free lower limb', 'left free lower limb', 'pelvic girdle', 'pelvis'], \
-	'Tissues': ['bone organ', 'muscle organ', 'neck', 'muscle of free upper limb']}
+#layers = { \
+#	'Axial':['skull', 'skeletal system of thorax'], \
+#	'Upper Appen.': ['right arm', 'left free upper limb', 'right hand'], \
+#	'Lower Appen.': ['right free lower limb', 'left free lower limb', 'pelvic girdle', 'pelvis'], \
+#	'Tissues': ['bone organ', 'muscle organ', 'neck', 'muscle of free upper limb']}
 #
-class Datasets:
-	byRegion = {\
-	'Head':			{'Bones': ['skull', 'neck'], 'Muscles': ['muscle of head']}, \
-	'Thorax':		{'Bones': ['skeletal system of thorax'], 'Muscles': ['muscle of thorax']}, \
-	'Upper Appen.':	{'Bones': ['right free upper limb', 'left free upper limb'], 'Muscles': ['muscle of free upper limb']}, \
-	'Lower Appen.': {'Bones': ['right free lower limb', 'left free lower limb', 'pelvic girdle', 'pelvis'], 'Muscles': ['muscle of leg', 'muscle of pelvic girdle', 'muscle of pelvis']}}
-"""
-Available modes for selection
-"""
-modes = {'Free Play': 'free play description',\
-		'Quiz Mode': 'test play description',\
-		'Movement Tutorial': 'movement tutorial description'}
+class menuLayerSelection:
+	_key_value_Regions = [\
+		('Head',			['head']), \
+		('Thorax',		['body proper']), \
+		('Upper Appen.',	['free upper limb', 'right free upper limb', 'left free upper limb']), \
+		('Lower Appen.', ['right free lower limb', 'left free lower limb', 'muscle of lower limb'])]
+	Regions = collections.OrderedDict(_key_value_Regions)
+	
+	_key_value_Layers = [\
+	('Bone', 'bone organ'), \
+	('Muscle', 'muscle organ')]
+	Layers = collections.OrderedDict(_key_value_Layers)
+
+	_key_value_Modes = [\
+		('Free Play', 'free play description'),\
+		('Quiz Mode', 'test play description'),\
+		('Movement Tutorial', 'movement tutorial description')]
+	Modes = collections.OrderedDict(_key_value_Modes)
 
 HELP_MESSAGE = \
 '''
