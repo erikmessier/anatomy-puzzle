@@ -290,7 +290,7 @@ class LayerMenu(vizinfo.InfoPanel):
 			ingame.active = True
 		else:
 			if self.selected.load:
-				puzzle.controller.start(self.selected.mode, self.loadLayers)
+				puzzle.controller.start(self.selected.mode, self.selected.load)
 				self.setPanelVisible(viz.OFF)
 				self.canvas.setCursorVisible(viz.OFF)
 				self.active = False

@@ -66,6 +66,7 @@ Dictionary of lists:
 - format in dictionary: {superset: [subset, subset, etc.]}
 - format in menu: superset is label for tab panel, subsets can be selected using check boxes from the tab panel.
 """
+
 #layers = { \
 #	'Axial':['skull', 'skeletal system of thorax'], \
 #	'Upper Appen.': ['right arm', 'left free upper limb', 'right hand'], \
