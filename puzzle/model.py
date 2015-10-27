@@ -27,19 +27,6 @@ proxManager = None
 # Bone groups
 groups = []
 
-# Static classes
-layers = { \
-	'bone':		{name: 'Bone',	fma: ['bone organ']},
-	'muscle':	{name: 'Muscle',	fma: ['muscle organ']},
-	'other':	{name: 'Other',	fma: []}}
-
-regions = { \
-	'head':		{name: 'Head',	fma: ['head']},
-	'thorax':	{name: 'Thorax',	fma: ['body proper']},
-	'upperApp':	{name: 'Upper Appendicular',	fma: ['right upper limb', 'left upper limb']},
-	'lowerApp':	{name: 'Lower Appendicular',	fma: ['right lower limb', 'left lower limb']},
-	'other':	{name: 'Other',	fma: []}}
-
 class BoneGroup():
 	"""
 	BoneGroup object manages a group of bones that need to stay
@@ -357,18 +344,29 @@ class DatasetInterface():
 			print 'Unknown filename ' + file
 			return None
 	
-	def getOntologySet(self, searchValue):
+	def getOntologySet(self, searchSets):
 		"""
-		Currently only supports seach by name
+		Pull in filenames to load using a collection of set search
+		groups. Takes in a set of tuples specifying an operation (i.e. set.intersection,
+		set.union and set of set(s) on which to perform that operation, thus 
+		filtering the desired subset.
 		"""
-		if type(searchValue) == str:
-			searchValue = [searchValue]
 		modelSet = []
-		for v in searchValue:
-			try:
-				modelSet.extend(self.indexByName[v]['filenames'])
-			except KeyError:
-				print 'Unknown name ' + str(searchValue)
+		for searchSet in searchSets:
+			setOperation = searchSet[0] # First entry should be the operation
+			filenames = []
+			for s in searchSet[1:]:
+				# Unpack groups of FMA concept names to FJ filenames
+				filenames.append([])
+				for conceptName in s:
+					try:
+						filenames[-1].extend(indexByName[conceptName]['filenames'])
+					except KeyError:
+						print 'Unknown name ', str(searchValue), '!'
+						continue
+				filenames[-1] = set(filenames[-1])
+				print filenames
+			modelSet.extend(list(setOperation(*filenames)))
 		return set(modelSet)
 		
 	def getMetaData(self, concept = None, file = None):
