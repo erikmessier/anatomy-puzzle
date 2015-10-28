@@ -13,30 +13,11 @@ import vizshape
 import vizproximity
 import vizdlg
 import viztip
+import viztask
 
+import collections
 #custom modules
 import config
-
-#def init():
-#	"""Create global menu instance"""
-#	global main
-#	global mode
-#	global layer
-#	global ingame
-#	global canvas
-#
-#	canvas = viz.addGUICanvas()
-##	canvas.setRenderWorldOverlay([2000,2000],60,1)
-#	
-#	main = MainMenu(canvas)
-#	mode = ModeMenu(canvas)
-#	layer = LayerMenu(canvas)
-#	ingame = InGameMenu(canvas)
-#	
-#	# Compatibility for all display types
-#	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
-#	canvas.setCursorSize([25,25])
-#	canvas.setCursorPosition([0,0])
 	
 class MenuController(object):
 	def __init__(self):
@@ -84,9 +65,9 @@ class MainMenu(vizinfo.InfoPanel):
 		self.exit = self.addItem(viz.addButtonLabel('Exit'), fontSize = 50)
 		vizact.onbuttondown(self.exit, self.exitButton)
 		
-		#rendering
-		bb = self.getBoundingBox()
-		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 3)
+#		#rendering
+#		bb = self.getBoundingBox()
+#		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
@@ -104,9 +85,9 @@ class MainMenu(vizinfo.InfoPanel):
 			
 	def playButton(self):
 		self.setPanelVisible(viz.OFF, animate = False)
-		game.setPanelVisible(viz.ON, animate = True)
+		mode.setPanelVisible(viz.ON, animate = True)
 		self.active = False
-		game.active = True
+		mode.active = True
 		
 	def exitButton(self):
 		viz.quit()
@@ -115,13 +96,91 @@ class MainMenu(vizinfo.InfoPanel):
 	def helpButton(self):
 		print 'Help Button was Pressed'
 
-class GameMenu(vizinfo.InfoPanel):
-	"""Game selection submenu"""
-	def __init__(self,canvas):
-		vizinfo.InfoPanel.__init__(self, '',title = 'Game Menu',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
-		self.layers = config.layers
-		self.modes = config.modes
+class ModeMenu(vizinfo.InfoPanel):
+	"""Mode selection menu"""
+	def __init__(self, canvas):
+		vizinfo.InfoPanel.__init__(self, '', title = 'Mode Selection', fontSize = 100, align = viz.ALIGN_CENTER_CENTER, icon = False, parent = canvas)
+		self.modes = config.menuLayerSelection.Modes
+		self.name = 'mode'
+		self.active = False
+		self.getPanel().fontSize(50)
+		self.setPanelVisible(viz.OFF, animate = False)
 		
+		##########################
+		"""creating modes panel"""
+		##########################
+		
+		#creating labels for modes
+		self.modeLabels = {}
+		
+		for l in self.modes.iterkeys():
+			self.modeLabels[l] = viz.addText(l, parent = canvas)
+		
+		#creating radio buttons for modes
+		self.modeGroup = viz.addGroup(parent = canvas)
+		self.radioButtons = {}
+		
+		for rb in self.modes.iterkeys():
+			self.radioButtons[rb] = viz.addRadioButton(self.modeGroup, parent = canvas)
+		
+		self.radioButtons['Free Play'].set(1)
+		
+		#creating grid panel to add mode to
+		modeGrid = vizdlg.GridPanel(parent = canvas)
+		
+		#adding modes and radio buttons to grid panel
+		for i in self.modes.iterkeys():
+			modeGrid.addRow([self.modeLabels[i], self.radioButtons[i]])
+		
+		##############################
+		"""next and back buttons"""
+		##############################
+		
+		#creating grid panels to add next and back buttons to
+		setGrid = vizdlg.GridPanel(parent = canvas)
+		
+		#create back and next buttons and add to grid panel
+		backButton = viz.addButtonLabel('Back')
+		startButton = viz.addButtonLabel('Next')
+		setGrid.addRow([backButton, startButton])
+		
+		#add back and state button actions
+		vizact.onbuttondown(backButton, self.back)
+		vizact.onbuttondown(startButton, self.next)
+		
+		###############################
+		"""add items to ModeMenu"""
+		###############################
+		self.addItem(modeGrid)
+		self.addItem(setGrid)
+		
+	def next(self):
+		self.setPanelVisible(viz.OFF, animate = False)
+		layer.setPanelVisible(viz.ON, animate = True)
+		self.active = False
+		layer.active = True
+	def back(self):
+		self.setPanelVisible(viz.OFF, animate = False)
+		main.setPanelVisible(viz.ON, animate = True)
+		self.active = False
+		main.active = True
+	def toggle(self):
+		if(self.menuVisible == True):
+			self.setPanelVisible(False)
+			self.canvas.setCursorVisible(False)
+			self.menuVisible = False
+		else:
+			self.setPanelVisible(True)
+			self.canvas.setCursorVisible(True)
+			self.menuVisible = True
+
+class LayerMenu(vizinfo.InfoPanel):
+	"""Layer selection menu"""
+	def __init__(self,canvas):
+		vizinfo.InfoPanel.__init__(self, '',title = 'Layer Selection',fontSize = 75,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
+		self.regions = config.menuLayerSelection.Regions #collections.OrderedDict type
+		self.layers = config.menuLayerSelection.Layers #collections.OrderedDict type
+		self.modes = config.menuLayerSelection.Modes
 		self.name = 'game'
 		self.canvas = canvas
 		self.active = False
@@ -135,49 +194,44 @@ class GameMenu(vizinfo.InfoPanel):
 		#####################
 		
 		#creating tab panel tp 
-		tp = vizdlg.TabPanel(align = viz.ALIGN_LEFT_TOP, parent = canvas)
+		byRegionPanel = vizdlg.TabPanel(align = viz.ALIGN_LEFT_TOP, parent = canvas)
 		
 		#creating sub panels for tab panels(all layer data is stored in config.layers) storing sub panels in laypan
 		layPan = {}
 		
-		for i, l in enumerate(self.layers):
-			layPan[l] = vizdlg.GridPanel(parent = canvas)
+		for i, l in enumerate(self.regions.iteritems()):
+			layPan[l[0]] = vizdlg.GridPanel(parent = canvas, fontSize = 10)
 		
 		#creating dict of checkboxes for layers
 		self.checkBox = {}
 		
-		for cb in [cb for l in self.layers.values() for cb in l]:
-			self.checkBox[cb] = viz.addCheckbox(parent = canvas)
+		for key in self.regions.iterkeys():
+			self.checkBox[key] = {}
+			for cb in self.layers.iterkeys():
+				self.checkBox[key][cb] = viz.addCheckbox(parent = canvas)
 		
-		#add layers and textboxes to panels
+		#populate panels with layers and checkboxes
+		for i in self.regions.iterkeys():
+			for j in self.layers.iterkeys():
+				layPan[i].addRow([viz.addText(j), self.checkBox[i][j]])
+			byRegionPanel.addPanel(i, layPan[i], align = viz.ALIGN_LEFT_TOP)
+		
+		#############################################
+		"""CREATE TOTAL LAYER SELECTION CHECKBOXES"""
+		#############################################
+		
+		#creating grib panel to put checkboxes on
+		selectAllPanel = vizdlg.GridPanel(parent = canvas, fontSize = 10)
+		
+		#creating checkboxes
+		self.selectAllOf = {}
+		
+		for i in self.layers.iterkeys():
+			self.selectAllOf[i] = viz.addCheckbox(parent = canvas)
+		
+		#adding checkboxes to panel
 		for i in self.layers:
-			for j in self.layers[i]:
-				layPan[i].addRow([viz.addText(j), self.checkBox[j]])
-			tp.addPanel(i, layPan[i], align = viz.ALIGN_LEFT_TOP)
-		
-		###############################################
-		'''CREATING MODES PANEL'''
-		###############################################
-		
-		#creating labels for modes
-		self.modeLabels = {}
-		
-		for l in self.modes.keys():
-			self.modeLabels[l] = viz.addText(l, parent = canvas)
-		
-		#creating radio buttons for modes
-		self.modeGroup = viz.addGroup(parent = canvas)
-		self.radioButtons = {}
-		
-		for rb in self.modes.keys():
-			self.radioButtons[rb] = viz.addRadioButton(self.modeGroup, parent = canvas)
-		
-		#creating grid panel to add mode to
-		modeGrid = vizdlg.GridPanel(parent = canvas)
-		
-		#adding modes and radio buttons to grid panel
-		for i in self.modes.keys():
-			modeGrid.addRow([self.modeLabels[i], self.radioButtons[i]])
+			selectAllPanel.addRow([viz.addText('Load All ' + i, fontSize = 5), self.selectAllOf[i]])
 		
 		###################################
 		'''CREATE START AND STOP BUTTONS'''
@@ -199,15 +253,12 @@ class GameMenu(vizinfo.InfoPanel):
 		'''ADD ITEMS TO GAME MENU'''
 		############################
 		
-		#directions
-		self.addItem(viz.addText('Select Parts of the Skeletal System You Wish to Puzzle and Select a Mode:', parent = canvas), fontSize = 30, align = viz.ALIGN_LEFT_TOP)
-		
 		#add tab panel to info panel
-		tp.setCellPadding(5)
-		self.addItem(tp, align = viz.ALIGN_LEFT_TOP)
+		byRegionPanel.setCellPadding(5)
+		self.addItem(byRegionPanel, align = viz.ALIGN_LEFT_TOP)
 		
-		#modes
-		self.addItem(modeGrid, align = viz.ALIGN_LEFT_TOP)
+		#add grid panel to info panel
+		self.addItem(selectAllPanel, align = viz.ALIGN_LEFT_TOP)
 	
 		#start and back buttons
 		self.addItem(setGrid, align = viz.ALIGN_RIGHT_TOP)
@@ -215,44 +266,40 @@ class GameMenu(vizinfo.InfoPanel):
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 		
+		#rendering
+		bb = self.getBoundingBox()
+		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
+		
 	def start(self):
-		self.mode = []
-		self.loadLayers = []
-		'''Which subsets were selected'''
-		for i in self.checkBox.keys():
-			if self.checkBox[i].get() == 1:
-				self.loadLayers.append(i)
-		for i in self.radioButtons.keys():
-			if self.radioButtons[i].get() == 1:
-				self.mode.append(i)
-		if len(self.loadLayers) != 0:
-			print str(self.mode[0]) + ' was selected'
-			try:
-				puzzle.controller.start(self.loadLayers)
-			except KeyError:
-				print "Dataset does not exist!"
-			self.setPanelVisible(viz.OFF)
-			self.canvas.setCursorVisible(viz.OFF)
-			self.active = False
-			ingame.active = True
-		elif self.mode[0] == 'Movement Tutorial':
+		"""
+		Start the game
+		"""
+		self.selected = Selection()
+		ignoreLayer = False
+		# Which subsets were selected
+		self.selected.modeSelected(mode.radioButtons)
+		self.selected.objectsSelected(self.regions, self.layers, self.checkBox, self.selectAllOf)
+		if self.selected.mode == 'Movement Tutorial':
 			puzzle.tutorial.init()
 			self.setPanelVisible(viz.OFF)
 			self.canvas.setCursorVisible(viz.OFF)
 			self.active = False
 			ingame.active = True
-		else: 
-			print str(self.mode[0]) + ' was selected'
-			print 'No Layer Was Selected!'
+		else:
+			if self.selected.load:
+				puzzle.controller.start(self.selected.mode, self.selected.load)
+				self.setPanelVisible(viz.OFF)
+				self.canvas.setCursorVisible(viz.OFF)
+				self.active = False
+				ingame.active = True
 	
 	def setDataset(self, name):
 		self.dataset = name
-
 	def back(self):
 		self.setPanelVisible(viz.OFF, animate = False)
-		main.setPanelVisible(viz.ON, animate = True)
+		mode.setPanelVisible(viz.ON, animate = True)
 		self.active = False
-		main.active = True
+		mode.active = True
 		
 	def toggle(self):
 		if(self.menuVisible == True):
@@ -265,7 +312,9 @@ class GameMenu(vizinfo.InfoPanel):
 			self.menuVisible = True
 
 class InGameMenu(vizinfo.InfoPanel):
-	"""In-game menu to be shown when games are running"""
+	"""
+	In-game menu to be shown when games are running
+	"""
 	def __init__(self,canvas):
 		vizinfo.InfoPanel.__init__(self, '',title='In Game',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent=canvas)
 		
@@ -288,20 +337,22 @@ class InGameMenu(vizinfo.InfoPanel):
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 
 	def restartButton(self):
-		if game.mode[0] == 'Movement Tutorial':
-			puzzle.tutorial.tutorial.end()
+		if layer.mode[0] == 'Movement Tutorial':
+			puzzle.tutorial.Tutorial.end()
 			puzzle.tutorial.init()
 		else:
 			puzzle.controller.end()
-			puzzle.controller.load(game.loadLayers)
+			puzzle.controller.start(game.mode[0],game.loadLayers)
 		self.toggle()
 	
 	def endButton(self):
-		if game.mode[0] == 'Movement Tutorial':
+		if layer.mode[0] == 'Movement Tutorial':
 			puzzle.tutorial.Tutorial.end()
 			puzzle.tutorial.recordData.close()
-		puzzle.controller.end()
-		self.toggle()
+		else:
+			puzzle.controller.end()
+		self.setPanelVisible(False)
+		self.menuVisible = False
 		self.active = False
 		main.active = True
 		main.menuVisible = True
@@ -321,7 +372,33 @@ class InGameMenu(vizinfo.InfoPanel):
 def toggle(visibility = viz.TOGGLE):
 	if(main.active == True):
 		main.toggle()
-	elif(game.active == True):
-		game.toggle()
+	elif(mode.active == True):
+		mode.toggle()
+	elif(layer.active == True):
+		layer.toggle()
 	else:
 		ingame.toggle()
+	
+class Selection():
+	"""Selection methods to determine GUI inputs, and storage format for GUI inputs"""
+	def __init__(self):
+		self.load = []
+		self.mode = []
+		self.unionFlag = False
+	def modeSelected(self, modeRadiosDict):
+		"""Determines the selected game mode from the GUI"""
+		for i in modeRadiosDict.keys():
+			if modeRadiosDict[i].get() == 1:
+				self.mode = i
+	def objectsSelected(self, regions, layers, specif_LayerChecks, all_LayerChecks):
+		"""Determiens which selections were made on the tabs, and entire layer selections made"""
+		for i in regions.iterkeys():
+			for j in layers.iterkeys():
+				if specif_LayerChecks[i][j].get() == 1:
+					layer_region = (set.intersection, [layers[j]], regions[i])
+					self.load.append(layer_region)
+		for i in all_LayerChecks.keys():
+			if all_LayerChecks[i].get() == 1:
+				layer_region = (set.union, [layers[i]], 'All Regions')
+				self.load.append(layer_region)
+				self.unionFlag = True

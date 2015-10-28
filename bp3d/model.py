@@ -60,6 +60,7 @@ class MeshGroup():
 	def merge(self, source):
 		"""Merge group members into this group and delete"""
 		self.members += source.group.members
+		self.members = list(set(self.members))
 		#del source.group
 		for b in source.group.members:
 			b.setGroup(self)
@@ -69,14 +70,12 @@ class Mesh(viz.VizNode):
 	Bone object is a customized version of VizNode that is design to accomodate
 	obj files from the BodyParts3D database.
 	"""
-	def __init__(self, fileName, SF = 1.0/200):
+	def __init__(self, fileName, SF = 1.0/500):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
 		self.metaData = ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
-		print self.centerPoint
 		self.centerPointScaled = [a*SF for a in self.centerPoint]
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
-		print self.centerPointScaledFlipped
 		
 		self.name = self.metaData['name']
 
@@ -96,19 +95,19 @@ class Mesh(viz.VizNode):
 #				self.info += bd + ' '
 		
 		# We are using a 'center' viznode to make manipulation easy
-		self.center = vizshape.addCube(0.1) # An arbitrary placeholder cube
-		#super(Mesh, self).__init__(self.center.id) #This is better
-		viz.VizNode.__init__(self, self.center.id)
+		self.center = vizshape.addCube(0.001) # An arbitrary placeholder cube
+		super(Mesh, self).__init__(self.center.id)
 		
 		# This is the actual mesh we will see
 		self.mesh = viz.addChild(config.DATASET_PATH + fileName + '.obj')
 		self.mesh.setScale([SF,SF,SF])
 		
 		# This is the viznode that will be moved around to check distances for snapping
-		self.checker = vizshape.addCube(10.0)
+		self.checker = vizshape.addCube(0.001)
 		
 		# Tooltip
 		self.tooltip = viz.addText(self.nameFormatted)
+		self.tooltip.color(0,5,1)
 		self.tooltip.billboard(viz.BILLBOARD_VIEW)
 		self.tooltip.setScale(0.001,0.001,0.001) #small scale for bounding box calc
 		
@@ -132,7 +131,7 @@ class Mesh(viz.VizNode):
 		
 		# Setup heirarchy for proper movement behavior
 		self.mesh.setParent(self)
-		self.tooltip.setParent(self)
+		self.tooltip.setParent(self.center)
 		self.checker.setParent(self.mesh)
 		
 		# Offset mesh to lie in center of center viznode
@@ -142,32 +141,67 @@ class Mesh(viz.VizNode):
 		self.addSensor()
 		
 		# Tooltip formatting
-		self.tooltip.setScale(0.1,0.1,0.1) #set to prefered scale
-		self.tooltip.setPosition(0,0,.5)
+		self.tooltip.setScale(0.1,0.1,0.1)#set to prefered scale
+		self.tooltip.setPosition(0,0,-1)
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
+		self.tooltip.visible(viz.OFF)
+		
+		#Line between tooltip and mesh centerPoint
+#		viz.startLayer(viz.LINES)
+#		viz.vertexColor(viz.BLUE)
+#		viz.lineWidth(5)
+#		viz.vertex(self.getPosition(viz.ABS_GLOBAL))
+#		viz.vertex(self.tooltip.getPosition(viz.ABS_GLOBAL))
+#		self.nameLine = viz.endLayer()
+#		self.nameLine.dynamic()
+#		self.nameLine.visible(viz.OFF)
 		
 		# Turn off visibility of center and checker viznodes
-#		self.disable([viz.RENDERING])
+		self.center.disable([viz.RENDERING])
 		self.color([0.3,0,0])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
-#		self.tooltip.disable([viz.RENDERING])
-		#self.dialogueBox.disable([viz.RENDERING])
-#		self.dialogue.disable([viz.RENDERING])
 		
-		self.scale = SF
-#		self.phys = self.collideSphere()
+		self.scale		= SF
+		self._enabled	= True
 
-		
-		self.nameAudioFlag = 1    #defualt: 1, 1 allows name to be played, 0 does not allow name playback
-		self.descAudioFlag = 1		#default: 1, 1 allows description to be played, 0 does not allow dec playback
-		self.grabbedFlag = 0
-		self.proxCounter = 0
-		
+		self.nameAudioFlag	= 1    #defualt: 1, 1 allows name to be played, 0 does not allow name playback
+		self.descAudioFlag	= 1		#default: 1, 1 allows description to be played, 0 does not allow dec playback
+		self.grabbedFlag	= 0
+		self.proxCounter	= 0
 		
 		# Group handling
 		self.group = BoneGroup([self])
 		groups.append(self.group)
+	
+	def enable(self, animate = False):
+		self._enabled = True
+		if animate:
+			fadein = vizact.fadeTo(1.0, time = 1.0)
+			self.mesh.alpha(0.0)
+			self.mesh.visible(viz.ON)
+			self.mesh.addAction(fadein)
+			#self.tooltip.alpha(0.0)
+			#self.tooltip.visible(viz.ON)
+			#self.tooltip.addAction(fadein)
+		else:
+			self.mesh.visible(viz.ON)
+			#self.tooltip.visible(viz.ON)
+		proxManager.addSensor(self._sensor)
 		
+	def disable(self):
+		self._enabled = False
+		self.mesh.visible(viz.OFF)
+		self.tooltip.visible(viz.OFF)
+		proxManager.removeSensor(self._sensor)
+	
+	def getEnabled(self):
+		return self._enabled
+		
+	def storeMat(self):
+		self._savedMat = self.getMatrix(viz.ABS_GLOBAL)
+		
+	def loadMat(self):
+		return self._savedMat
 	
 	def incProxCounter(self):
 		"""
@@ -182,8 +216,8 @@ class Mesh(viz.VizNode):
 	
 	def addSensor(self):
 		"""Add a sensor to a proximity manager"""
-		sensor = vizproximity.addBoundingSphereSensor(self)
-		proxManager.addSensor(sensor)
+		self._sensor = vizproximity.addBoundingSphereSensor(self)
+		proxManager.addSensor(self._sensor)
 		
 	def setGroupParent(self):
 		"""
@@ -200,24 +234,20 @@ class Mesh(viz.VizNode):
 		"""Set bone alpha level"""
 		self.mesh.alpha(level)
 	
-	def snap(self, target, animate = True):
+	def moveTo(self, matrix, animate = True, time = 0.3):
 		"""
 		Invoked by the puzzle.snap method to handle local business
 		"""
-		targetPosition = target.checker.getPosition(viz.ABS_GLOBAL)
-		targetEuler = target.checker.getEuler(viz.ABS_GLOBAL)		
 		# WARNING the full setMatrix cannot be assigned because scale is different!
 		if (animate):
-			move = vizact.moveTo(targetPosition, time = 0.3)
-			spin = vizact.spinTo(euler = targetEuler, time = 0.3)
+			move = vizact.moveTo(matrix.getPosition(), time = time, mode = viz.ABS_GLOBAL)
+			spin = vizact.spinTo(euler = matrix.getEuler(), time = time, mode = viz.ABS_GLOBAL)
 			transition = vizact.parallel(spin, move)
 			self.addAction(transition)
 		else:
 			self.setPosition(targetPosition, viz.ABS_GLOBAL)
 			self.setEuler(targetEuler,viz.ABS_GLOBAL)
 
-		target.group.merge(self)
-		
 	def grabSequence(self):
 		"""
 		i don't even
@@ -295,8 +325,15 @@ class Mesh(viz.VizNode):
 
 class DatasetInterface():
 	def __init__(self):
-		self.partOfElement = self.parseOntology('partof_element_parts.txt')
+		self.partOfElement = self.parseElementOntology('partof_element_parts.txt')
+		self.isAElement = self.parseElementOntology('isa_element_parts.txt')
 		self.allMetaData  = self.parseMetaData() # Dictionary of dictionary with concept ID as key
+		self.indexByName = {}
+		
+		names = [self.partOfElement[n]['name'] for n in self.partOfElement.keys()]
+		self.indexByName.update(dict(zip(names, self.partOfElement.values())))
+		names = [self.isAElement[n]['name'] for n in self.isAElement.keys()]
+		self.indexByName.update(dict(zip(names, self.isAElement.values())))
 		
 	def getConceptByFile(self, file):
 		filenames = [self.allMetaData[n]['filename'] for n in self.allMetaData.keys()]
@@ -305,23 +342,32 @@ class DatasetInterface():
 			return indexByFile[file]['concept']
 		except KeyError:
 			print 'Unknown filename ' + file
-	
-	def getOntologySet(self, searchValue):
+			return None
+			
+	def getOntologySet(self, searchSets):
 		"""
-		Currently only supports seach by name
+		Pull in filenames to load using a collection of set search
+		groups. Takes in a set of tuples specifying an operation (i.e. set.intersection,
+		set.union and set of set(s) on which to perform that operation, thus 
+		filtering the desired subset.
 		"""
-		names = [self.partOfElement[n]['name'] for n in self.partOfElement.keys()]
-		indexByName = dict(zip(names, self.partOfElement.values()))
-		if type(searchValue) == str:
-			searchValue = searchValue.split('\0')
-		set = []
-		for v in searchValue:
-			try:
-				set.extend(indexByName[v]['filenames'])
-			except KeyError:
-				print 'Unknown name ' + searchValue
-		print set
-		return set
+		modelSet = []
+		for searchSet in searchSets:
+			setOperation = searchSet[0] # First entry should be the operation
+			filenames = []
+			for s in searchSet[1:]:
+				# Unpack groups of FMA concept names to FJ filenames
+				filenames.append([])
+				for conceptName in s:
+					try:
+						filenames[-1].extend(self.indexByName[conceptName]['filenames'])
+					except KeyError:
+						print 'Unknown name ', str(searchValue), '!'
+						continue
+				filenames[-1] = set(filenames[-1])
+				print filenames
+			modelSet.extend(list(setOperation(*filenames)))
+		return set(modelSet)
 		
 	def getMetaData(self, concept = None, file = None):
 		"""
@@ -334,28 +380,28 @@ class DatasetInterface():
 			except KeyError:
 				print 'Unknown FMA concept id ' + concept
 				return
-			# silly vizard uses XZY coordinates instead of XYZ coordinates
+			# silly dataset uses right-handed coordinate system
 			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
 			return thisMD
 		elif file:
 			thisMD = self.allMetaData[self.getConceptByFile(file)]
-			# silly vizard uses XZY coordinates instead of XYZ coordinates
+			# silly dataset uses right-handed coordinate system
 			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
 			return thisMD
 		else:
 			print 'No search criteria specified'
 		
-	def parseOntology(self, filename):
-		FMAPartOfElement = {}
+	def parseElementOntology(self, filename):
+		elementOntology = {}
 		with open(config.DATASET_PATH + filename, 'rb') as f:
 			reader = csv.reader(f, delimiter = '\t')
 			reader.next()
 			for line in reader:
-				if not FMAPartOfElement.has_key(line[0]):
-					FMAPartOfElement[line[0]] = {'concept':line[0],'name':line[1],'filenames':[]}
+				if not elementOntology.has_key(line[0]):
+					elementOntology[line[0]] = {'concept':line[0],'name':line[1],'filenames':[line[2]]}
 				else:
-					FMAPartOfElement[line[0]]['filenames'].append(line[2])
-		return FMAPartOfElement
+					elementOntology[line[0]]['filenames'].append(line[2])
+		return elementOntology
 		
 	def parseMetaData(self):
 		with open(config.DATASET_PATH + 'metadata.json','rb') as f:
