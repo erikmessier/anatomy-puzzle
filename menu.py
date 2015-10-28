@@ -57,18 +57,22 @@ class MenuController(object):
 		self.ingame	= InGameMenu(canvas)
 class MenuBase(vizinfo.InfoPanel):
 	"""Base Menu Class"""
-	def __init__(self, canvas):
+	def __init__(self, canvas, name, title):
 		"""initialize the menu"""
-		vizinfo.InfoPanel.__init__(self, '', title = self.title, fontSize = 100, parent = canvas, align = viz.ALIGN_CENTER_CENTER, icon = False)
+		vizinfo.InfoPanel.__init__(self, '', title = title, fontSize = 100, parent = canvas, align = viz.ALIGN_CENTER_CENTER, icon = False)
 		
 		#hide system mouse
 		viz.mouse.setVisible(False)
 		viz.mouse.setTrap(True)
+		
+		#menu is visible
 		self.menuVisible = True
 		self.canvas = canvas
 		self.active = True
-		self.name = 'insert menu name'
 		
+		#individual menu parameters
+		self.name = name
+		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 		
 	def toggle(self):
 		if self.menuVisible == True:
@@ -83,9 +87,7 @@ class MainMenu(MenuBase):
 	"""Main game menu"""
 	def __init__(self, canvas):
 		"""initialize the Main menu"""
-		self.title = 'Main Menu'
-		super(MainMenu, self).__init__(canvas)
-		self.name = 'main'
+		super(MainMenu, self).__init__(canvas, 'main', 'Main Menu')
 		
 		# add play button, play button action, and scroll over animation
 		self.play = self.addItem(viz.addButtonLabel('Play'), fontSize = 50)
@@ -105,13 +107,25 @@ class MainMenu(MenuBase):
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
+		
+	def playButton(self):
+		self.setPanelVisible(viz.OFF, animate = False)
+		mode.setPanelVisible(viz.ON, animate = True)
+		self.active = False
+		mode.active = True
+		
+	def exitButton(self):
+		viz.quit()
+		print 'Visual Anatomy Trainer has closed'
+	
+	def helpButton(self):
+		print 'Help Button was Pressed'
 
-class ModeMenu(vizinfo.InfoPanel):
+class ModeMenu(MenuBase):
 	"""Mode selection menu"""
 	def __init__(self, canvas):
-		vizinfo.InfoPanel.__init__(self, '', title = 'Mode Selection', fontSize = 100, align = viz.ALIGN_CENTER_CENTER, icon = False, parent = canvas)
+		super(ModeMenu, self).__init__(canvas, 'mode', 'Mode Selection')
 		self.modes = config.menuLayerSelection.Modes
-		self.name = 'mode'
 		self.active = False
 		self.getPanel().fontSize(50)
 		self.setPanelVisible(viz.OFF, animate = False)
