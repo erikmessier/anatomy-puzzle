@@ -5,6 +5,9 @@ Just a bunch of constants defining running configuration
 # Vizard modules
 import vizshape
 
+# Custom modules
+import games
+
 # Where is the dataset in relation to where I am?
 DATASET_PATH = '.\\dataset\\full\\'
 
@@ -72,36 +75,24 @@ layers = { \
 """
 Available modes for selection
 """
+
+class Modes:
+	freePlay	= games.puzzleGame.FreePlayMode
+	quizPlay	= games.puzzleGame.TestMode
+	tutorial	= games.tutorialGame.InterfaceTutorial
+	
 modes = {'Free Play': 'free play description',\
 		'Quiz Mode': 'test play description',\
 		'Movement Tutorial': 'movement tutorial description'}
 
-HELP_MESSAGE = \
-'''
-Welcome to the puzzle game demo!
-Drag and drop the bones together to complete the anatomical model.
-Controls:
-	Press and hold space bar to grab bones
-	Use the arrow keys to move the camera
-	Use 'o' key to toggle proximity spheres
-Note: This demo requires the 3D Connexion SpaceMouse. If you do not have
-a SpaceMouse, see the code to enable wx/ad/ze control of the glove instead.
-'''
-
 """
 Position and Orientation Vectors Scales for spacemouse control 
 """
-<<<<<<< Updated upstream
+
 positionVector = [.0001,.0001,.0001]
 orientationVector = [.01,.01,.01]
-=======
-positionVector = [.00005,.00005,.00005]
-orientationVector = [0,0,0]
-
 
 # Colors of the various tissue layes
-
 colors = { \
 	'muscle organ':	(1.0, 0.5, 0.5), \
 	'bone organ':	(1.0, 1.0, 0.8)}
->>>>>>> Stashed changes

@@ -15,8 +15,7 @@ import random
 
 #custom
 import init
-import menu	
-import controller as puzzle
+import menu
 import config
 import model
 
@@ -28,26 +27,22 @@ def init():
 	global snapFlag
 	global gloveLink
 	global recordData
-	global Tutorial
 	snapFlag = False
 	proxList = []
 	gloveLink = None
 	snapTransitionTime = 0.3
 	animateOutline = 1.25
 	tasks = viztask.Scheduler
-	canvas = viz.addGUICanvas()
-	Tutorial = InterfaceTutorial(canvas)
 	recordData = TutorialData()
 		
 class InterfaceTutorial():
-	def __init__(self, canvas):
+	def __init__(self):
 		
 		sf = 0.5
 		puzzle.glove.setEuler(0,0,0)
 		puzzle.glove.setPosition(0,0,0)
 		self.gloveStart = puzzle.glove.getPosition()
 		self.iterations = 0
-		self.canvas = canvas
 		self.origPosVec = config.positionVector
 		self.origOrienVec = config.orientationVector
 		#creating directions panel
@@ -64,13 +59,13 @@ class InterfaceTutorial():
 		
 		#creating tutorial objects
 		self.dog = viz.addChild('.\\dataset\\dog\\dog.obj')
-		self.dogOutline = viz.addChild('.\\dataset\\dog\\dog.obj')
 		self.dogStart = self.dog.getPosition()
 		self.dog.setScale([sf,sf,sf])
-		self.dogOutline.setScale([sf,sf,sf])
 		self.startColor = puzzle.glove.getColor()
 		
 		#creating dog outline
+		self.dogOutline = viz.addChild('.\\dataset\\dog\\dog.obj')
+		self.dogOutline.setScale([sf,sf,sf])
 		self.dogOutline.alpha(0.8)
 		self.dogOutline.color(0,5,0)
 		self.dogOutline.texture(None)
@@ -387,7 +382,6 @@ def snapCheckEnter(e, dogTarget):
 	If the snap proximity sensor has its desired target within range, then snapFlag is True.
 	snapFlag is used in release to determine whether snap will be called or not.
 	"""
-	"""@args vizproximity.ProximityEvent()"""
 	global snapFlag
 	targets = e.manager.getActiveTargets()
 	for t in targets:
@@ -398,16 +392,19 @@ def snapCheckExit(e, dogTarget):
 	"""
 	If the dogTarget has left the proximity sensor then snapFlag is False
 	"""
-	"""@args vizproximity.ProximityEvent()"""
 	global snapFlag
 	target = e.target.getSourceObject()
 	if target == dogTarget:
 		snapFlag = False
 
 class TutorialData():
-	'''collects data from tutorial'''
+	"""
+	Collects data from tutorial
+	"""
 	def __init__(self):
-		'''init data recording structure'''
+		"""
+		Init data recording structure
+		"""
 		self.startTime = datetime.datetime.now()
 		try:
 			self.scoreFile = open('.\\log\\tutorial\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.csv', 'wb')

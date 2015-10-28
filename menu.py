@@ -16,7 +16,6 @@ import viztip
 
 #custom modules
 import config
-import puzzle
 
 #def init():
 #	"""Create global menu instance"""
