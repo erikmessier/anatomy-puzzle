@@ -18,7 +18,7 @@ import viztask
 import collections
 #custom modules
 import config
-	
+
 class MenuController(object):
 	def __init__(self):
 		self.canvas = viz.addGUICanvas()
@@ -33,25 +33,39 @@ class MenuController(object):
 		self.mode	= ModeMenu(canvas)
 		self.layer	= LayerMenu(canvas)
 		self.ingame	= InGameMenu(canvas)
-
-class GameMenu(vizinfo.InfoPanel):
-	def __init__(self):
-		pass
+class MenuBase(vizinfo.InfoPanel):
+	"""Base Menu Class"""
+	def __init__(self, canvas, name, title):
+		"""initialize the menu"""
+		vizinfo.InfoPanel.__init__(self, '', title = title, fontSize = 100, parent = canvas, align = viz.ALIGN_CENTER_CENTER, icon = False)
 		
-class MainMenu(vizinfo.InfoPanel):
-	"""Main game menu"""
-	def __init__(self, canvas):
-		"""initialize the Main menu"""
-		vizinfo.InfoPanel.__init__(self, '', fontSize = 100, parent = canvas, align = viz.ALIGN_CENTER_CENTER, \
-			title = 'Main Menu', icon = False)
-		
-		# Since we are using the vizard pointer, hide system mouse
+		#hide system mouse
 		viz.mouse.setVisible(False)
 		viz.mouse.setTrap(True)
+		
+		#menu is visible
 		self.menuVisible = True
 		self.canvas = canvas
 		self.active = True
-		self.name = 'main'
+		
+		#individual menu parameters
+		self.name = name
+		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
+		
+	def toggle(self):
+		if self.menuVisible == True:
+			self.setPanelVisible(False)
+			self.canvas.setCursorVisible(False)
+			self.menuVisible = False
+		else:
+			self.setPanelVisible(True)
+			self.canvas.setCursorVisible(True)
+			self.menuVisible = True
+class MainMenu(MenuBase):
+	"""Main game menu"""
+	def __init__(self, canvas):
+		"""initialize the Main menu"""
+		super(MainMenu, self).__init__(canvas, 'main', 'Main Menu')
 		
 		# add play button, play button action, and scroll over animation
 		self.play = self.addItem(viz.addButtonLabel('Play'), fontSize = 50)
@@ -71,18 +85,7 @@ class MainMenu(vizinfo.InfoPanel):
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
-
-	def toggle(self):
-		if(self.menuVisible == True):
-			self.setPanelVisible(False)
-			self.canvas.setCursorVisible(False)
-			self.menuVisible = False
-		else:
-			self.setPanelVisible(True)
-			self.canvas.setCursorVisible(True)
-			self.menuVisible = True
 		
-			
 	def playButton(self):
 		self.setPanelVisible(viz.OFF, animate = False)
 		mode.setPanelVisible(viz.ON, animate = True)
@@ -96,12 +99,11 @@ class MainMenu(vizinfo.InfoPanel):
 	def helpButton(self):
 		print 'Help Button was Pressed'
 
-class ModeMenu(vizinfo.InfoPanel):
+class ModeMenu(MenuBase):
 	"""Mode selection menu"""
 	def __init__(self, canvas):
-		vizinfo.InfoPanel.__init__(self, '', title = 'Mode Selection', fontSize = 100, align = viz.ALIGN_CENTER_CENTER, icon = False, parent = canvas)
+		super(ModeMenu, self).__init__(canvas, 'mode', 'Mode Selection')
 		self.modes = config.menuLayerSelection.Modes
-		self.name = 'mode'
 		self.active = False
 		self.getPanel().fontSize(50)
 		self.setPanelVisible(viz.OFF, animate = False)
@@ -135,7 +137,6 @@ class ModeMenu(vizinfo.InfoPanel):
 		##############################
 		"""next and back buttons"""
 		##############################
-		
 		#creating grid panels to add next and back buttons to
 		setGrid = vizdlg.GridPanel(parent = canvas)
 		
@@ -228,7 +229,7 @@ class LayerMenu(vizinfo.InfoPanel):
 		
 		for i in self.layers.iterkeys():
 			self.selectAllOf[i] = viz.addCheckbox(parent = canvas)
-		
+			
 		#adding checkboxes to panel
 		for i in self.layers:
 			selectAllPanel.addRow([viz.addText('Load All ' + i, fontSize = 5), self.selectAllOf[i]])
