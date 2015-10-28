@@ -27,7 +27,7 @@ proxManager = None
 # Bone groups
 groups = []
 
-class BoneGroup():
+class MeshGroup():
 	"""
 	BoneGroup object manages a group of bones that need to stay
 	fused to each other. Besides keeping a list of bones, it also

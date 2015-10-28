@@ -18,24 +18,46 @@ import viztip
 import config
 import puzzle
 
-def init():
-	"""Create global menu instance"""
-	global main
-	global game
-	global ingame
-
-	canvas = viz.addGUICanvas()
-#	canvas.setRenderWorldOverlay([2000,2000],60,1)
+#def init():
+#	"""Create global menu instance"""
+#	global main
+#	global mode
+#	global layer
+#	global ingame
+#	global canvas
+#
+#	canvas = viz.addGUICanvas()
+##	canvas.setRenderWorldOverlay([2000,2000],60,1)
+#	
+#	main = MainMenu(canvas)
+#	mode = ModeMenu(canvas)
+#	layer = LayerMenu(canvas)
+#	ingame = InGameMenu(canvas)
+#	
+#	# Compatibility for all display types
+#	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
+#	canvas.setCursorSize([25,25])
+#	canvas.setCursorPosition([0,0])
 	
-	main = MainMenu(canvas)
-	game = GameMenu(canvas)
-	ingame = InGameMenu(canvas)
-	
-	# Compatibility for all display types
-	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
-	canvas.setCursorSize([25,25])
-	canvas.setCursorPosition([0,0])
+class MenuController(object):
+	def __init__(self):
+		self.canvas = viz.addGUICanvas()
+		canvas = self.canvas
+		
+		# Compatibility for all display types
+		canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
+		canvas.setCursorSize([25,25])
+		canvas.setCursorPosition([0,0])
+		
+		self.main	= MainMenu(canvas)
+		self.mode	= ModeMenu(canvas)
+		self.layer	= LayerMenu(canvas)
+		self.ingame	= InGameMenu(canvas)
 
+class GameMenu(vizinfo.InfoPanel):
+	def __init__(self):
+		pass
+		
 class MainMenu(vizinfo.InfoPanel):
 	"""Main game menu"""
 	def __init__(self, canvas):

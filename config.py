@@ -91,5 +91,17 @@ a SpaceMouse, see the code to enable wx/ad/ze control of the glove instead.
 """
 Position and Orientation Vectors Scales for spacemouse control 
 """
+<<<<<<< Updated upstream
 positionVector = [.0001,.0001,.0001]
 orientationVector = [.01,.01,.01]
+=======
+positionVector = [.00005,.00005,.00005]
+orientationVector = [0,0,0]
+
+
+# Colors of the various tissue layes
+
+colors = { \
+	'muscle organ':	(1.0, 0.5, 0.5), \
+	'bone organ':	(1.0, 1.0, 0.8)}
+>>>>>>> Stashed changes

@@ -1,0 +1,27 @@
+﻿"""
+Model components of the Puzzle game
+"""
+
+# Built-in modules
+
+# Vizard Modules
+import viz
+import vizact, vizshape, vizproximity
+
+# Custom modules
+import config
+
+# Currently loaded game
+gameController = None
+
+# Vizard display instance
+display = None
+
+# Pointer instance
+pointer = None
+
+# Menu
+menu = None
+
+# Dataset interface
+ds = None
