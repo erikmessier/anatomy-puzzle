@@ -166,13 +166,9 @@ class modalityGUI():
 		#create main frame and directions frame
 		mainFrame = Tkinter.Frame(self.root)
 		mainFrame.pack(side = Tkinter.LEFT)
-		directionsFrame = Tkinter.Frame(mainFrame)
-		directionsFrame.config(bg = 'blue')
-		directionsFrame.pack(side = Tkinter.TOP)
 		
-		#display modality label and directions
-		directions = Tkinter.Label(directionsFrame, text = 'Select "Next" to continue with last selected values', bg = 'blue', fg = 'white').pack(side = Tkinter.TOP)
-		displayModeLabel = Tkinter.Label(mainFrame, text = 'Display Mode: ')
+		#display modality label
+		displayModeLabel = Tkinter.Label(mainFrame, text = 'Display Mode: ', bg = 'blue', fg = 'white')
 		displayModeLabel.pack_configure(side = Tkinter.TOP)
 		
 		#display modality frame for radio buttons
@@ -190,7 +186,7 @@ class modalityGUI():
 			self.dispModeRadio.pack_configure(side = Tkinter.LEFT)
 		
 		#pointer modality label
-		pointModeLabel = Tkinter.Label(mainFrame, text = 'Pointer Mode: ')
+		pointModeLabel = Tkinter.Label(mainFrame, text = 'Pointer Mode: ', bg = 'blue', fg = 'white')
 		pointModeLabel.pack_configure(side = Tkinter.TOP)
 		
 		#pointer modality frame for radio buttons
@@ -211,18 +207,15 @@ class modalityGUI():
 		self.vPoint.set(self.pointerMode)
 	
 		#creating next and exit button frame
-		endFrame = Tkinter.Frame(mainFrame)
-		endFrame.pack(side = Tkinter.TOP)
-		
-		exitFrame = Tkinter.Frame(endFrame)
+		exitFrame = Tkinter.Frame(mainFrame)
 		exitFrame.pack(side = Tkinter.LEFT)
 		
-		nextFrame = Tkinter.Frame(endFrame)
-		nextFrame.pack(side = Tkinter.LEFT)
+		nextFrame = Tkinter.Frame(mainFrame)
+		nextFrame.pack(side = Tkinter.RIGHT)
 		
 		#creating next and exit buttons
-		nextButton = Tkinter.Button(nextFrame, text = 'Next', fg = 'blue', command = self.next)
-		exitButton = Tkinter.Button(exitFrame, text = 'Exit', fg = 'blue', command = self.exit)
+		nextButton = Tkinter.Button(nextFrame, text = 'Next', fg = 'white', bg = 'green', command = self.next)
+		exitButton = Tkinter.Button(exitFrame, text = 'Exit', fg = 'white', bg = 'red', command = self.exit)
 		nextButton.pack_configure(side = Tkinter.RIGHT)
 		exitButton.pack_configure(side = Tkinter.LEFT)
 		
