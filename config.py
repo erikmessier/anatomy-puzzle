@@ -171,7 +171,7 @@ class modalityGUI():
 		directionsFrame.pack(side = Tkinter.TOP)
 		
 		#display modality label and directions
-		directions = Tkinter.Label(directionsFrame, text = 'Select "Next" to continue with last selected values').pack(side = Tkinter.TOP)
+		directions = Tkinter.Label(directionsFrame, text = 'Select "Next" to continue with last selected values', bg = 'blue', fg = 'white').pack(side = Tkinter.TOP)
 		displayModeLabel = Tkinter.Label(mainFrame, text = 'Display Mode: ')
 		displayModeLabel.pack_configure(side = Tkinter.TOP)
 		
