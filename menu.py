@@ -3,43 +3,21 @@ menu.py
 
 This is where all of the menu handling will go
 """
+
+# Vizard modules
 import viz
 import vizact
-import sys
-import abc
+import vizproximity
 import vizmenu
 import vizinfo
 import vizshape
-import vizproximity
 import vizdlg
-import viztip
 import viztask
 
 import collections
-#custom modules
-import config
-import puzzle
 
-#def init():
-#	"""Create global menu instance"""
-#	global main
-#	global mode
-#	global layer
-#	global ingame
-#	global canvas
-#
-#	canvas = viz.addGUICanvas()
-##	canvas.setRenderWorldOverlay([2000,2000],60,1)
-#	
-#	main = MainMenu(canvas)
-#	mode = ModeMenu(canvas)
-#	layer = LayerMenu(canvas)
-#	ingame = InGameMenu(canvas)
-#	
-#	# Compatibility for all display types
-#	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
-#	canvas.setCursorSize([25,25])
-#	canvas.setCursorPosition([0,0])
+# Custom modules
+import config
 
 class MenuController(object):
 	def __init__(self):
