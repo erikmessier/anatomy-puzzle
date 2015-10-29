@@ -20,6 +20,7 @@ output:
 -3D TV w/ Wii Motion capture support (to be implemented)
 -combinations of the above if possible.
 """
+import oculus
 
 import viz
 import vizact
@@ -241,17 +242,19 @@ class DisplayInstance():
 		if self.displayMode == 0:
 			viz.setMultiSample(4)
 			viz.fov(60)
-			viz.go() #viz.FULLSCREEN
+			viz.window.setSize([1280,720])
+			viz.go()
+			viz.window.setFullscreenMonitor(1)
+#			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
 
 		elif self.displayMode == 1:
 			viz.setMultiSample(4)
 			viz.go(viz.STEREO_HORZ | viz.FULLSCREEN)
 			
 		elif self.displayMode == 2:
-			import oculus
-			
-			#viz.setMultiSample(4)
 			viz.go(viz.STEREO_HORZ)
+			viz.setMultiSample(16)
+			viz.window.setSize([1280,720])
 			
 			KEYS = {
 			'reset'	: 'r'
@@ -261,6 +264,12 @@ class DisplayInstance():
 			#do not use ? makes things worse.
 			#viz.setOption('viz.glFinish',1)
 		
+		elif self.displayMode == 3:
+			viz.setMultiSample(4)
+			viz.fov(60)
+			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
+			viz.window.setFullscreenMonitor(2)
+
 		# Initial direction of main view
 		viz.MainView.setEuler([0,0,0])
 		viz.MainView.setPosition([0,0,-3], viz.REL_LOCAL)
@@ -283,21 +292,24 @@ class DisplayInstance():
 		
 	#		#occulus Rift enabled
 			if(self.displayMode == 2):
-				import oculus
 				self.hmd = oculus.Rift()
 				navigationNode = viz.addGroup()
 				viewlink = viz.link(navigationNode, viz.MainView)
 				viewlink.preMultLinkable(self.hmd.getSensor())
 				camlink = viz.link(self.camcenter,navigationNode)
 				
+				#set initial positions
+				camlink.preEuler([0,0,0])
+				camlink.preTrans([0,0,-3.25])
+				
 
 			#2D display
 			else:
 				camlink = viz.link(self.camcenter,viz.MainView)
 			
-			#set initial positions
-			camlink.preEuler([0,30,0])
-			camlink.preTrans([0,0,-5])
+				#set initial positions
+				camlink.preEuler([0,30,0])
+				camlink.preTrans([0,0,-5])
 
 			
 			#instantiate control class
@@ -352,9 +364,9 @@ def loadColiseum():
 	colosseum.setScale([sf,sf,sf])
 	colosseum.setPosition([-37.5*sf , 0, 0]) #center colisseum
 
-	pedistal = viz.addChild('.\\dataset\\environment\\capital.OSGB')
-	pedistal.setScale([100,100,100])
-	pedistal.setPosition([0,-7.26,0]) #Found by testing
+#	pedistal = viz.addChild('.\\dataset\\environment\\capital.OSGB')
+#	pedistal.setScale([100,100,100])
+#	pedistal.setPosition([0,-7.26,0]) #Found by testing
 
 def loadTemple(bounding = True):
 	"""loads temple enviornment"""
@@ -365,7 +377,7 @@ def loadTemple(bounding = True):
 	temple = viz.addChild('.\\dataset\\environment\\temple.OSGB')
 	temple.setEuler([0,90,0])
 	temple.setScale([sf,sf,sf])
-	temple.setPosition([0,-2.8, 0]) #Found by testing
+	temple.setPosition([0,-1.569, 0]) #Found by measuring
 
 #	pedistal = viz.addChild('.\\dataset\\environment\\Column.OSGB')
 #	pedistal.setScale([3.0,3.0,3.0])
@@ -472,7 +484,7 @@ def pointerInput(mode, pointer,arena):
 #		MainViewShadow.disable(viz.RENDERING)
 #		viz.link(viz.MainView, MainViewShadow)
 		
-		#make glove (pointer) child of MainViewShadow
+		#make glove () child of MainViewShadow
 		
 		#fixedRotation = viz.link(MainViewShadow,pointer)
 		#fixedRotation.setMask(viz.LINK_ORI)

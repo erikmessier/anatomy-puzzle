@@ -1,11 +1,94 @@
-﻿"""
+"""
 View elements of the puzzle game
 """
 
 # Vizard Modules
-import viz, vizshape
+import viz
+import vizdlg, vizshape, vizact, sys, os.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
+#custom module
+import config
+import menu
+
+class TestSnapPanel(vizdlg.Panel):
+	"""
+	test panel that test snap directions are sent to
+	"""
+	def __init__(self):
+		#init canvas and create themes for the test panel
+		self.canvas = viz.addGUICanvas(parent = viz.ABS_GLOBAL)
+#		self.canvas = menu.canvas
+		viz.mouse.setVisible(False)
+		self.name = 'test'
+		self._theme = viz.Theme()
+		self._theme.borderColor = (0.1,0.1,0.1,1)
+		self._theme.backColor = (0.4,0.4,0.4,1)
+		self._theme.lightBackColor = (0.6,0.6,0.6,1)
+		self._theme.darkBackColor = (0.2,0.2,0.2,1)
+		self._theme.highBackColor = (0.2,0.2,0.2,1)
+		self._theme.textColor = (1,1,1,1)
+		self._theme.highTextColor = (1,1,1,1)
+		
+		#initialize test panel
+		vizdlg.Panel.__init__(self, parent = self.canvas, theme = self._theme, align = viz.ALIGN_CENTER, fontSize = 10)
+		self.visible(viz.OFF)
+		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
+		
+		#title
+		title = vizdlg.TitleBar('INSTRUCTIONS')
+		self.addItem(title, align = viz.ALIGN_CENTER_TOP)
+		
+		#bones to be snapped. source snapped to target.
+		source = 'a'*20
+		self.sourceText = viz.addTextbox(parent = self.canvas)
+		self.sourceText.setLength(1.5)
+		target = 'a'*20
+		self.targetText = viz.addTextbox(parent = self.canvas)
+		self.targetText.setLength(1.5)
+		
+		#instructions 
+		self.Instruct1 = self.addItem(viz.addText('Snap the: ', parent = self.canvas), align = viz.ALIGN_CENTER_TOP)
+		self.sourceCommand = self.addItem(self.sourceText, align = viz.ALIGN_CENTER_TOP)
+		self.Instruct2 = self.addItem(viz.addText('To the: ', parent = self.canvas), align = viz.ALIGN_CENTER_TOP)
+		self.targetCommand = self.addItem(self.targetText, align = viz.ALIGN_CENTER_TOP)
+		
+		#render canvas
+		#render canvas
+		bb = self.getBoundingBox()
+		self.canvas.setRenderWorld([bb.height, bb.width],[4, 3*1.333])
+		#on esc toggle menu (doesn't interfere with in-game menu)
+#		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
+		self.canvas.setPosition(0,2,5)
+		self.canvas.resolution(self.canvas.getResolution())
+#		self.canvas.billboard(viz.BILLBOARD_VIEW_POS)
+#		self.canvas.setBackdrop(viz.ALIGN_LEFT_TOP)
+#		self.canvas.alignment(viz.ALIGN_LEFT_CENTER)
+#		
+#		if config.dispMode == config.DisplayMode.oculus:
+#			self.oculusPanelPos = self.canvas.getPosition()
+#			self.oculusPanelPos[0] = 1
+#			self.canvas.setPosition(self.oculusPanelPos)
+#		
+#		vizact.onbuttondown(viz.KEY_ESCAPE, self.toggle)
+
+		
+	def setFields(self, source, target):
+		self.sourceText.message(source)
+		self.targetText.message(target)
+		
+	def toggle(self):
+		self.visible(viz.TOGGLE)
+
+class TestGrabPanel(vizdlg.Panel):
+	"""blah"""
+	def __init__(self):
+		pass
 
 def wireframeCube(dimensions):
+	"""
+	Draw a wireframe rectangle. Currently comes in green only.
+	"""
 	edges = [[x,y,z] for x in [-1,0,1] for y in [-1,0,1] for z in [-1,0,1] if abs(x)+abs(y)+abs(z) == 2]
 	for edge in edges:
 		viz.startLayer(viz.LINES)

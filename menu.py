@@ -18,28 +18,6 @@ import viztask
 import collections
 #custom modules
 import config
-import puzzle
-
-#def init():
-#	"""Create global menu instance"""
-#	global main
-#	global mode
-#	global layer
-#	global ingame
-#	global canvas
-#
-#	canvas = viz.addGUICanvas()
-##	canvas.setRenderWorldOverlay([2000,2000],60,1)
-#	
-#	main = MainMenu(canvas)
-#	mode = ModeMenu(canvas)
-#	layer = LayerMenu(canvas)
-#	ingame = InGameMenu(canvas)
-#	
-#	# Compatibility for all display types
-#	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
-#	canvas.setCursorSize([25,25])
-#	canvas.setCursorPosition([0,0])
 
 class MenuController(object):
 	def __init__(self):
@@ -123,9 +101,9 @@ class MainMenu(MenuBase):
 		self.Exit = self.addItem(viz.addButtonLabel('Exit'), fontSize = 50)
 		vizact.onbuttondown(self.Exit, self.helpButton)
 		
-		#rendering
-		bb = self.getBoundingBox()
-		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 3)
+#		#rendering
+#		bb = self.getBoundingBox()
+#		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
@@ -169,7 +147,6 @@ class ModeMenu(MenuBase):
 		##############################
 		"""next and back buttons"""
 		##############################
-		
 		#creating grid panels to add next and back buttons to
 		setGrid = vizdlg.GridPanel(parent = canvas)
 		
@@ -249,7 +226,7 @@ class LayerMenu(MenuBase):
 		
 		for i in self.layers.iterkeys():
 			self.selectAllOf[i] = viz.addCheckbox(parent = canvas)
-		
+			
 		#adding checkboxes to panel
 		for i in self.layers:
 			selectAllPanel.addRow([viz.addText('Load All ' + i, fontSize = 5), self.selectAllOf[i]])
@@ -405,7 +382,3 @@ class Selection():
 				layer_region = (set.union, [layers[i]], 'All Regions')
 				self.load.append(layer_region)
 				self.unionFlag = True
-				
-				
-viz.go()
-a = MenuController()

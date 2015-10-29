@@ -61,4 +61,5 @@ log/
 
 tmp*
 tutorial log*
-dataset*
+*bckup
+*dog
