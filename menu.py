@@ -51,13 +51,28 @@ class MenuController(object):
 		canvas.setCursorSize([25,25])
 		canvas.setCursorPosition([0,0])
 		
+		self.menus = {'main': None, 'mode': None, 'layer': None, 'ingame': None}
+		
 		self.main	= MainMenu(canvas)
+		self.menus[self.main.name] = self.main
 		self.mode	= ModeMenu(canvas)
+		self.menus[self.mode.name] = self.mode
 		self.layer	= LayerMenu(canvas)
+		self.menus[self.layer.name] = self.layer
 		self.ingame	= InGameMenu(canvas)
+		self.menus[self.ingame.name] = self.ingame
+		
+	def changeMenu(self, menu1, menu2):	
+		menu1.setPanelVisible(viz.OFF, animate = False)
+		menu2.setPanelVisible(viz.OFF, animate = True)
+		menu1.active = False
+		menu2.active = True
+	def exit(self):
+		viz.quit()
+		print 'Visual Anatomy Trainer has closed'
 class MenuBase(vizinfo.InfoPanel):
 	"""Base Menu Class"""
-	def __init__(self, canvas, name, title):
+	def __init__(self, canvas, name, title, startVisible = False):
 		"""initialize the menu"""
 		vizinfo.InfoPanel.__init__(self, '', title = title, fontSize = 100, parent = canvas, align = viz.ALIGN_CENTER_CENTER, icon = False)
 		
@@ -65,14 +80,21 @@ class MenuBase(vizinfo.InfoPanel):
 		viz.mouse.setVisible(False)
 		viz.mouse.setTrap(True)
 		
-		#menu is visible
-		self.menuVisible = True
 		self.canvas = canvas
-		self.active = True
 		
+		#menu is visible
+		if startVisible:
+			self.menuVisible = True
+			self.active = True
+		else:
+			self.active = False
+			self.setPanelVisible(viz.OFF, animate = False)
+			self.menuVisible = False
+
 		#individual menu parameters
 		self.name = name
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
+		
 		
 	def toggle(self):
 		if self.menuVisible == True:
@@ -87,19 +109,19 @@ class MainMenu(MenuBase):
 	"""Main game menu"""
 	def __init__(self, canvas):
 		"""initialize the Main menu"""
-		super(MainMenu, self).__init__(canvas, 'main', 'Main Menu')
+		super(MainMenu, self).__init__(canvas, 'main', 'Main Menu', True)
 		
 		# add play button, play button action, and scroll over animation
 		self.play = self.addItem(viz.addButtonLabel('Play'), fontSize = 50)
-		vizact.onbuttondown(self.play, self.playButton)
+		vizact.onbuttondown(self.play, self.helpButton)
 		
 		# add options button row
-		self.help = self.addItem(viz.addButtonLabel('Help'), fontSize = 50)
-		vizact.onbuttondown(self.help, self.helpButton)
+		self.Help = self.addItem(viz.addButtonLabel('Help'), fontSize = 50)
+		vizact.onbuttondown(self.Help, self.helpButton)
 		
 		# add help button row
-		self.exit = self.addItem(viz.addButtonLabel('Exit'), fontSize = 50)
-		vizact.onbuttondown(self.exit, self.exitButton)
+		self.Exit = self.addItem(viz.addButtonLabel('Exit'), fontSize = 50)
+		vizact.onbuttondown(self.Exit, self.helpButton)
 		
 		#rendering
 		bb = self.getBoundingBox()
@@ -107,16 +129,6 @@ class MainMenu(MenuBase):
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
-		
-	def playButton(self):
-		self.setPanelVisible(viz.OFF, animate = False)
-		mode.setPanelVisible(viz.ON, animate = True)
-		self.active = False
-		mode.active = True
-		
-	def exitButton(self):
-		viz.quit()
-		print 'Visual Anatomy Trainer has closed'
 	
 	def helpButton(self):
 		print 'Help Button was Pressed'
@@ -126,9 +138,7 @@ class ModeMenu(MenuBase):
 	def __init__(self, canvas):
 		super(ModeMenu, self).__init__(canvas, 'mode', 'Mode Selection')
 		self.modes = config.menuLayerSelection.Modes
-		self.active = False
 		self.getPanel().fontSize(50)
-		self.setPanelVisible(viz.OFF, animate = False)
 		
 		##########################
 		"""creating modes panel"""
@@ -188,28 +198,15 @@ class ModeMenu(MenuBase):
 		main.setPanelVisible(viz.ON, animate = True)
 		self.active = False
 		main.active = True
-	def toggle(self):
-		if(self.menuVisible == True):
-			self.setPanelVisible(False)
-			self.canvas.setCursorVisible(False)
-			self.menuVisible = False
-		else:
-			self.setPanelVisible(True)
-			self.canvas.setCursorVisible(True)
-			self.menuVisible = True
 
-class LayerMenu(vizinfo.InfoPanel):
+class LayerMenu(MenuBase):
 	"""Layer selection menu"""
 	def __init__(self,canvas):
-		vizinfo.InfoPanel.__init__(self, '',title = 'Layer Selection',fontSize = 75,align=viz.ALIGN_CENTER_CENTER,icon=False,parent= canvas)
+		super(LayerMenu, self).__init__(canvas, 'layer', 'Layer Selection')
 		self.regions = config.menuLayerSelection.Regions #collections.OrderedDict type
 		self.layers = config.menuLayerSelection.Layers #collections.OrderedDict type
 		self.modes = config.menuLayerSelection.Modes
-		self.name = 'game'
-		self.canvas = canvas
-		self.active = False
 		self.getPanel().fontSize(50)
-		self.setPanelVisible(viz.OFF, animate = False)
 
 		self.menuVisible = False	
 		
@@ -324,32 +321,14 @@ class LayerMenu(vizinfo.InfoPanel):
 		mode.setPanelVisible(viz.ON, animate = True)
 		self.active = False
 		mode.active = True
-		
-	def toggle(self):
-		if(self.menuVisible == True):
-			self.setPanelVisible(False)
-			self.canvas.setCursorVisible(False)
-			self.menuVisible = False
-		else:
-			self.setPanelVisible(True)
-			self.canvas.setCursorVisible(True)
-			self.menuVisible = True
 
-class InGameMenu(vizinfo.InfoPanel):
+class InGameMenu(MenuBase):
 	"""
 	In-game menu to be shown when games are running
 	"""
 	def __init__(self,canvas):
-		vizinfo.InfoPanel.__init__(self, '',title='In Game',fontSize = 100,align=viz.ALIGN_CENTER_CENTER,icon=False,parent=canvas)
-		
-		self.name = 'ingame'
-		self.canvas = canvas
-		self.active = False
-		self.getPanel().fontSize(50)
-		self.setPanelVisible(viz.OFF, animate = False)
-		self.menuVisible = False
-		
-		
+		super(InGameMenu, self).__init__(canvas, 'ingame', 'In Game Menu')
+
 		self.restart = self.addItem(viz.addButtonLabel('Restart'))
 		self.end = self.addItem(viz.addButtonLabel('End game'))
 		
