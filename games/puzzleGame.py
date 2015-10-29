@@ -464,7 +464,7 @@ class TestPlay(PuzzleController):
 		self.score = PuzzleScore(self.modeName)
 		
 #		viztask.schedule(soundTask(glove))
-		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		self._meshesfToLoad = model.ds.getOntologySet(dataset)
 		self.loadMeshes(self._meshesToLoad)
 
 		# Hide all of the meshes
