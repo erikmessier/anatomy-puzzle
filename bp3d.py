@@ -147,7 +147,7 @@ class Mesh(viz.VizNode):
 		
 		# Turn off visibility of center and checker viznodes
 		self.center.disable([viz.RENDERING])
-		self.color([0.3,0,0])
+		self.mesh.color(self.metaData['color'])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 		
 		self.scale		= SF
@@ -223,6 +223,12 @@ class Mesh(viz.VizNode):
 		"""Set bone alpha level"""
 		self.mesh.alpha(level)
 	
+	def color(self, value = (1,1,1), reset = False):
+		if reset:
+			self.mesh.color(self.metaData['color'])
+		else:
+			self.mesh.color(value)
+
 	def moveTo(self, matrix, animate = True, time = 0.3):
 		"""
 		Invoked by the puzzle.snap method to handle local business
@@ -371,14 +377,25 @@ class DatasetInterface():
 				return
 			# silly dataset uses right-handed coordinate system
 			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
-			return thisMD
 		elif file:
 			thisMD = self.allMetaData[self.getConceptByFile(file)]
 			# silly dataset uses right-handed coordinate system
 			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
-			return thisMD
 		else:
 			print 'No search criteria specified'
+			return
+		
+		thisMD['color'] = self.getColor(thisMD['filename'])
+		return thisMD
+		
+	
+	def getColor(self, filename):
+		for conceptName in config.colors.keys():
+			if filename in self.indexByName[conceptName]['filenames']:
+				return config.colors[conceptName]
+				break
+		else:
+			return (1,1,1)
 		
 	def parseElementOntology(self, filename):
 		elementOntology = {}

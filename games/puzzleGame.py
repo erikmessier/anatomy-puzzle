@@ -268,27 +268,24 @@ class PuzzleController(object):
 		Grab in-range objects with the pointer
 		"""
 		grabList = self._proximityList # Needed for disabling grab of grounded bones
+		
 		if len(grabList) > 0 and not self._grabFlag:
 			target = self.getClosestBone(model.pointer,grabList)
+			
 			if target.group.grounded:
 				self._meshesById[target.id].mesh.color(0,1,0.5)
-				if menuMode != 'Quiz Mode': #quick fix for tool tip not being displayed in quiz mode(global menuMode is declared in def start)
-					self._meshesById[target.id].tooltip.visible(viz.ON)
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
 				self.transparency(target, 0.7)
 				self._meshesById[target.id].mesh.color(0,1,0.5)
-				if menuMode != 'Quiz Mode':
-					self._meshesById[target.id].tooltip.visible(viz.ON)
+				
 			if target != self._lastGrabbed and self._lastGrabbed:
-				self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,1.0])
+				self._lastGrabbed.color(reset = True)
 				for m in self._proximityList: 
 					if m == self._lastGrabbed:
 						self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,0.5])
-				if menuMode != 'Quiz Mode':
-					self._meshesById[self._lastGrabbed.id].tooltip.visible(viz.OFF)
 			self._lastGrabbed = target
 		self._grabFlag = True
 
@@ -348,7 +345,7 @@ class PuzzleController(object):
 		if len(self._proximityList) and not self._gloveLink:
 			model.pointer.color(1,1,1)
 		if source != self._lastGrabbed:
-			self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
+			self._meshesById[source.id].color(reset = True)
 			self._meshesById[source.id].setNameAudioFlag(0)
 		self._proximityList.remove(source)
 	

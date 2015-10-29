@@ -81,7 +81,7 @@ class PointerMode:
 	spaceMouse	= 1
 	label = {'Keyboard Control': 0, 'SpaceMouse Control': 1}
 
-pointerMode = PointerMode.keyboard
+pointerMode = PointerMode.spaceMouse
 
 """
 Dictionary of lists:
