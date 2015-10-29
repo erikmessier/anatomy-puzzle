@@ -109,10 +109,11 @@ class menuLayerSelection:
 	('Muscle', 'muscle organ')]
 	Layers = collections.OrderedDict(_key_value_Layers)
 
-	_key_value_Modes = [\
-		('Free Play', 'free play description'),\
-		('Quiz Mode', 'test play description'),\
-		('Movement Tutorial', 'movement tutorial description')]
+	_key_value_Modes = [ \
+		('Free Play', games.puzzleGame.FreePlay), \
+		('Quiz Mode', games.puzzleGame.TestPlay), \
+		('Movement Tutorial', games.tutorialGame.InterfaceTutorial)]
+		
 	Modes = collections.OrderedDict(_key_value_Modes)
 
 """

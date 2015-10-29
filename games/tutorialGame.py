@@ -40,7 +40,7 @@ def init():
 	tasks = viztask.Scheduler
 	recordData = TutorialData()
 		
-class InterfaceTutorial():
+class InterfaceTutorial(object):
 	"""
 	This game mode is intended to instruct novice users in the use of the SpaceMouse
 	interface hardware. The mechanics of this tutorial are heavily inspired by the
@@ -130,7 +130,11 @@ class InterfaceTutorial():
 		#task schedule
 		self.interface = viztask.schedule(self.interfaceTasks())
 		self.gameMechanics = viztask.schedule(self.mechanics())
-		
+	
+	def load(self, dataset):
+		'''Accept dataset, but do nothing with it'''
+		pass
+
 	def debugger(self):
 		"""
 		Activates debuggin' tools

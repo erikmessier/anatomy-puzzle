@@ -11,25 +11,14 @@ import vizact, vizshape, vizproximity
 
 # Custom modules
 import config
-
-# Vizard display instance
-display = None
-
-# Pointer instance
-pointer = None
-
-# Dataset interface
-ds = None
-
-# Proximity Manager
-proxManager = None
+import model
 
 # Bone groups
 groups = []
 
 class MeshGroup():
 	"""
-	BoneGroup object manages a group of bones that need to stay
+	MeshGroup object manages a group of bones that need to stay
 	fused to each other. Besides keeping a list of bones, it also
 	has methods necessary to allow ease of group management
 	"""
@@ -67,12 +56,12 @@ class MeshGroup():
 
 class Mesh(viz.VizNode):
 	"""
-	Bone object is a customized version of VizNode that is design to accomodate
+	Mesh object is a customized version of VizNode that is design to accomodate
 	obj files from the BodyParts3D database.
 	"""
 	def __init__(self, fileName, SF = 1.0/500):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
-		self.metaData = ds.getMetaData(file = fileName)
+		self.metaData = model.ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
 		self.centerPointScaled = [a*SF for a in self.centerPoint]
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
@@ -170,7 +159,7 @@ class Mesh(viz.VizNode):
 		self.proxCounter	= 0
 		
 		# Group handling
-		self.group = BoneGroup([self])
+		self.group = MeshGroup([self])
 		groups.append(self.group)
 	
 	def enable(self, animate = False):
@@ -186,13 +175,13 @@ class Mesh(viz.VizNode):
 		else:
 			self.mesh.visible(viz.ON)
 			#self.tooltip.visible(viz.ON)
-		proxManager.addSensor(self._sensor)
+		model.proxManager.addSensor(self._sensor)
 		
 	def disable(self):
 		self._enabled = False
 		self.mesh.visible(viz.OFF)
 		self.tooltip.visible(viz.OFF)
-		proxManager.removeSensor(self._sensor)
+		model.proxManager.removeSensor(self._sensor)
 	
 	def getEnabled(self):
 		return self._enabled
@@ -217,7 +206,7 @@ class Mesh(viz.VizNode):
 	def addSensor(self):
 		"""Add a sensor to a proximity manager"""
 		self._sensor = vizproximity.addBoundingSphereSensor(self)
-		proxManager.addSensor(self._sensor)
+		model.proxManager.addSensor(self._sensor)
 		
 	def setGroupParent(self):
 		"""

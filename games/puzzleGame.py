@@ -19,9 +19,8 @@ import init
 import menu
 import config
 import model
-
-# The controller...
-controlInst = None
+import puzzleView
+import bp3d
 
 class PuzzleController(object):
 	"""
@@ -52,16 +51,16 @@ class PuzzleController(object):
 		self._pointerTexture = model.pointer.getTexture()
 		self._pointerOrigColor = model.pointer.getColor()
 
-		self.viewcube = view.viewCube()
+		self.viewcube = puzzleView.viewCube()
 		
-	def load(self, dataset = 'right arm'):
+	def load(self, dataset):
 		"""
 		Load datasets and initialize everything necessary to commence
 		the puzzle game.
 		"""
 		
 		# Dataset
-		model.ds = model.DatasetInterface()
+		model.ds = bp3d.DatasetInterface()
 
 		# Proximity management
 		model.proxManager = vizproximity.Manager()
@@ -101,7 +100,7 @@ class PuzzleController(object):
 			if not model.ds.getConceptByFile(fileName):
 				print "WARNING, UNKNOWN FILE ", fileName
 				continue
-			b = model.Mesh(fileName)
+			b = bp3d.Mesh(fileName)
 			if (not randomize):
 				#Hardcoded keystone
 				b.setPosition([0.0,1.5,0.0])

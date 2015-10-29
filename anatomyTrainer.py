@@ -52,12 +52,13 @@ def start():
 #	vizact.onkeydown(viz.KEY_F12, viz.window.stopRecording)
 	
 	# Stuff to run on program termination
-	vizact.onexit(puzzle.controller.end)
+	vizact.onexit(endGame)
 	
-def startGame(game):
+def startGame(game, dataset):
 	if model.gameController:
 		return
-	model.gameController = config.controllers.game()
+	model.gameController = game()
+	model.gameController.load(dataset)
 
 def restartGame():
 	if not model.gameController:
