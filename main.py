@@ -17,5 +17,7 @@ import anatomyTrainer
 
 def main():
 	anatomyTrainer.start()
+
 if __name__ == '__main__':
 	main()
+	

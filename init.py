@@ -4,32 +4,19 @@ init.py
 The purpose of this file is to organize all of the input and
 output initilization code onto one place so that IO parameters 
 can be changed efficiently. 
-
-Different IO options include: 
-
-Input:
--keyboard only
--3d mouse
--wiimote (to be implemented)
-
-output: 
--monitor
--Oculus SDK 1
--Oculus SDk 2
--3D TV
--3D TV w/ Wii Motion capture support (to be implemented)
--combinations of the above if possible.
 """
-import oculus
 
+# Vizard modules
 import viz
 import vizact
 import vizshape
 import viztask
 import vizproximity
-import config
+import oculus
 
-import puzzle
+# Custom modules
+import config
+import games
 
 #--------------------------init classes-------------------------
 class CameraKeyboardControl(viz.EventClass): 
@@ -385,7 +372,7 @@ def loadTemple(bounding = True):
 	if bounding == True:
 		dimensions = [1,2,0.5]
 
-		boundingBox = puzzle.view.wireframeCube(dimensions)
+		boundingBox = games.puzzleView.wireframeCube(dimensions)
 		boundingBox.setPosition(0,dimensions[1]/2,0)
 		boundingBox.alpha(0.25)
 

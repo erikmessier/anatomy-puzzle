@@ -119,8 +119,8 @@ Available modes for selection
 """
 
 class Modes:
-	freePlay	= games.puzzleGame.FreePlayMode
-	quizPlay	= games.puzzleGame.TestMode
+	freePlay	= games.puzzleGame.FreePlay
+	quizPlay	= games.puzzleGame.TestPlay
 	tutorial	= games.tutorialGame.InterfaceTutorial
 
 """

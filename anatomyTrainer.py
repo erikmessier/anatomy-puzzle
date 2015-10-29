@@ -5,6 +5,8 @@ import vizact
 # Custom modules
 import model
 import menu
+import init
+import config
 
 def start():
 	"""
@@ -38,10 +40,10 @@ def start():
 	device = init.pointerInput(config.pointerMode, pointer, sky)
 
 	# Initialize display
-	puzzle.model.display = init.DisplayInstance(config.dispMode,config.camMode,device,pointer)
+	model.display = init.DisplayInstance(config.dispMode,config.camMode,device,pointer)
 	
 	# Launch menu system
-	menu.init()
+	model.menu = menu.MenuController()
 	
 #	# Record moviefilms
 #	viz.setOption('viz.AVIRecorder.maxWidth', '1280')
