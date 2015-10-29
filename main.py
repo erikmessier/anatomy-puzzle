@@ -10,6 +10,9 @@
 # 2014-2015 Academic year
 """
 
+# Built-In 
+import json
+
 # Custom modules
 import config
 import anatomyTrainer
@@ -21,8 +24,17 @@ def main():
 	#Prompt for init config parameters
 	configurations = config.modalityGUI()
 	
-	#Initialize puzzle game
-	anatomyTrainer.start()
+	#Handling configuration selections
+	with open('.\\dataset\\configurations\\configurations.json','rb') as f:
+		configurations = json.load(f)
+		config.dispMode = int(configurations['dispMode'])
+		config.pointerMode = int(configurations['pointerMode'])
+		proceedFromConfigGUI = configurations['proceed']
+		f.close()
+	if proceedFromConfigGUI:
+	
+		#Initialize puzzle game
+		anatomyTrainer.start()
 
 if __name__ == '__main__':
 	main()
