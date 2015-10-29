@@ -47,15 +47,15 @@ class MenuController(object):
 		"""
 		Start the game
 		"""
-		self.selected = Selection()
+		model.selected = Selection()
 		ignoreLayer = False
 		
 		# Which subsets were selected
-		self.selected.modeSelected(self.modeMenu.radioButtons)
-		self.selected.objectsSelected(self.layerMenu)
+		model.selected.modeSelected(self.modeMenu.radioButtons)
+		model.selected.objectsSelected(self.layerMenu)
 		
 		# Startup the game
-		anatomyTrainer.startGame(config.menuLayerSelection.Modes[self.selected.mode], self.selected.load)
+		anatomyTrainer.startGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
 		
 		self.changeMenu(self.layerMenu, self.inGameMenu)
 		self.toggle()
@@ -75,8 +75,8 @@ class MenuController(object):
 #				self.inGameMenu.active = True
 		
 	def restart(self):
-		self.endGame()
-		self.start()
+		anatomyTrainer.restartGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
+		self.toggle()
 #		if self.layerMenu.mode[0] == 'Movement Tutorial':
 #			puzzle.tutorial.Tutorial.end()
 #			puzzle.tutorial.init()
@@ -86,12 +86,14 @@ class MenuController(object):
 #		self.ingame.toggle()
 		
 	def endGame(self):
-		if self.layerMenu.mode[0] == 'Movement Tutorial':
-			puzzle.tutorial.Tutorial.end()
-			puzzle.tutorial.recordData.close()
-		else:
-			puzzle.controller.end()
+		anatomyTrainer.endGame()
 		self.changeMenu(self.inGameMenu, self.mainMenu)
+#		if self.layerMenu.mode[0] == 'Movement Tutorial':
+#			puzzle.tutorial.Tutorial.end()
+#			puzzle.tutorial.recordData.close()
+#		else:
+#			puzzle.controller.end()
+#		self.changeMenu(self.inGameMenu, self.mainMenu)
 		
 	def backMenu(self, curMenu):
 		i = self.menuOrder.index(curMenu)
@@ -352,8 +354,8 @@ class InGameMenu(MenuBase):
 		self.controller = controller
 		
 		#menu buttons
-		self.restart = self.addItem(viz.addButtonLabel('Restart'))
-		self.end = self.addItem(viz.addButtonLabel('End game'))
+		self.restart = self.addItem(viz.addButtonLabel('Restart'), fontSize = 50)
+		self.end = self.addItem(viz.addButtonLabel('End game'), fontSize = 50)
 		
 		#Callbacks
 		vizact.onbuttondown(self.restart, self.controller.restart)

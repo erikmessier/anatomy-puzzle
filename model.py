@@ -25,3 +25,6 @@ menu = None
 
 # Dataset interface
 ds = None
+
+# Selected Datasets from Menu
+selected = None

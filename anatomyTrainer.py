@@ -60,16 +60,17 @@ def startGame(game, dataset):
 	model.gameController = game()
 	model.gameController.load(dataset)
 
-def restartGame():
+def restartGame(game, dataset):
 	if not model.gameController:
 		return
-#	model.gameController.end()
-#	model.gameController.start()
+	model.gameController.end()
+	model.gameController = None
+	startGame(game, dataset)
 
 def endGame():
-	game = model.gameController
-	if not game:
+	if not model.gameController:
 		return
-	game.end()
-	game = None
+	model.gameController.end()
+	model.gameController = None
+	print model.gameController
 
