@@ -18,36 +18,118 @@ import viztask
 import collections
 #custom modules
 import config
+import puzzle
+
+#def init():
+#	"""Create global menu instance"""
+#	global main
+#	global mode
+#	global layer
+#	global ingame
+#	global canvas
+#
+#	canvas = viz.addGUICanvas()
+##	canvas.setRenderWorldOverlay([2000,2000],60,1)
+#	
+#	main = MainMenu(canvas)
+#	mode = ModeMenu(canvas)
+#	layer = LayerMenu(canvas)
+#	ingame = InGameMenu(canvas)
+#	
+#	# Compatibility for all display types
+#	canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
+#	canvas.setCursorSize([25,25])
+#	canvas.setCursorPosition([0,0])
 
 class MenuController(object):
 	def __init__(self):
 		self.canvas = viz.addGUICanvas()
 		canvas = self.canvas
 		
+		
 		# Compatibility for all display types
 		canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
 		canvas.setCursorSize([25,25])
 		canvas.setCursorPosition([0,0])
 		
-		self.menus = {'main': None, 'mode': None, 'layer': None, 'ingame': None}
+		self.main = MainMenu(canvas, self)
+		self.mode = ModeMenu(canvas, self)
+		self.layer = LayerMenu(canvas, self)
+		self.ingame = InGameMenu(canvas, self)
 		
-		self.main	= MainMenu(canvas)
-		self.menus[self.main.name] = self.main
-		self.mode	= ModeMenu(canvas)
-		self.menus[self.mode.name] = self.mode
-		self.layer	= LayerMenu(canvas)
-		self.menus[self.layer.name] = self.layer
-		self.ingame	= InGameMenu(canvas)
-		self.menus[self.ingame.name] = self.ingame
+		#stating menu display path
+		self.menuOrder = [self.main, self.mode, self.layer, self.ingame]
 		
-	def changeMenu(self, menu1, menu2):	
-		menu1.setPanelVisible(viz.OFF, animate = False)
-		menu2.setPanelVisible(viz.OFF, animate = True)
-		menu1.active = False
-		menu2.active = True
-	def exit(self):
+	def start(self):
+		"""
+		Start the game
+		"""
+		self.selected = Selection()
+		ignoreLayer = False
+		# Which subsets were selected
+		self.selected.modeSelected(self.mode.radioButtons)
+		self.selected.objectsSelected(self.layer.regions, self.layer.layers, self.layer.checkBox, self.layer.selectAllOf)
+		if self.selected.mode == 'Movement Tutorial':
+			puzzle.tutorial.init()
+			self.setPanelVisible(viz.OFF)
+			self.canvas.setCursorVisible(viz.OFF)
+			self.layer.active = False
+			self.ingame.active = True
+		else:
+			if self.selected.load:
+				puzzle.controller.start(self.selected.mode, self.selected.load)
+				self.setPanelVisible(viz.OFF)
+				self.layer.canvas.setCursorVisible(viz.OFF)
+				self.layer.active = False
+				self.ingame.active = True
+				
+	def restart(self):
+		if self.layer.mode[0] == 'Movement Tutorial':
+			puzzle.tutorial.Tutorial.end()
+			puzzle.tutorial.init()
+		else:
+			puzzle.controller.end()
+			puzzle.controller.start(game.mode[0],game.loadLayers)
+		self.ingame.toggle()
+		
+	def endGame(self):
+		if self.layer.mode[0] == 'Movement Tutorial':
+			puzzle.tutorial.Tutorial.end()
+			puzzle.tutorial.recordData.close()
+		else:
+			puzzle.controller.end()
+		self.changeMenu(self.ingame, self.main)
+		
+	def backMenu(self, curMenu):
+		i = self.menuOrder.index(curMenu)
+		self.changeMenu(curMenu,  self.menuOrder[i-1])
+		
+	def nextMenu(self, curMenu):
+		i = self.menuOrder.index(curMenu)
+		self.changeMenu(curMenu,  self.menuOrder[i+1])
+
+	def changeMenu(self, leaveMenu, goToMenu):	
+		leaveMenu.setPanelVisible(viz.OFF, animate = False)
+		goToMenu.setPanelVisible(viz.ON, animate = True)
+		leaveMenu.menuVisible = False
+		goToMenu.menuVisible = True
+		leaveMenu.active = False
+		goToMenu.active = True
+		
+	def toggle(self):
+		if(self.main.active == True):
+			main.toggle()
+		elif(self.mode.active == True):
+			mode.toggle()
+		elif(self.layer.active == True):
+			layer.toggle()
+		else:
+			ingame.toggle()
+		
+	def exitGame(self):
 		viz.quit()
 		print 'Visual Anatomy Trainer has closed'
+		
 class MenuBase(vizinfo.InfoPanel):
 	"""Base Menu Class"""
 	def __init__(self, canvas, name, title, startVisible = False):
@@ -83,15 +165,20 @@ class MenuBase(vizinfo.InfoPanel):
 			self.setPanelVisible(True)
 			self.canvas.setCursorVisible(True)
 			self.menuVisible = True
+
 class MainMenu(MenuBase):
 	"""Main game menu"""
-	def __init__(self, canvas):
+	def __init__(self, canvas, controller):
+		# Store controller instance
+		self.controller = controller
+	
 		"""initialize the Main menu"""
 		super(MainMenu, self).__init__(canvas, 'main', 'Main Menu', True)
 		
+		
 		# add play button, play button action, and scroll over animation
 		self.play = self.addItem(viz.addButtonLabel('Play'), fontSize = 50)
-		vizact.onbuttondown(self.play, self.helpButton)
+		vizact.onbuttondown(self.play, self.controller.nextMenu, self)
 		
 		# add options button row
 		self.Help = self.addItem(viz.addButtonLabel('Help'), fontSize = 50)
@@ -99,22 +186,28 @@ class MainMenu(MenuBase):
 		
 		# add help button row
 		self.Exit = self.addItem(viz.addButtonLabel('Exit'), fontSize = 50)
-		vizact.onbuttondown(self.Exit, self.helpButton)
+		vizact.onbuttondown(self.Exit, controller.exitGame)
 		
-#		#rendering
-#		bb = self.getBoundingBox()
-#		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
+		#rendering
+		bb = self.getBoundingBox()
+		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 3)
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 	
+		
 	def helpButton(self):
 		print 'Help Button was Pressed'
 
 class ModeMenu(MenuBase):
 	"""Mode selection menu"""
-	def __init__(self, canvas):
+	def __init__(self, canvas, controller):
 		super(ModeMenu, self).__init__(canvas, 'mode', 'Mode Selection')
+		
+		# Store controller instance
+		self.controller = controller
+		
+		#Store modes from config to populate modemenu with
 		self.modes = config.menuLayerSelection.Modes
 		self.getPanel().fontSize(50)
 		
@@ -147,6 +240,7 @@ class ModeMenu(MenuBase):
 		##############################
 		"""next and back buttons"""
 		##############################
+		
 		#creating grid panels to add next and back buttons to
 		setGrid = vizdlg.GridPanel(parent = canvas)
 		
@@ -156,36 +250,28 @@ class ModeMenu(MenuBase):
 		setGrid.addRow([backButton, startButton])
 		
 		#add back and state button actions
-		vizact.onbuttondown(backButton, self.back)
-		vizact.onbuttondown(startButton, self.next)
+		vizact.onbuttondown(backButton, controller.backMenu, self)
+		vizact.onbuttondown(startButton, self.controller.nextMenu, self)
 		
 		###############################
 		"""add items to ModeMenu"""
 		###############################
 		self.addItem(modeGrid)
 		self.addItem(setGrid)
-		
-	def next(self):
-		self.setPanelVisible(viz.OFF, animate = False)
-		layer.setPanelVisible(viz.ON, animate = True)
-		self.active = False
-		layer.active = True
-	def back(self):
-		self.setPanelVisible(viz.OFF, animate = False)
-		main.setPanelVisible(viz.ON, animate = True)
-		self.active = False
-		main.active = True
 
 class LayerMenu(MenuBase):
 	"""Layer selection menu"""
-	def __init__(self,canvas):
+	def __init__(self,canvas,controller):
 		super(LayerMenu, self).__init__(canvas, 'layer', 'Layer Selection')
+		
+		# Store controller instance
+		self.controller = controller
+		
+		#Store region, layer, and mode data from config to populate menu
 		self.regions = config.menuLayerSelection.Regions #collections.OrderedDict type
 		self.layers = config.menuLayerSelection.Layers #collections.OrderedDict type
 		self.modes = config.menuLayerSelection.Modes
 		self.getPanel().fontSize(50)
-
-		self.menuVisible = False	
 		
 		#####################
 		'''LAYER TAB PANEL SETUP'''
@@ -226,7 +312,7 @@ class LayerMenu(MenuBase):
 		
 		for i in self.layers.iterkeys():
 			self.selectAllOf[i] = viz.addCheckbox(parent = canvas)
-			
+		
 		#adding checkboxes to panel
 		for i in self.layers:
 			selectAllPanel.addRow([viz.addText('Load All ' + i, fontSize = 5), self.selectAllOf[i]])
@@ -244,8 +330,8 @@ class LayerMenu(MenuBase):
 		setGrid.addRow([backButton, startButton])
 		
 		#add back and state button actions
-		vizact.onbuttondown(backButton, self.back)
-		vizact.onbuttondown(startButton, self.start)
+		vizact.onbuttondown(backButton, self.controller.backMenu, self)
+		vizact.onbuttondown(startButton, self.controller.start)
 		
 		############################
 		'''ADD ITEMS TO GAME MENU'''
@@ -267,97 +353,27 @@ class LayerMenu(MenuBase):
 		#rendering
 		bb = self.getBoundingBox()
 		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
-		
-	def start(self):
-		"""
-		Start the game
-		"""
-		self.selected = Selection()
-		ignoreLayer = False
-		# Which subsets were selected
-		self.selected.modeSelected(mode.radioButtons)
-		self.selected.objectsSelected(self.regions, self.layers, self.checkBox, self.selectAllOf)
-		if self.selected.mode == 'Movement Tutorial':
-			puzzle.tutorial.init()
-			self.setPanelVisible(viz.OFF)
-			self.canvas.setCursorVisible(viz.OFF)
-			self.active = False
-			ingame.active = True
-		else:
-			if self.selected.load:
-				puzzle.controller.start(self.selected.mode, self.selected.load)
-				self.setPanelVisible(viz.OFF)
-				self.canvas.setCursorVisible(viz.OFF)
-				self.active = False
-				ingame.active = True
-	
-	def setDataset(self, name):
-		self.dataset = name
-	def back(self):
-		self.setPanelVisible(viz.OFF, animate = False)
-		mode.setPanelVisible(viz.ON, animate = True)
-		self.active = False
-		mode.active = True
 
 class InGameMenu(MenuBase):
 	"""
 	In-game menu to be shown when games are running
 	"""
-	def __init__(self,canvas):
+	def __init__(self,canvas,controller):
 		super(InGameMenu, self).__init__(canvas, 'ingame', 'In Game Menu')
-
+		
+		# Store controller instance
+		self.controller = controller
+		
+		#menu buttons
 		self.restart = self.addItem(viz.addButtonLabel('Restart'))
 		self.end = self.addItem(viz.addButtonLabel('End game'))
 		
 		#Callbacks
-		vizact.onbuttondown(self.restart, self.restartButton)
-		vizact.onbuttondown(self.end, self.endButton)
+		vizact.onbuttondown(self.restart, self.controller.restart)
+		vizact.onbuttondown(self.end, self.controller.endGame)
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
-
-	def restartButton(self):
-		if layer.mode[0] == 'Movement Tutorial':
-			puzzle.tutorial.Tutorial.end()
-			puzzle.tutorial.init()
-		else:
-			puzzle.controller.end()
-			puzzle.controller.start(game.mode[0],game.loadLayers)
-		self.toggle()
-	
-	def endButton(self):
-		if layer.mode[0] == 'Movement Tutorial':
-			puzzle.tutorial.Tutorial.end()
-			puzzle.tutorial.recordData.close()
-		else:
-			puzzle.controller.end()
-		self.setPanelVisible(False)
-		self.menuVisible = False
-		self.active = False
-		main.active = True
-		main.menuVisible = True
-		main.setPanelVisible(True)
-		main.canvas.setCursorVisible(True)
-
-	def toggle(self):
-		if(self.menuVisible == True):
-			self.setPanelVisible(False)
-			self.canvas.setCursorVisible(False)
-			self.menuVisible = False
-		else:
-			self.setPanelVisible(True)
-			self.canvas.setCursorVisible(True)
-			self.menuVisible = True
-
-def toggle(visibility = viz.TOGGLE):
-	if(main.active == True):
-		main.toggle()
-	elif(mode.active == True):
-		mode.toggle()
-	elif(layer.active == True):
-		layer.toggle()
-	else:
-		ingame.toggle()
 	
 class Selection():
 	"""Selection methods to determine GUI inputs, and storage format for GUI inputs"""

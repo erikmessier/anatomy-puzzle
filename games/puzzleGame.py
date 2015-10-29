@@ -19,7 +19,7 @@ import init
 import menu
 import config
 import model
-import view
+#import view
 
 # The controller...
 controlInst = None

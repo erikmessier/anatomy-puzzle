@@ -38,12 +38,12 @@ class DisplayMode:
 
 dispMode = DisplayMode.monitor
 
-dispMode = DisplayMode.monitor
 menuScaleConfig = { \
 	0:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2}, \
 	1:{'main':.5, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 1}, \
 	2:{'main':1, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 2}, \
 	3:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2}}
+	
 menuScale = menuScaleConfig[dispMode]
 
 ##############################
@@ -120,9 +120,10 @@ Available modes for selection
 """
 
 class Modes:
-	freePlay	= games.puzzleGame.FreePlayMode
-	quizPlay	= games.puzzleGame.TestMode
-	tutorial	= games.tutorialGame.InterfaceTutorial
+	pass
+#	freePlay	= games.puzzleGame.FreePlayMode
+#	quizPlay	= games.puzzleGame.TestMode
+#	tutorial	= games.tutorialGame.InterfaceTutorial
 
 """
 Position and Orientation Vectors Scales for spacemouse control 

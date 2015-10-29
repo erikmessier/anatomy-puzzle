@@ -29,8 +29,6 @@ import viztask
 import vizproximity
 import config
 
-import puzzle
-
 #--------------------------init classes-------------------------
 class CameraKeyboardControl(viz.EventClass): 
 	""" 
