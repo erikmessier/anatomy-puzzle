@@ -3129,6 +3129,8 @@ FMA7309	right lung	FJ3067
 FMA7309	right lung	FJ3068
 FMA7309	right lung	FJ3069
 FMA7309	right lung	FJ3070
+FMA7309	right lung	FJ351	added
+FMA7309	right lung	FJ518	added
 FMA7310	left lung	FJ2441
 FMA7310	left lung	FJ2442
 FMA7310	left lung	FJ2443
@@ -3253,6 +3255,8 @@ FMA7310	left lung	FJ2962
 FMA7310	left lung	FJ2963
 FMA7310	left lung	FJ2964
 FMA7310	left lung	FJ2965
+FMA7310	left lung	FJ352	added
+FMA7310	left lung	FJ726	added
 FMA7333	upper lobe of right lung	FJ2041
 FMA7333	upper lobe of right lung	FJ2044
 FMA7333	upper lobe of right lung	FJ2453

@@ -978,6 +978,17 @@
   "name": "Right plantaris", 
   "filename": "FJ1429"
  }, 
+ "FMA7337": {
+  "representation": "BP4114", 
+  "concept": "FMA7337", 
+  "centerPoint": [
+   -55.495382116275884, 
+   -73.1247415176797, 
+   1192.3771235597976
+  ], 
+  "name": "Lower lobe of right lung", 
+  "filename": "FJ351"
+ }, 
  "FMA8175": {
   "representation": "BP10033", 
   "concept": "FMA8175", 
@@ -6567,26 +6578,26 @@
   "filename": "FJ1683"
  }, 
  "FMA71194": {
-  "representation": "BP10204", 
+  "representation": "BP3640", 
   "concept": "FMA71194", 
   "centerPoint": [
-   -10.771263955475794, 
-   -131.60022704507517, 
-   1293.9279298831366
+   -6.609720449585655, 
+   -148.38283646408814, 
+   1274.6832983425425
   ], 
   "name": "Right lobe of thymus", 
-  "filename": "FJ3151"
+  "filename": "FJ515"
  }, 
  "FMA71195": {
-  "representation": "BP9901", 
+  "representation": "BP3641", 
   "concept": "FMA71195", 
   "centerPoint": [
-   9.860066093514847, 
-   -137.54048184818484, 
-   1286.6427227722766
+   30.13776617944733, 
+   -144.13675706695017, 
+   1286.6381615302835
   ], 
   "name": "Left lobe of thymus", 
-  "filename": "FJ3150"
+  "filename": "FJ642"
  }, 
  "FMA50085": {
   "representation": "BP7710", 
@@ -8303,6 +8314,17 @@
   ], 
   "name": "Left tenth rib", 
   "filename": "FJ3225"
+ }, 
+ "FMA7383": {
+  "representation": "BP3646", 
+  "concept": "FMA7383", 
+  "centerPoint": [
+   -64.61569213690792, 
+   -130.96918867777194, 
+   1219.1160359187863
+  ], 
+  "name": "Middle lobe of lung", 
+  "filename": "FJ246"
  }, 
  "FMA8670": {
   "representation": "BP9523", 
@@ -14310,6 +14332,28 @@
   "name": "Left abductor hallucis", 
   "filename": "FJ1400M"
  }, 
+ "FMA7370": {
+  "representation": "BP4120", 
+  "concept": "FMA7370", 
+  "centerPoint": [
+   50.2790131719818, 
+   -107.74485410022801, 
+   1271.0528397873932
+  ], 
+  "name": "Upper lobe of left lung", 
+  "filename": "FJ352"
+ }, 
+ "FMA7371": {
+  "representation": "BP3649", 
+  "concept": "FMA7371", 
+  "centerPoint": [
+   68.37767223563475, 
+   -103.29510138419492, 
+   1196.2072090777426
+  ], 
+  "name": "Lower lobe of left lung", 
+  "filename": "FJ726"
+ }, 
  "FMA44249": {
   "representation": "BP5093", 
   "concept": "FMA44249", 
@@ -17213,6 +17257,17 @@
   ], 
   "name": "Left epididymis", 
   "filename": "FJ3136"
+ }, 
+ "FMA7333": {
+  "representation": "BP4115", 
+  "concept": "FMA7333", 
+  "centerPoint": [
+   -37.53171738820629, 
+   -100.12573963144962, 
+   1285.2496167076179
+  ], 
+  "name": "Upper lobe of right lung", 
+  "filename": "FJ518"
  }, 
  "FMA85102": {
   "representation": "BP5991", 

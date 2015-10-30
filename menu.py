@@ -388,6 +388,6 @@ class Selection():
 					
 		for i in inputMenu.selectAllOf.keys():
 			if inputMenu.selectAllOf[i].get() == 1:
-				layer_region = (set.union, [layers[i]], 'All Regions')
+				layer_region = (set.union, [inputMenu.layers[i]], 'All Regions')
 				self.load.append(layer_region)
 				self.unionFlag = True

@@ -106,7 +106,8 @@ class menuLayerSelection:
 	
 	_key_value_Layers = [\
 	('Bone', 'bone organ'), \
-	('Muscle', 'muscle organ')]
+	('Muscle', 'muscle organ'), \
+	('Test', 'left lung')]
 	Layers = collections.OrderedDict(_key_value_Layers)
 
 	_key_value_Modes = [ \
