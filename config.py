@@ -10,6 +10,9 @@ import collections
 import Tkinter
 import json
 
+# Custom modules
+import games
+
 # Where is the dataset in relation to where I am?
 DATASET_PATH = '.\\dataset\\full\\'
 
@@ -36,10 +39,11 @@ class DisplayMode:
 dispMode = DisplayMode.monitor
 
 menuScaleConfig = { \
-	0:{'main':1.2, 'game':.75, 'ingame': 1, 'test':2}, \
-	1:{'main':.5, 'game':.3, 'ingame': 1, 'test': 1}, \
-	2:{'main':1, 'game':0.75, 'ingame': 1, 'test': 2}, \
-	3:{'main':1.2, 'game':.75, 'ingame': 1, 'test':2}}
+	0:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2}, \
+	1:{'main':.5, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 1}, \
+	2:{'main':1, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 2}, \
+	3:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2}}
+	
 menuScale = menuScaleConfig[dispMode]
 
 ##############################
@@ -77,7 +81,7 @@ class PointerMode:
 	spaceMouse	= 1
 	label = {'Keyboard Control': 0, 'SpaceMouse Control': 1}
 
-pointerMode = PointerMode.keyboard
+pointerMode = PointerMode.spaceMouse
 
 """
 Dictionary of lists:
@@ -105,30 +109,33 @@ class menuLayerSelection:
 	('Muscle', 'muscle organ')]
 	Layers = collections.OrderedDict(_key_value_Layers)
 
-	_key_value_Modes = [\
-		('Free Play', 'free play description'),\
-		('Quiz Mode', 'test play description'),\
-		('Movement Tutorial', 'movement tutorial description')]
+	_key_value_Modes = [ \
+		('Free Play', games.puzzleGame.FreePlay), \
+		('Quiz Mode', games.puzzleGame.TestPlay), \
+		('Movement Tutorial', games.tutorialGame.InterfaceTutorial)]
+		
 	Modes = collections.OrderedDict(_key_value_Modes)
 
-HELP_MESSAGE = \
-'''
-Welcome to the puzzle game demo!
-Drag and drop the bones together to complete the anatomical model.
-Controls:
-	Press and hold space bar to grab bones
-	Use the arrow keys to move the camera
-	Use 'o' key to toggle proximity spheres
-Note: This demo requires the 3D Connexion SpaceMouse. If you do not have
-a SpaceMouse, see the code to enable wx/ad/ze control of the glove instead.
-'''
+"""
+Available modes for selection
+"""
+
+class Modes:
+	freePlay	= games.puzzleGame.FreePlay
+	quizPlay	= games.puzzleGame.TestPlay
+	tutorial	= games.tutorialGame.InterfaceTutorial
 
 """
 Position and Orientation Vectors Scales for spacemouse control 
 """
-positionVector = [.00005,.00005,.00005]
-orientationVector = [0,0,0]
 
+positionVector		= [.00005,.00005,.00005]
+orientationVector	= [0,0,0]
+
+# Colors of the various tissue layes
+colors = { \
+	'muscle organ':	(1.0, 0.5, 0.5), \
+	'bone organ':	(1.0, 1.0, 0.8)}
 
 class modalityGUI():
 	def __init__(self):

@@ -19,10 +19,8 @@ import init
 import menu
 import config
 import model
-import view
-
-# The controller...
-controlInst = None
+import puzzleView
+import bp3d
 
 class PuzzleController(object):
 	"""
@@ -53,16 +51,16 @@ class PuzzleController(object):
 		self._pointerTexture = model.pointer.getTexture()
 		self._pointerOrigColor = model.pointer.getColor()
 
-		self.viewcube = view.viewCube()
+		self.viewcube = puzzleView.viewCube()
 		
-	def load(self, dataset = 'right arm'):
+	def load(self, dataset):
 		"""
 		Load datasets and initialize everything necessary to commence
 		the puzzle game.
 		"""
 		
 		# Dataset
-		model.ds = model.DatasetInterface()
+		model.ds = bp3d.DatasetInterface()
 
 		# Proximity management
 		model.proxManager = vizproximity.Manager()
@@ -102,7 +100,7 @@ class PuzzleController(object):
 			if not model.ds.getConceptByFile(fileName):
 				print "WARNING, UNKNOWN FILE ", fileName
 				continue
-			b = model.Mesh(fileName)
+			b = bp3d.Mesh(fileName)
 			if (not randomize):
 				#Hardcoded keystone
 				b.setPosition([0.0,1.5,0.0])
@@ -270,27 +268,24 @@ class PuzzleController(object):
 		Grab in-range objects with the pointer
 		"""
 		grabList = self._proximityList # Needed for disabling grab of grounded bones
+		
 		if len(grabList) > 0 and not self._grabFlag:
 			target = self.getClosestBone(model.pointer,grabList)
+			
 			if target.group.grounded:
 				self._meshesById[target.id].mesh.color(0,1,0.5)
-				if menuMode != 'Quiz Mode': #quick fix for tool tip not being displayed in quiz mode(global menuMode is declared in def start)
-					self._meshesById[target.id].tooltip.visible(viz.ON)
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
 				self.transparency(target, 0.7)
 				self._meshesById[target.id].mesh.color(0,1,0.5)
-				if menuMode != 'Quiz Mode':
-					self._meshesById[target.id].tooltip.visible(viz.ON)
+				
 			if target != self._lastGrabbed and self._lastGrabbed:
-				self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,1.0])
+				self._lastGrabbed.color(reset = True)
 				for m in self._proximityList: 
 					if m == self._lastGrabbed:
 						self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,0.5])
-				if menuMode != 'Quiz Mode':
-					self._meshesById[self._lastGrabbed.id].tooltip.visible(viz.OFF)
 			self._lastGrabbed = target
 		self._grabFlag = True
 
@@ -350,7 +345,7 @@ class PuzzleController(object):
 		if len(self._proximityList) and not self._gloveLink:
 			model.pointer.color(1,1,1)
 		if source != self._lastGrabbed:
-			self._meshesById[source.id].mesh.color([1.0,1.0,1.0])
+			self._meshesById[source.id].color(reset = True)
 			self._meshesById[source.id].setNameAudioFlag(0)
 		self._proximityList.remove(source)
 	
@@ -466,7 +461,7 @@ class TestPlay(PuzzleController):
 		self.score = PuzzleScore(self.modeName)
 		
 #		viztask.schedule(soundTask(glove))
-		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		self._meshesfToLoad = model.ds.getOntologySet(dataset)
 		self.loadMeshes(self._meshesToLoad)
 
 		# Hide all of the meshes

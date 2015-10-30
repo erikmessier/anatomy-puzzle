@@ -12,8 +12,14 @@ import viztask
 import vizshape
 import vizmat
 
-# Custom
-import controller as puzzle
+import csv
+import time
+import datetime
+import random
+
+#custom
+import init
+import menu
 import config
 import model
 import menu
@@ -26,18 +32,15 @@ def init():
 	global snapFlag
 	global gloveLink
 	global recordData
-	global Tutorial
 	snapFlag = False
 	proxList = []
 	gloveLink = None
 	snapTransitionTime = 0.3
 	animateOutline = 1.25
-	canvas = viz.addGUICanvas()
 	tasks = viztask.Scheduler
-	Tutorial = InterfaceTutorial(canvas)
 	recordData = TutorialData()
 		
-class InterfaceTutorial():
+class InterfaceTutorial(object):
 	"""
 	This game mode is intended to instruct novice users in the use of the SpaceMouse
 	interface hardware. The mechanics of this tutorial are heavily inspired by the
@@ -50,7 +53,6 @@ class InterfaceTutorial():
 		model.pointer.setPosition(0,0,0)
 		self.gloveStart = model.pointer.getPosition()
 		self.iterations = 0
-		self.canvas = canvas
 		self.origPosVec = config.positionVector
 		self.origOrienVec = config.orientationVector
 		
@@ -68,13 +70,14 @@ class InterfaceTutorial():
 		
 		#creating tutorial objects
 		self.dog = viz.addChild('.\\dataset\\dog\\dog.obj')
-		self.dogOutline = viz.addChild('.\\dataset\\dog\\dog.obj')
 		self.dogStart = self.dog.getPosition()
 		self.dog.setScale([sf,sf,sf])
 		self.dogOutline.setScale([sf,sf,sf])
 		self.startColor = model.pointer.getColor()
 		
 		#creating dog outline
+		self.dogOutline = viz.addChild('.\\dataset\\dog\\dog.obj')
+		self.dogOutline.setScale([sf,sf,sf])
 		self.dogOutline.alpha(0.8)
 		self.dogOutline.color(0,5,0)
 		self.dogOutline.texture(None)
@@ -127,7 +130,11 @@ class InterfaceTutorial():
 		#task schedule
 		self.interface = viztask.schedule(self.interfaceTasks())
 		self.gameMechanics = viztask.schedule(self.mechanics())
-		
+	
+	def load(self, dataset):
+		'''Accept dataset, but do nothing with it'''
+		pass
+
 	def debugger(self):
 		"""
 		Activates debuggin' tools
@@ -398,7 +405,6 @@ def snapCheckEnter(e, dogTarget):
 	If the snap proximity sensor has its desired target within range, then snapFlag is True.
 	snapFlag is used in release to determine whether snap will be called or not.
 	"""
-	"""@args vizproximity.ProximityEvent()"""
 	global snapFlag
 	targets = e.manager.getActiveTargets()
 	for t in targets:
@@ -409,16 +415,19 @@ def snapCheckExit(e, dogTarget):
 	"""
 	If the dogTarget has left the proximity sensor then snapFlag is False
 	"""
-	"""@args vizproximity.ProximityEvent()"""
 	global snapFlag
 	target = e.target.getSourceObject()
 	if target == dogTarget:
 		snapFlag = False
 
 class TutorialData():
-	'''collects data from tutorial'''
+	"""
+	Collects data from tutorial
+	"""
 	def __init__(self):
-		'''init data recording structure'''
+		"""
+		Init data recording structure
+		"""
 		self.startTime = datetime.datetime.now()
 		try:
 			self.scoreFile = open('.\\log\\tutorial\\' + self.startTime.strftime('%m%d%Y_%H%M%S') + '.csv', 'wb')
