@@ -84,7 +84,7 @@ class Mesh(viz.VizNode):
 #				self.info += bd + ' '
 		
 		# We are using a 'center' viznode to make manipulation easy
-		self.center = vizshape.addCube(0.001) # An arbitrary placeholder cube
+		self.center = vizshape.addCube(0.1) # An arbitrary placeholder cube
 		super(Mesh, self).__init__(self.center.id)
 		
 		# This is the actual mesh we will see
@@ -146,9 +146,9 @@ class Mesh(viz.VizNode):
 #		self.nameLine.visible(viz.OFF)
 		
 		# Turn off visibility of center and checker viznodes
-		self.center.disable([viz.RENDERING])
+#		self.center.disable([viz.RENDERING])
 		self.mesh.color(self.metaData['color'])
-		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
+#		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 		
 		self.scale		= SF
 		self._enabled	= True
@@ -326,24 +326,28 @@ class Mesh(viz.VizNode):
 
 class DatasetInterface():
 	def __init__(self):
-		self.partOfElement = self.parseElementOntology('partof_element_parts.txt')
-		self.isAElement = self.parseElementOntology('isa_element_parts.txt')
+		partOfElement = self.parseElementOntology('partof_element_parts.txt')
+		isAElement = self.parseElementOntology('isa_element_parts.txt')
+		self.fullOntology = {}
+		self.fullOntology.update(partOfElement)
+		self.fullOntology.update(isAElement)
 		self.allMetaData  = self.parseMetaData() # Dictionary of dictionary with concept ID as key
-		self.indexByName = {}
+		self.ontologyByName = {}
 		
-		names = [self.partOfElement[n]['name'] for n in self.partOfElement.keys()]
-		self.indexByName.update(dict(zip(names, self.partOfElement.values())))
-		names = [self.isAElement[n]['name'] for n in self.isAElement.keys()]
-		self.indexByName.update(dict(zip(names, self.isAElement.values())))
+		names = [self.fullOntology[n]['name'] for n in self.fullOntology.keys()]
+		self.ontologyByName.update(dict(zip(names, self.fullOntology.values())))
 		
-	def getConceptByFile(self, file):
-		filenames = [self.allMetaData[n]['filename'] for n in self.allMetaData.keys()]
-		indexByFile = dict(zip(filenames, self.allMetaData.values()))
-		try:
-			return indexByFile[file]['concept']
-		except KeyError:
-			print 'Unknown filename ' + file
-			return None
+	def getByConcept(self, concept):
+		"""
+		Get filenames(s) by concept id
+		"""
+		pass
+		
+	def getByName(self, name):
+		"""
+		Get filenames(s) by concept name
+		"""
+		pass
 			
 	def getOntologySet(self, searchSets):
 		"""
@@ -361,7 +365,7 @@ class DatasetInterface():
 				filenames.append([])
 				for conceptName in s:
 					try:
-						filenames[-1].extend(self.indexByName[conceptName]['filenames'])
+						filenames[-1].extend(self.ontologyByName[conceptName]['filenames'])
 					except KeyError:
 						print 'Unknown name ', str(conceptName), '!'
 						continue
@@ -374,42 +378,39 @@ class DatasetInterface():
 		Returns all associated metadata with a particular entity in a dictionary
 		"""
 		if concept:
-			try:
-				thisMD = self.allMetaData[concept]
-			except KeyError:
-				print 'Unknown FMA concept id ' + concept
-				return
-			# silly dataset uses right-handed coordinate system
-			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
+			print 'Pulling in multiple pieces of metadata not supported'
+			return None
 		elif file:
-			thisMD = self.allMetaData[self.getConceptByFile(file)]
+			try:
+				thisMD = self.allMetaData[file]
+			except KeyError:
+				print 'Unknown filename!'
+				return None
 			# silly dataset uses right-handed coordinate system
 			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
 		else:
 			print 'No search criteria specified'
-			return
+			return None
 		
 		thisMD['color'] = self.getColor(thisMD['filename'])
 		return thisMD
 		
-	
 	def getColor(self, filename):
-		for conceptName in config.colors.keys():
-			if filename in self.indexByName[conceptName]['filenames']:
-				return config.colors[conceptName]
-				break
-		else:
-			return (1,1,1)
-	
-	def getColor(self, filename):
-		for conceptName in config.colors.keys():
-			if filename in self.indexByName[conceptName]['filenames']:
-				return config.colors[conceptName]
+		"""
+		Pull in coloring from config, if it is defined
+		"""
+		for ontologyName in config.colors.keys():
+			if filename in self.ontologyByName[ontologyName]['filenames']:
+				return config.colors[ontologyName]
 				break
 		else:
 			return (1,1,1)
 			
 	def parseElementOntology(self, filename):
+		"""
+		Parse ontological relationship files supplied with the BodyParts3D dataset release.
+		Currrently only designed to handle isa_element* and partof_element* files.
+		"""
 		elementOntology = {}
 		with open(config.DATASET_PATH + filename, 'rb') as f:
 			reader = csv.reader(f, delimiter = '\t')
@@ -426,5 +427,7 @@ class DatasetInterface():
 			return json.load(f)
 	
 def rightToLeft(center):
-	"""Convert from right handed coordinate system to left handed"""
+	"""
+	Convert from right handed coordinate system to left handed
+	"""
 	return [center[0], center[1], center[2]*-1]
