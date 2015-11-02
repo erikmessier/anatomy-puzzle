@@ -222,10 +222,14 @@ class modalityGUI():
 		nextFrame.pack(side = Tkinter.RIGHT)
 		
 		#creating next and exit buttons
-		nextButton = Tkinter.Button(nextFrame, text = 'Next', fg = 'white', bg = 'green', command = self.next)
-		exitButton = Tkinter.Button(exitFrame, text = 'Exit', fg = 'white', bg = 'red', command = self.exit)
+		nextButton = Tkinter.Button(nextFrame, text = 'Next', fg = 'white', bg = 'green', command = lambda: self.next(None))
+		exitButton = Tkinter.Button(exitFrame, text = 'Exit', fg = 'white', bg = 'red', command = lambda: self.exit(None))
 		nextButton.pack_configure(side = Tkinter.RIGHT)
 		exitButton.pack_configure(side = Tkinter.LEFT)
+		
+		#adding keybindings
+		self.root.bind('<Return>', self.next)
+		self.root.bind('<Escape>', self.exit)
 		
 		#start gui
 		self.root.mainloop()
@@ -240,7 +244,7 @@ class modalityGUI():
 		self.pointerMode = radioValue
 	def camSelected(self):
 		pass
-	def next(self):
+	def next(self, keyDown):
 		with open(self.PATH + 'configurations.json','wb') as f:
 			self.configurations = {'dispMode': self.dispMode, 'pointerMode': self.pointerMode, 'proceed': self.proceed}
 			for _ in self.configurations.values():
@@ -248,7 +252,7 @@ class modalityGUI():
 					return
 			json.dump(self.configurations, f, indent = 1)
 		self.root.destroy()
-	def exit(self):
+	def exit(self, keyDown):
 		self.proceed = False
 		with open(self.PATH + 'configurations.json','wb') as f:
 			self.configurations = {'dispMode': self.dispMode, 'pointerMode': self.pointerMode, 'proceed': self.proceed}

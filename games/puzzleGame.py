@@ -273,19 +273,22 @@ class PuzzleController(object):
 			target = self.getClosestBone(model.pointer,grabList)
 			
 			if target.group.grounded:
-				self._meshesById[target.id].mesh.color(0,1,0.5)
+				target.color([0,1,0.5])
+				target.tooltip.visible(viz.ON)
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
 				self.transparency(target, 0.7)
-				self._meshesById[target.id].mesh.color(0,1,0.5)
+				target.color([0,1,0.5])
+				target.tooltip.visible(viz.ON)
 				
 			if target != self._lastGrabbed and self._lastGrabbed:
 				self._lastGrabbed.color(reset = True)
+				self._lastGrabbed.tooltip.visible(viz.OFF)
 				for m in self._proximityList: 
 					if m == self._lastGrabbed:
-						self._meshesById[self._lastGrabbed.id].mesh.color([1.0,1.0,0.5])
+						self._lastGrabbed.color([1.0,1.0,0.5])
 			self._lastGrabbed = target
 		self._grabFlag = True
 
