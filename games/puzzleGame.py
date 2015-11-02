@@ -97,7 +97,7 @@ class PuzzleController(object):
 		"""Load all of the files from the dataset into puzzle.mesh instances"""
 		for i, fileName in enumerate(meshes):
 			# This is the actual mesh we will see
-			if not model.ds.getConceptByFile(fileName):
+			if not model.ds.getMetaData(file = fileName):
 				print "WARNING, UNKNOWN FILE ", fileName
 				continue
 			b = bp3d.Mesh(fileName)
