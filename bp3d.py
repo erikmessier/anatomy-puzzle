@@ -67,6 +67,7 @@ class Mesh(viz.VizNode):
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
 		
 		self.name = self.metaData['name']
+		print self.name, self.centerPoint
 
 		self.nameFormatted = ''
 		for i, w in enumerate(self.name.split()):
@@ -84,7 +85,7 @@ class Mesh(viz.VizNode):
 #				self.info += bd + ' '
 		
 		# We are using a 'center' viznode to make manipulation easy
-		self.center = vizshape.addCube(0.1) # An arbitrary placeholder cube
+		self.center = vizshape.addCube(0.001) # An arbitrary placeholder cube
 		super(Mesh, self).__init__(self.center.id)
 		
 		# This is the actual mesh we will see
@@ -146,9 +147,8 @@ class Mesh(viz.VizNode):
 #		self.nameLine.visible(viz.OFF)
 		
 		# Turn off visibility of center and checker viznodes
-#		self.center.disable([viz.RENDERING])
 		self.mesh.color(self.metaData['color'])
-#		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
+		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 		
 		self.scale		= SF
 		self._enabled	= True
@@ -331,11 +331,12 @@ class DatasetInterface():
 		self.fullOntology = {}
 		self.fullOntology.update(partOfElement)
 		self.fullOntology.update(isAElement)
-		self.allMetaData  = self.parseMetaData() # Dictionary of dictionary with concept ID as key
-		self.ontologyByName = {}
 		
+		self.ontologyByName = {}
 		names = [self.fullOntology[n]['name'] for n in self.fullOntology.keys()]
 		self.ontologyByName.update(dict(zip(names, self.fullOntology.values())))
+		
+		self.allMetaData  = self.parseMetaData() # Dictionary of dictionary with concept ID as key
 		
 	def getByConcept(self, concept):
 		"""
@@ -386,13 +387,10 @@ class DatasetInterface():
 			except KeyError:
 				print 'Unknown filename!'
 				return None
-			# silly dataset uses right-handed coordinate system
-			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
 		else:
 			print 'No search criteria specified'
 			return None
 		
-		thisMD['color'] = self.getColor(thisMD['filename'])
 		return thisMD
 		
 	def getColor(self, filename):
@@ -424,10 +422,17 @@ class DatasetInterface():
 		
 	def parseMetaData(self):
 		with open(config.DATASET_PATH + 'metadata.json','rb') as f:
-			return json.load(f)
+			full = json.load(f)
+			
+		for thisMD in full.values():
+			thisMD['centerPoint'] = rightToLeft(thisMD['centerPoint'])
+			thisMD['color'] = self.getColor(thisMD['filename'])
+		
+		return full
 	
 def rightToLeft(center):
 	"""
 	Convert from right handed coordinate system to left handed
 	"""
+	print 'right to left', center
 	return [center[0], center[1], center[2]*-1]

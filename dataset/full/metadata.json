@@ -4377,6 +4377,17 @@
   "name": "Left superficial palmar arterial arch", 
   "filename": "FJ2248"
  }, 
+ "FJ515": {
+  "representation": "BP3640", 
+  "concept": "FMA71194", 
+  "centerPoint": [
+   -6.609720449585655, 
+   -148.38283646408814, 
+   1274.6832983425425
+  ], 
+  "name": "Right lobe of thymus", 
+  "filename": "FJ515"
+ }, 
  "FJ1383M": {
   "representation": "BP9161", 
   "concept": "FMA37718", 
@@ -5619,6 +5630,17 @@
   ], 
   "name": "Left nasal bone", 
   "filename": "FJ3272"
+ }, 
+ "FJ726": {
+  "representation": "BP3649", 
+  "concept": "FMA7371", 
+  "centerPoint": [
+   68.37767223563475, 
+   -103.29510138419492, 
+   1196.2072090777426
+  ], 
+  "name": "Lower lobe of left lung", 
+  "filename": "FJ726"
  }, 
  "FJ1816M": {
   "representation": "BP9165", 
@@ -10119,6 +10141,17 @@
   "name": "Left basilic vein", 
   "filename": "FJ2218"
  }, 
+ "FJ2239": {
+  "representation": "BP6884", 
+  "concept": "FMA22687", 
+  "centerPoint": [
+   163.76527811860925, 
+   -72.4639848670757, 
+   1290.9397137014303
+  ], 
+  "name": "Left posterior circumflex humeral artery", 
+  "filename": "FJ2239"
+ }, 
  "FJ2211": {
   "representation": "BP6876", 
   "concept": "FMA23069", 
@@ -10735,6 +10768,17 @@
   "name": "Left genioglossus", 
   "filename": "FJ2738"
  }, 
+ "FJ642": {
+  "representation": "BP3641", 
+  "concept": "FMA71195", 
+  "centerPoint": [
+   30.13776617944733, 
+   -144.13675706695017, 
+   1286.6381615302835
+  ], 
+  "name": "Left lobe of thymus", 
+  "filename": "FJ642"
+ }, 
  "FJ3241": {
   "representation": "BP9649", 
   "concept": "FMA24508", 
@@ -11032,16 +11076,16 @@
   "name": "Inferior branch of medial segmental artery", 
   "filename": "FJ2988"
  }, 
- "FJ2239": {
-  "representation": "BP6884", 
-  "concept": "FMA22687", 
+ "FJ246": {
+  "representation": "BP3646", 
+  "concept": "FMA7383", 
   "centerPoint": [
-   163.76527811860925, 
-   -72.4639848670757, 
-   1290.9397137014303
+   -64.61569213690792, 
+   -130.96918867777194, 
+   1219.1160359187863
   ], 
-  "name": "Left posterior circumflex humeral artery", 
-  "filename": "FJ2239"
+  "name": "Middle lobe of lung", 
+  "filename": "FJ246"
  }, 
  "FJ1387M": {
   "representation": "BP8902", 
@@ -11273,6 +11317,17 @@
   ], 
   "name": "Proximal part of jejunum", 
   "filename": "FJ2626"
+ }, 
+ "FJ518": {
+  "representation": "BP4115", 
+  "concept": "FMA7333", 
+  "centerPoint": [
+   -37.53171738820629, 
+   -100.12573963144962, 
+   1285.2496167076179
+  ], 
+  "name": "Upper lobe of right lung", 
+  "filename": "FJ518"
  }, 
  "FJ2627": {
   "representation": "BP9588", 
@@ -14428,7 +14483,7 @@
    -69.12990497496867, 
    1493.169702753443
   ], 
-  "name": "Right Medulla oblongata", 
+  "name": "Medulla oblongata", 
   "filename": "FJ1769"
  }, 
  "FJ1290": {
@@ -15354,6 +15409,17 @@
   ], 
   "name": "Left lower first secondary premolar tooth", 
   "filename": "FJ1255"
+ }, 
+ "FJ351": {
+  "representation": "BP4114", 
+  "concept": "FMA7337", 
+  "centerPoint": [
+   -55.495382116275884, 
+   -73.1247415176797, 
+   1192.3771235597976
+  ], 
+  "name": "Lower lobe of right lung", 
+  "filename": "FJ351"
  }, 
  "FJ1691M": {
   "representation": "BP9797", 
@@ -19083,6 +19149,17 @@
   ], 
   "name": "First posterior ventricular branch of right coronary artery", 
   "filename": "FJ2717"
+ }, 
+ "FJ352": {
+  "representation": "BP4120", 
+  "concept": "FMA7370", 
+  "centerPoint": [
+   50.2790131719818, 
+   -107.74485410022801, 
+   1271.0528397873932
+  ], 
+  "name": "Upper lobe of left lung", 
+  "filename": "FJ352"
  }, 
  "FJ1517M": {
   "representation": "BP7970", 
@@ -24025,13 +24102,13 @@
  }, 
  "FJ1831": {
   "representation": "BP6704", 
-  "concept": "FMA62005", 
+  "concept": "FMA62004", 
   "centerPoint": [
    -6.267634395001547, 
    -68.48508844864361, 
    1492.8137701920161
   ], 
-  "name": "Left Medulla oblongata", 
+  "name": "Medulla oblongata", 
   "filename": "FJ1831"
  }, 
  "FJ1832": {
