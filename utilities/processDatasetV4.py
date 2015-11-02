@@ -25,6 +25,7 @@ def getCenterOfMass(file):
 
 metadata = {}
 knownFiles, unknownFiles = 0, 0
+overwrites = 0
 
 filenames = os.listdir(DATASET_PATH)
 
@@ -45,12 +46,17 @@ for i, name in enumerate(filenames):
 			
 		thisData['centerPoint'] = getCenterOfMass(f)
 		
-		metadata[thisData['concept']] = thisData
+		if metadata.has_key(thisData['concept']):
+			overwrites += 1
+			print 'Concept ', thisData['concept'], ' just got overwrote'
+			
+		metadata[thisData['filename']] = thisData
 		knownFiles += 1
 
 
-print str(knownFiles) + ' files were parsed.'
-print str(unknownFiles) + ' files were not found. Possibly assembly names.'
+print knownFiles, ' files were parsed.'
+print unknownFiles, ' files were not found. Possibly assembly names.'
+print overwrites, ' overwrites occured.'
 
 with open(DATASET_PATH + 'metadata.json','wb') as f:
 	json.dump(metadata, f, indent = 1)
