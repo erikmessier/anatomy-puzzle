@@ -760,6 +760,8 @@ FMA5022	muscle organ	FJ2803
 FMA5022	muscle organ	FJ2806
 FMA5022	muscle organ	FJ2809
 FMA5022	muscle organ	FJ3131
+FMA5022	muscle organ	FJ1464M	added
+FMA5022	muscle organ	FJ1464	added
 FMA5039	right costocervical trunk	FJ2276
 FMA5041	right second posterior intercostal artery	FJ1950
 FMA5042	right superior intercostal artery	FJ1935
