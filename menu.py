@@ -379,15 +379,17 @@ class Selection():
 				break
 	
 	def objectsSelected(self, inputMenu):
-		"""Determiens which selections were made on the tabs, and entire layer selections made"""
+		"""
+		Determines which selections were made on the tabs, and entire layer selections made
+		"""
 		for i in inputMenu.regions.iterkeys():
 			for j in inputMenu.layers.iterkeys():
 				if inputMenu.checkBox[i][j].get() == 1:
-					layer_region = (set.intersection, [inputMenu.layers[j]], inputMenu.regions[i])
+					layer_region = (set.intersection, inputMenu.layers[j], inputMenu.regions[i])
 					self.load.append(layer_region)
 					
 		for i in inputMenu.selectAllOf.keys():
 			if inputMenu.selectAllOf[i].get() == 1:
-				layer_region = (set.union, [inputMenu.layers[i]], 'All Regions')
+				layer_region = (set.union, inputMenu.layers[i], 'All Regions')
 				self.load.append(layer_region)
 				self.unionFlag = True

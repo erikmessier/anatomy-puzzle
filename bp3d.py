@@ -366,7 +366,6 @@ class DatasetInterface():
 						print 'Unknown name ', str(conceptName), '!'
 						continue
 				filenames[-1] = set(filenames[-1])
-				print filenames
 			modelSet.extend(list(setOperation(*filenames)))
 		return set(modelSet)
 		
