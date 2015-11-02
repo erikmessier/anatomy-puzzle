@@ -442,9 +442,9 @@ class TestPlay(PuzzleController):
 		"""
 		
 		# Dataset
-		model.ds = model.DatasetInterface()
+		model.ds = bp3d.DatasetInterface()
 		
-		self._quizPanel = view.TestSnapPanel()
+		self._quizPanel = puzzleView.TestSnapPanel()
 		self._quizPanel.toggle()
 
 		# Proximity management
