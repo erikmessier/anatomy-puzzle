@@ -19,6 +19,7 @@ display = None
 
 # Pointer instance
 pointer = None
+planeVert = None
 
 # Menu
 menu = None
