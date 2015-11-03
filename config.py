@@ -6,10 +6,6 @@ Just a bunch of constants defining running configuration
 import vizshape
 import collections
 
-#For modalityGUI
-import Tkinter
-import json
-
 # Custom modules
 import games
 
@@ -39,10 +35,10 @@ class DisplayMode:
 dispMode = DisplayMode.monitor
 
 menuScaleConfig = { \
-	0:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2}, \
-	1:{'main':.5, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 1}, \
-	2:{'main':1, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 2}, \
-	3:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2}}
+	0:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2, 'loading':1}, \
+	1:{'main':.5, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 1, 'loading':1}, \
+	2:{'main':1, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 2, 'loading':1}, \
+	3:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2, 'loading':1}}
 	
 menuScale = menuScaleConfig[dispMode]
 
@@ -101,8 +97,8 @@ class menuLayerSelection:
 	""" Associates region with region concept name(s)"""
 	_key_value_Regions = [\
 		('Head',			['head']), \
-		('Thorax',		['body proper', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart']), \
-		('Upper Appen.',	['free upper limb', 'right free upper limb', 'left free upper limb']), \
+		('Thorax',		['body proper','muscle of shoulder', 'muscle of pectoral girdle', 'muscle of vertebral column', 'muscle of neck', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart']), \
+		('Upper Appen.',	['right free upper limb', 'left free upper limb', 'muscle of free upper limb']), \
 		('Lower Appen.', ['right free lower limb', 'left free lower limb', 'muscle of lower limb'])]
 	Regions = collections.OrderedDict(_key_value_Regions)
 	
@@ -142,8 +138,8 @@ class Modes:
 Position and Orientation Vectors Scales for spacemouse control 
 """
 
-positionVector		= [.00005,.00005,.00005]
-orientationVector	= [0,0,0]
+SMPositionScale	= [.0001,.0001,.0001]
+SMEulerScale	= [0.001, 0.001, 0.001]
 
 # Ignore filenames with these concept names when calculating union/intersection for loading final dataset
 ignoreSets = ('portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery')

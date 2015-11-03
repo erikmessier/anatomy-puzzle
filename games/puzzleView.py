@@ -40,10 +40,10 @@ class TestSnapPanel(vizdlg.Panel):
 		self.addItem(title, align = viz.ALIGN_CENTER_TOP)
 		
 		#bones to be snapped. source snapped to target.
-		source = 'a'*20
+		source = ''
 		self.sourceText = viz.addTextbox(parent = self.canvas)
 		self.sourceText.setLength(1.5)
-		target = 'a'*20
+		target = ''
 		self.targetText = viz.addTextbox(parent = self.canvas)
 		self.targetText.setLength(1.5)
 		

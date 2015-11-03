@@ -463,9 +463,6 @@ def pointerInput(mode, pointer,arena):
 			
 		viz.callback(viz.SENSOR_DOWN_EVENT,buttonPress)
 		
-		#device.setTranslateScale([1,1,1])
-		#device.setRotateScale([0,0,0]) # i don't think we need this
-		
 		#add 3Dnode object that follows mainview exactly, called MainViewShadow
 #		MainViewShadow = vizshape.addSphere(radius = .5)
 #		MainViewShadow.disable(viz.RENDERING)
@@ -544,12 +541,12 @@ def pointerInput(mode, pointer,arena):
 				
 				#if selected do log scale on orientation
 				if log == True:
-					config.orientationVector= [.5, .5 , .5]
+					config.SMEulerScale= [.5, .5 , .5]
 					orientation = logScale(orientation)
 	
 				#rescale position
-				position = scalarMult(position,config.positionVector)
-				orientation = scalarMult(orientation,config.orientationVector)
+				position = scalarMult(position,config.SMPositionScale)
+				orientation = scalarMult(orientation,config.SMEulerScale)
 				
 				#invert signs of x and z 
 				x,y,z = position
@@ -578,16 +575,8 @@ def pointerInput(mode, pointer,arena):
 
 		#schedule controller loop with viztask scheduler
 		viztask.schedule( getCoords(device,pointer))
-
-		#vizact.ontimer2(.01,1, delayedSet ) 
-
-		#viz.link(device, pointer, viz.REL_PARENT)
-		#link.preEuler([0,90,0])
 		
 		return device
 		
 	else:
 		raise ValueError('Invaid control mode selection')
-		
-	#question guys. if keyboard is selected, should  the init script call code 
-	#in the control module to set the functions? - Alex

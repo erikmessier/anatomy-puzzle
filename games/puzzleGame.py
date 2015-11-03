@@ -11,6 +11,7 @@ import vizshape
 # Python built-in modules
 import random
 import math
+import numpy
 import json, csv
 import time, datetime
 
@@ -690,3 +691,4 @@ def playName(boneObj):
 		viz.playSound(path + "audio_names\\" + boneObj.name + ".wav") # should be updated to path
 	except ValueError:
 		print ("the name of the audio name file was wrong")
+		

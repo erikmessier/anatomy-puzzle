@@ -6,6 +6,8 @@ This is where all of the menu handling will go
 
 # Builtin module
 import collections
+import json
+import Tkinter
 
 # Vizard modules
 import viz
@@ -39,13 +41,14 @@ class MenuController(object):
 		self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.exitGame))
 		
 		#init menus
-		self.mainMenu	= MainMenu(canvas, self)
-		self.modeMenu	= ModeMenu(canvas, self)
-		self.layerMenu	= LayerMenu(canvas, self)
-		self.inGameMenu	= InGameMenu(canvas, self)
+		self.mainMenu		= MainMenu(canvas, self)
+		self.modeMenu		= ModeMenu(canvas, self)
+		self.layerMenu		= LayerMenu(canvas, self)
+		self.loadingScreen 	= LoadingScreen(canvas)
+		self.inGameMenu		= InGameMenu(canvas, self)
 		
 		#stating menu display path
-		self.menuOrder = [self.mainMenu, self.modeMenu, self.layerMenu, self.inGameMenu]
+		self.menuOrder = [self.mainMenu, self.modeMenu, self.layerMenu, self.loadingScreen, self.inGameMenu]
 		
 		self.activeMenu = self.mainMenu
 		
@@ -145,7 +148,7 @@ class MenuController(object):
 		
 class MenuBase(vizinfo.InfoPanel):
 	"""Base Menu Class"""
-	def __init__(self, canvas, name, title, startVisible = False):
+	def __init__(self, canvas, name = '', title = '', startVisible = False):
 		"""initialize the menu"""
 		vizinfo.InfoPanel.__init__(self, '', title = title, fontSize = 100, parent = canvas, align = viz.ALIGN_CENTER_CENTER, icon = False)
 		
@@ -397,6 +400,19 @@ class InGameMenu(MenuBase):
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
+
+class LoadingScreen(MenuBase):
+	"""
+	Loading Screen
+	"""
+	def __init__(self, canvas):
+		super(LoadingScreen, self).__init__(canvas, 'loading')
+		
+		#add message box
+		self.percent = viz.addTextbox(parent = canvas)
+		self.percent.message('hey')
+		self.addItem(self.percent)
+		
 	
 class Selection():
 	"""Selection methods to determine GUI inputs, and storage format for GUI inputs"""
@@ -427,3 +443,122 @@ class Selection():
 				layer_region = (set.union, inputMenu.layers[i], 'All Regions')
 				self.load.append(layer_region)
 				self.unionFlag = True
+
+class modalityGUI():
+	def __init__(self):
+		self.PATH = '.\\dataset\\configurations\\'
+		
+		"""initialization variables: reading from previous created file to find what selections were 
+		storing values in variables"""
+		try:
+			with open(self.PATH + 'configurations.json','rb') as f:
+				try:
+					self.prevInput = json.load(f)
+				except ValueError:
+					print 'no previous input file!'
+		except IOError:
+			print 'file has not yet been created'
+			
+		try:
+			self.dispMode = self.prevInput['dispMode']
+			self.pointerMode = self.prevInput['pointerMode']
+		except:
+			self.dispMode = None
+			self.pointerMode = None
+		self.camMode = None
+		self.proceed = True
+		
+		#create the window
+		self.root = Tkinter.Tk()
+		self.root.resizable(0,0)
+		self.root.protocol('WM_DELETE_WINDOW', self.__CancelCommand)
+		
+		#modify root window
+		self.root.title('Modality Selection: ')
+		
+		#create main frame and directions frame
+		mainFrame = Tkinter.Frame(self.root)
+		mainFrame.pack(side = Tkinter.LEFT)
+		
+		#display modality label
+		displayModeLabel = Tkinter.Label(mainFrame, text = 'Display Mode: ', bg = 'blue', fg = 'white')
+		displayModeLabel.pack_configure(side = Tkinter.TOP)
+		
+		#display modality frame for radio buttons
+		dispFrame = Tkinter.Frame(mainFrame)
+		dispFrame.pack(side = Tkinter.TOP)
+		
+		#creating display modality radio buttons
+		self.vDisp = Tkinter.StringVar()
+		self.vDisp.set('dispMode')
+				
+		for label in config.DisplayMode.MODES.keys():
+			val = config.DisplayMode.MODES[label]
+			self.dispModeRadio = Tkinter.Radiobutton(dispFrame, text = label, variable = self.vDisp, value = val, command = self.dispSelected)
+			self.dispModeRadio.pack_configure(side = Tkinter.LEFT)
+		
+		#pointer modality label
+		pointModeLabel = Tkinter.Label(mainFrame, text = 'Pointer Mode: ', bg = 'blue', fg = 'white')
+		pointModeLabel.pack_configure(side = Tkinter.TOP)
+		
+		#pointer modality frame for radio buttons
+		pointFrame = Tkinter.Frame(mainFrame)
+		pointFrame.pack(side = Tkinter.TOP)
+		
+		#creating pointer modality radio buttons
+		self.vPoint = Tkinter.StringVar()
+		self.vPoint.set('pointMode')
+		
+		for label in config.PointerMode.MODES.keys():
+			val = config.PointerMode.MODES[label]
+			self.pointModeRadio = Tkinter.Radiobutton(pointFrame, text = label, variable =  self.vPoint, value = val, command = self.pointSelected)
+			self.pointModeRadio.pack_configure(side = Tkinter.LEFT)
+	
+		#setting display modality and pointer modality to most previously selected
+		self.vDisp.set(self.dispMode)
+		self.vPoint.set(self.pointerMode)
+	
+		#creating next and exit button frame
+		exitFrame = Tkinter.Frame(mainFrame)
+		exitFrame.pack(side = Tkinter.LEFT)
+		
+		nextFrame = Tkinter.Frame(mainFrame)
+		nextFrame.pack(side = Tkinter.RIGHT)
+		
+		#creating next and exit buttons
+		nextButton = Tkinter.Button(nextFrame, text = 'Next', fg = 'white', bg = 'green', command = lambda: self.next(None))
+		exitButton = Tkinter.Button(exitFrame, text = 'Exit', fg = 'white', bg = 'red', command = lambda: self.exit(None))
+		nextButton.pack_configure(side = Tkinter.RIGHT)
+		exitButton.pack_configure(side = Tkinter.LEFT)
+		
+		#adding keybindings
+		self.root.bind('<Return>', self.next)
+		self.root.bind('<Escape>', self.exit)
+		
+		#start gui
+		self.root.mainloop()
+	
+	def __CancelCommand(self):
+		pass
+	def dispSelected(self):
+		radioValue = self.vDisp.get()
+		self.dispMode = radioValue
+	def pointSelected(self):
+		radioValue = self.vPoint.get()
+		self.pointerMode = radioValue
+	def camSelected(self):
+		pass
+	def next(self, keyDown):
+		with open(self.PATH + 'configurations.json','wb') as f:
+			self.configurations = {'dispMode': self.dispMode, 'pointerMode': self.pointerMode, 'proceed': self.proceed}
+			for _ in self.configurations.values():
+				if _ == None:
+					return
+			json.dump(self.configurations, f, indent = 1)
+		self.root.destroy()
+	def exit(self, keyDown):
+		self.proceed = False
+		with open(self.PATH + 'configurations.json','wb') as f:
+			self.configurations = {'dispMode': self.dispMode, 'pointerMode': self.pointerMode, 'proceed': self.proceed}
+			json.dump(self.configurations, f, indent = 1)
+		self.root.destroy()

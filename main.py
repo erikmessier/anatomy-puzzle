@@ -1,4 +1,6 @@
-﻿"""
+﻿
+
+"""
 ########################################
 #      STEREOSCOPIC ANATOMY GAME
 ########################################
@@ -16,13 +18,14 @@ import json
 # Custom modules
 import config
 import anatomyTrainer
+import menu
 
 #import overHeadMenu
 
 def main():
 	
 	#Prompt for init config parameters
-	configurations = config.modalityGUI()
+	configurations = menu.modalityGUI()
 	
 	#Handling configuration selections
 	with open('.\\dataset\\configurations\\configurations.json','rb') as f:

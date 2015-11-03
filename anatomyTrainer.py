@@ -17,15 +17,13 @@ def start():
 	viz.phys.enable()
 
 	# Initialize pointer tool
-	# Unused?
 	model.pointer = viz.addChild('.\\dataset\\Hand\\handPoint_reduced.ply')
 	pointer = model.pointer
 	
 	pointer.setScale(0.012, 0.012, 0.012)
 	pointer.setEuler(0, -115, 0)
 	pointer.disable([viz.PHYSICS, viz.DYNAMICS])
-
-
+	
 	# Initialize environment this will load the coliseum and sky
 	sky = viz.addChild('sky_day.osgb')
 	sky.collideMesh()
