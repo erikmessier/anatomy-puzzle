@@ -97,24 +97,36 @@ Dictionary of lists:
 #	'Tissues': ['bone organ', 'muscle organ', 'neck', 'muscle of free upper limb']}
 #
 class menuLayerSelection:
+	"""Used to model region-layer relationship, and to relate modes to their mode operations"""
+	""" Associates region with region concept name(s)"""
 	_key_value_Regions = [\
 		('Head',			['head']), \
-		('Thorax',		['body proper']), \
+		('Thorax',		['body proper', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart']), \
 		('Upper Appen.',	['free upper limb', 'right free upper limb', 'left free upper limb']), \
 		('Lower Appen.', ['right free lower limb', 'left free lower limb', 'muscle of lower limb'])]
 	Regions = collections.OrderedDict(_key_value_Regions)
 	
+	""" Associates layer with the full layer concept name"""
 	_key_value_Layers = [\
 	('Bone', ['bone organ']), \
 	('Muscle', ['muscle organ']), \
-	('Test', ['left lung', 'right lung'])]
+	('Organs', ['brain', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart'])]
 	Layers = collections.OrderedDict(_key_value_Layers)
-
+	
+	""" Developer Tool to disable checkboxes if no content is available for that layer
+		Format: List(Tuple(Region, List(layers to ignore)))"""
+	_key_value_RemoveCheckFromTab = [\
+	('Head', []), \
+	('Thorax', []), \
+	('Upper Appen.', ['Organs']), \
+	('Lower Appen.', ['Organs'])]
+	RemoveCheckFromTab = collections.OrderedDict(_key_value_RemoveCheckFromTab)
+	
+	""" Relates mode to its mode operation"""
 	_key_value_Modes = [ \
 		('Free Play', games.puzzleGame.FreePlay), \
 		('Quiz Mode', games.puzzleGame.TestPlay), \
 		('Movement Tutorial', games.tutorialGame.InterfaceTutorial)]
-		
 	Modes = collections.OrderedDict(_key_value_Modes)
 
 """
@@ -133,10 +145,19 @@ Position and Orientation Vectors Scales for spacemouse control
 positionVector		= [.00005,.00005,.00005]
 orientationVector	= [0,0,0]
 
+# Ignore filenames with these concept names when calculating union/intersection for loading final dataset
+ignoreSets = ('portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery')
+
 # Colors of the various tissue layes
 colors = { \
 	'muscle organ':	(1.0, 0.5, 0.5), \
-	'bone organ':	(1.0, 1.0, 0.8)}
+	'bone organ':	(1.0, 1.0, 0.8), \
+	'brain':		(0.45, 0.7, 0.7), \
+	'left lung':	(1.0, 0.70, 0.85), \
+	'right lung':	(1.0, 0.70, 0.85), \
+	'gastrointestinal tract':	(1.0, 0.85, 0.6), \
+	'heart':		(1.0, 0.45, 0.4), \
+	'urinary system':		(1.0, 1.0, 0.4)}
 
 class modalityGUI():
 	def __init__(self):

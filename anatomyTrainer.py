@@ -43,7 +43,6 @@ def start():
 	
 	# Override escape key to toggle menu
 	viz.setOption('viz.default_key.quit','0')
-	vizact.onkeydown(viz.KEY_ESCAPE, model.menu.toggle)
 	
 #	# Record moviefilms
 #	viz.setOption('viz.AVIRecorder.maxWidth', '1280')

@@ -33,6 +33,12 @@ class MenuController(object):
 		canvas.setCursorSize([25,25])
 		canvas.setCursorPosition([0,0])
 		
+		#init keybindings
+		self.keybindings = []
+		self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
+		self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.exitGame))
+		
+		#init menus
 		self.mainMenu	= MainMenu(canvas, self)
 		self.modeMenu	= ModeMenu(canvas, self)
 		self.layerMenu	= LayerMenu(canvas, self)
@@ -55,53 +61,29 @@ class MenuController(object):
 		model.selected.objectsSelected(self.layerMenu)
 		
 		# Startup the game
+		if not model.selected.load:
+			return
 		anatomyTrainer.startGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
 		
 		self.changeMenu(self.layerMenu, self.inGameMenu)
+		
 		self.toggle()
-#		
-#		if self.selected.mode == 'Movement Tutorial':
-#			puzzle.tutorial.init()
-#			self.setPanelVisible(viz.OFF)
-#			self.canvas.setCursorVisible(viz.OFF)
-#			self.layerMenu.active = False
-#			self.inGameMenu.active = True
-#		else:
-#			if self.selected.load:
-#				model.gameController.start(self.selected.mode, self.selected.load)
-#				self.setPanelVisible(viz.OFF)
-#				self.layerMenu.canvas.setCursorVisible(viz.OFF)
-#				self.layerMenu.active = False
-#				self.inGameMenu.active = True
 		
 	def restart(self):
 		anatomyTrainer.restartGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
 		self.toggle()
-#		if self.layerMenu.mode[0] == 'Movement Tutorial':
-#			puzzle.tutorial.Tutorial.end()
-#			puzzle.tutorial.init()
-#		else:
-#			puzzle.controller.end()
-#			puzzle.controller.start(game.mode[0],game.loadLayers)
-#		self.ingame.toggle()
 		
 	def endGame(self):
 		anatomyTrainer.endGame()
 		self.changeMenu(self.inGameMenu, self.mainMenu)
-#		if self.layerMenu.mode[0] == 'Movement Tutorial':
-#			puzzle.tutorial.Tutorial.end()
-#			puzzle.tutorial.recordData.close()
-#		else:
-#			puzzle.controller.end()
-#		self.changeMenu(self.inGameMenu, self.mainMenu)
 		
-	def backMenu(self, curMenu):
-		i = self.menuOrder.index(curMenu)
-		self.changeMenu(curMenu,  self.menuOrder[i-1])
+	def backMenu(self):
+		i = self.menuOrder.index(self.activeMenu)
+		self.changeMenu(self.activeMenu,  self.menuOrder[i-1])
 		
-	def nextMenu(self, curMenu):
-		i = self.menuOrder.index(curMenu)
-		self.changeMenu(curMenu,  self.menuOrder[i+1])
+	def nextMenu(self):
+		i = self.menuOrder.index(self.activeMenu)
+		self.changeMenu(self.activeMenu,  self.menuOrder[i+1])
 
 	def changeMenu(self, leaveMenu, goToMenu):	
 		leaveMenu.setPanelVisible(viz.OFF, animate = False)
@@ -111,6 +93,48 @@ class MenuController(object):
 		goToMenu.menuVisible = True
 		goToMenu.active = True
 		self.activeMenu = goToMenu
+		self.updateKeybindings()
+	
+	def updateKeybindings(self):
+		for keybinding in self.keybindings:
+			keybinding.remove()
+		if self.activeMenu == self.inGameMenu:
+			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.toggle))
+		elif self.activeMenu == self.layerMenu:
+			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.start))
+			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.backMenu))
+		elif self.activeMenu == self.mainMenu:
+			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
+			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.exitGame))
+		else:
+			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
+			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.backMenu))
+			
+	def onAllSelection(self, obj, state):
+		"""If entire layer was selected on layerMenu, then disable the individual checks for a specific layer, and viceversa"""
+		for layer in self.layerMenu.selectAllOf.keys():
+				cb = self.layerMenu.selectAllOf[layer]
+				if obj == cb:
+					if state == viz.DOWN:
+						self.disableChecks(layer, self.layerMenu.checkBox)
+						break
+					if state == viz.UP:
+						self.enableChecks(layer, self.layerMenu.checkBox)
+						break
+						
+	def disableChecks(self, layer, checkBoxes):
+		"""Disable checkboxes of specific layer on layerMenu"""
+		for region in checkBoxes:
+			if not filter(lambda x: x == layer, config.menuLayerSelection.RemoveCheckFromTab[region]):
+				checkBoxes[region][layer].disable()
+				
+			
+		
+	def enableChecks(self, layer, checkBoxes):
+		"""Enable checkboxes of a specific layer on layerMenu"""
+		for region in checkBoxes:
+			if not filter(lambda x: x == layer, config.menuLayerSelection.RemoveCheckFromTab[region]):
+				checkBoxes[region][layer].enable()
 		
 	def toggle(self):
 		self.activeMenu.toggle()
@@ -144,7 +168,6 @@ class MenuBase(vizinfo.InfoPanel):
 		self.name = name
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 		
-		
 	def toggle(self):
 		if self.menuVisible == True:
 			self.setPanelVisible(False)
@@ -167,7 +190,7 @@ class MainMenu(MenuBase):
 		
 		# add play button, play button action, and scroll over animation
 		self.play = self.addItem(viz.addButtonLabel('Play'), fontSize = 50)
-		vizact.onbuttondown(self.play, self.controller.nextMenu, self)
+		vizact.onbuttondown(self.play, self.controller.nextMenu)
 		
 		# add options button row
 		self.Help = self.addItem(viz.addButtonLabel('Help'), fontSize = 50)
@@ -239,8 +262,8 @@ class ModeMenu(MenuBase):
 		setGrid.addRow([backButton, startButton])
 		
 		#add back and state button actions
-		vizact.onbuttondown(backButton, self.controller.backMenu, self)
-		vizact.onbuttondown(startButton, self.controller.nextMenu, self)
+		self.backward = vizact.onbuttondown(backButton, self.controller.backMenu)
+		self.forward = vizact.onbuttondown(startButton, self.controller.nextMenu)
 		
 		###############################
 		"""add items to ModeMenu"""
@@ -282,6 +305,11 @@ class LayerMenu(MenuBase):
 			self.checkBox[key] = {}
 			for cb in self.layers.iterkeys():
 				self.checkBox[key][cb] = viz.addCheckbox(parent = canvas)
+				
+		#remove checkboxes from non-functioning region-layer selections
+		for key in config.menuLayerSelection.RemoveCheckFromTab.iterkeys():
+			for cb in config.menuLayerSelection.RemoveCheckFromTab[key]:
+				self.checkBox[key][cb].disable()
 		
 		#populate panels with layers and checkboxes
 		for i in self.regions.iterkeys():
@@ -319,7 +347,7 @@ class LayerMenu(MenuBase):
 		setGrid.addRow([backButton, startButton])
 		
 		#add back and state button actions
-		vizact.onbuttondown(backButton, self.controller.backMenu, self)
+		vizact.onbuttondown(backButton, self.controller.backMenu)
 		vizact.onbuttondown(startButton, self.controller.start)
 		
 		############################
@@ -342,7 +370,13 @@ class LayerMenu(MenuBase):
 		#rendering
 		bb = self.getBoundingBox()
 		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
-
+		
+		#############################
+		"""BUTTON CALLBACK"""
+		#############################
+		
+		viz.callback(viz.BUTTON_EVENT, controller.onAllSelection)
+		
 class InGameMenu(MenuBase):
 	"""
 	In-game menu to be shown when games are running

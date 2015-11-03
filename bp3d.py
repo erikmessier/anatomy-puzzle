@@ -372,7 +372,21 @@ class DatasetInterface():
 						continue
 				filenames[-1] = set(filenames[-1])
 			modelSet.extend(list(setOperation(*filenames)))
-		return set(modelSet)
+		
+		#remove all files form modelSet that are also found in ignoreSets
+		ignoreSets = config.ignoreSets
+		removeFromModelSet = []
+		for ignoreSet in ignoreSets:
+			try:
+				removeFromModelSet.extend(self.ontologyByName[ignoreSet]['filenames'])
+			except KeyError:
+				print 'Unknown name for ignore set: ', str(ignoreSet)
+				continue
+		removeFromModelSet = set(removeFromModelSet)
+		
+		modelSet = set(modelSet) - removeFromModelSet
+		
+		return modelSet
 		
 	def getMetaData(self, concept = None, file = None):
 		"""
