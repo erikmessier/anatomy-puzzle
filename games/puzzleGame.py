@@ -411,11 +411,40 @@ class PuzzleController(object):
 		self._keyBindings.append(vizact.onkeyup('65421', self.release))
 		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_CONTROL_R, self.solve))
+				
+	def alphaSliceUpdate(self):
+		"""
+		This is the loop to get run on every frame to compute the alpha slice feature
+		"""
+		maxAlpha	= 1.00
+		minAlpha	= 0.09
+		topPlane	= 0.0001
+		bottomPlane	= -0.0005
+		
+		while True:
+			yield viztask.waitFrame(2)
+			planePoint	= model.planeVert.Vertex(0).getPosition(viz.ABS_GLOBAL)
+			planeNorm	= model.planeVert.Vertex(0).getNormal(viz.ABS_GLOBAL)
+			for mesh in self._meshes:
+				dist = planeProj(planePoint, planeNorm, mesh.getPosition(viz.ABS_GLOBAL))
+				if dist >= topPlane:
+					mesh.setAlpha(minAlpha)
+				elif dist >= bottomPlane:
+					distPercentage = 1 - ((dist - bottomPlane) / (topPlane - bottomPlane))
+					mesh.setAlpha((distPercentage * (maxAlpha - minAlpha)) + minAlpha)
+				else:
+					mesh.setAlpha(maxAlpha)
+	
+	def enableSlice(self):
+		viztask.schedule(self.alphaSliceUpdate())
+			
 		
 class FreePlay(PuzzleController):
 	def __init__(self):
 		super(FreePlay, self).__init__()
 		self.modeName = 'freeplay'
+		
+		self.enableSlice()
 
 class TestPlay(PuzzleController):
 	def __init__(self):
@@ -692,3 +721,10 @@ def playName(boneObj):
 	except ValueError:
 		print ("the name of the audio name file was wrong")
 		
+def planeProj(planePoint, planeNormal, targetPoint):
+	"""
+	Take in plane given by equation ax+by+cz+d=0 in the format [a, b, c, d] and
+	compute projected distance from point
+	"""
+	planeToTarget = numpy.subtract(targetPoint, planePoint)
+	return numpy.dot(planeNormal, planeToTarget)

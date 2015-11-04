@@ -448,5 +448,4 @@ def rightToLeft(center):
 	"""
 	Convert from right handed coordinate system to left handed
 	"""
-	print 'right to left', center
 	return [center[0], center[1], center[2]*-1]

@@ -1,6 +1,6 @@
 ﻿# Vizard modules
 import viz
-import vizact
+import vizact, vizshape
 
 # Custom modules
 import model
@@ -16,7 +16,7 @@ def start():
 	# Physics
 	viz.phys.enable()
 
-	# Initialize pointer tool
+	### Initialize pointer tool
 	model.pointer = viz.addChild('.\\dataset\\Hand\\handPoint_reduced.ply')
 	pointer = model.pointer
 	
@@ -24,7 +24,17 @@ def start():
 	pointer.setEuler(0, -115, 0)
 	pointer.disable([viz.PHYSICS, viz.DYNAMICS])
 	
-	# Initialize environment this will load the coliseum and sky
+	### Alpha slice plane setup
+	viz.startLayer(viz.POINTS)
+	viz.vertex(0,0,0)
+	planeVert = viz.endLayer(parent = pointer)
+	planeVert.dynamic()
+	
+	# Setup normal vector for alpha slicing plane calculation
+	planeVert.setNormal(0,[0,1,0])
+	model.planeVert = planeVert
+	
+	### Initialize environment this will load the coliseum and sky
 	sky = viz.addChild('sky_day.osgb')
 	sky.collideMesh()
 	sky.disable(viz.DYNAMICS)
@@ -33,13 +43,13 @@ def start():
 	# Initialize pointer controls
 	device = init.pointerInput(config.pointerMode, pointer, sky)
 
-	# Initialize display
+	### Initialize display
 	model.display = init.DisplayInstance(config.dispMode,config.camMode,device,pointer)
 	
-	# Launch menu system
+	### Launch menu system
 	model.menu = menu.MenuController()
 	
-	# Override escape key to toggle menu
+	### Override escape key to toggle menu
 	viz.setOption('viz.default_key.quit','0')
 	
 #	# Record moviefilms
