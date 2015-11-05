@@ -148,7 +148,7 @@ class PuzzleController(object):
 			#Wait to add thread if threadThrottle conditions are not met
 			model.threads += 1 #Add 1 for each new thread added --- new render started
 			yield viztask.waitTrue(self.threadThrottle,self._maxThreads, model.threads)
-			viz.director(self.renderMeshes, fileName)
+			yield viz.director(self.renderMeshes, fileName)
 		self.printNoticeable('end of rendering process')
 	
 	def renderMeshes(self, fileName):
