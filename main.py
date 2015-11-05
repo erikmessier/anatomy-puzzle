@@ -1,15 +1,12 @@
-﻿
+﻿"""
+STEREOSCOPIC ANATOMY GAME
 
-"""
-########################################
-#      STEREOSCOPIC ANATOMY GAME
-########################################
-# A Senior design project
-#
-# Authors:
-# Alex Dawson-Elli, Kenny Lamarka, Kevin Alexandre, Jascha Wilcox , Nate Burell
-#
-# 2014-2015 Academic year
+Originally started as a senior design project for the 2014-2015 academic year.
+Senior design team members:
+ Alex Dawson-Elli, Kenny Lamarka, Kevin Alexandre, Jascha Wilcox , Nate Burell
+
+Development was continued in fall 2015 by:
+ Jascha Wilcox, Erik Messier
 """
 
 # Built-In 
@@ -20,10 +17,7 @@ import config
 import anatomyTrainer
 import menu
 
-#import overHeadMenu
-
 def main():
-	
 	#Prompt for init config parameters
 	configurations = menu.modalityGUI()
 	
@@ -53,4 +47,5 @@ if __name__ == '__main__':
 	
 	
 	
-	
+
+

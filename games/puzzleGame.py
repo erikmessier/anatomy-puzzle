@@ -26,9 +26,8 @@ import bp3d
 
 class PuzzleController(object):
 	"""
-	Puzzle game controller base class.
-	Not intended to be used directly, derive children that feature
-	the game mode functionality you want.
+	Puzzle game controller base class. Not intended to be used directly, derive
+	children that feature the game mode functionality you want.
 	"""
 	def __init__(self):
 		self.modeName = ''
@@ -44,6 +43,7 @@ class PuzzleController(object):
 		self._closestBoneIdx = None
 		self._prevBoneIdx	= None
 		self._lastGrabbed	= None
+		self._highlighted	= None
 		self._gloveLink		= None
 
 		self._grabFlag		= False
@@ -166,9 +166,7 @@ class PuzzleController(object):
 			bone.checker.setPosition(source.centerPoint, viz.ABS_PARENT)
 
 	def getAdjacent(self, mesh, pool):
-		"""
-		Sort pool by distance from mesh
-		"""
+		"""Sort pool by distance from mesh"""
 		self.moveCheckers(mesh)
 		neighbors = []
 		
@@ -267,9 +265,7 @@ class PuzzleController(object):
 		return self.getEnabled()
 	
 	def snapGroup(self, boneNames):
-		"""
-		Specify a list of bones that should be snapped together
-		"""
+		"""Specify a list of bones that should be snapped together"""
 		print boneNames
 		if (len(boneNames) > 0):
 			meshes = []
@@ -277,9 +273,7 @@ class PuzzleController(object):
 			[m.snap(meshes[0], animate = False) for m in meshes[1:]]
 
 	def grab(self):
-		"""
-		Grab in-range objects with the pointer
-		"""
+		"""Grab in-range objects with the pointer"""
 		grabList = self._proximityList # Needed for disabling grab of grounded bones
 		
 		if len(grabList) > 0 and not self._grabFlag:
@@ -348,6 +342,7 @@ class PuzzleController(object):
 		return proxList[0]
 
 	def EnterProximity(self, e):
+		"""Callback for a proximity entry event between the pointer and a mesh"""
 		source = e.sensor.getSourceObject()
 		model.pointer.color([4.0,1.5,1.5])
 		obj = self._meshesById[source.id]
@@ -357,6 +352,7 @@ class PuzzleController(object):
 		self._proximityList.append(source)
 	
 	def ExitProximity(self, e):
+		"""Callback for a proximity exit event between the pointer and a mesh"""
 		source = e.sensor.getSourceObject()
 		if len(self._proximityList) and not self._gloveLink:
 			model.pointer.color(1,1,1)
@@ -366,9 +362,7 @@ class PuzzleController(object):
 		self._proximityList.remove(source)
 	
 	def implode(self):
-		"""
-		Move bones to solved positions
-		"""
+		"""Move bones to solved positions"""
 		target = self._keystones[0] #keystone
 		for m in self._meshes[1:]:
 			if m.getAction():
@@ -381,9 +375,7 @@ class PuzzleController(object):
 		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
 
 	def explode(self):
-		"""
-		Move bones to position before implode was called
-		"""
+		"""Move bones to position before implode was called"""
 		for m in self._meshes[1:]:
 			if m.getAction():
 				return
@@ -392,18 +384,14 @@ class PuzzleController(object):
 		self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
 
 	def solve(self):
-		"""
-		Operator used to toggle between implode and explode
-		"""
+		"""Operator used to toggle between implode and explode"""
 		if self._imploded == False:
 			self.implode()
 		else:
 			self.explode()
 
 	def end(self):
-		"""
-		Do everything that needs to be done to end the puzzle game
-		"""
+		"""Do everything that needs to be done to end the puzzle game"""
 		print "Puzzle instance ending!"
 #		self.score.close()
 		model.proxManager.clearSensors()
@@ -419,17 +407,50 @@ class PuzzleController(object):
 		self._keyBindings.append(vizact.onkeydown('65421', self.grab)) #numpad enter select
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, self.snapCheck))
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_L, self.snapCheck))
-		self._keyBindings.append(vizact.onkeyup(' ', self.release))
-		self._keyBindings.append(vizact.onkeyup('65421', self.release))
 		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_CONTROL_R, self.solve))
+		self._keyBindings.append(vizact.onkeydown(viz.KEY_CONTROL_L, self.solve))
+		self._keyBindings.append(vizact.onkeyup(' ', self.release))
+		self._keyBindings.append(vizact.onkeyup('65421', self.release))
+				
+	def alphaSliceUpdate(self):
+		"""This is the loop to get run on every frame to compute the alpha slice feature"""
+		maxAlpha	= 1.00
+		minAlpha	= 0.09
+		topPlane	= 0.00005
+		bottomPlane	= -0.0005
+		
+		while True:
+			yield viztask.waitFrame(2)
+			planePoint	= model.planeVert.Vertex(0).getPosition(viz.ABS_GLOBAL)
+			planeNorm	= model.planeVert.Vertex(0).getNormal(viz.ABS_GLOBAL)
+			for mesh in self._meshes:
+				dist = planeProj(planePoint, planeNorm, mesh.getPosition(viz.ABS_GLOBAL))
+				if dist >= topPlane:
+					mesh.setAlpha(minAlpha)
+				elif dist >= bottomPlane:
+					distPercentage = 1 - ((dist - bottomPlane) / (topPlane - bottomPlane))
+					mesh.setAlpha((distPercentage * (maxAlpha - minAlpha)) + minAlpha)
+				else:
+					mesh.setAlpha(maxAlpha)
+	
+	def enableSlice(self):
+		viztask.schedule(self.alphaSliceUpdate())
+			
 		
 class FreePlay(PuzzleController):
+	"""Free play mode allowing untimed, unguided exploration of the selected dataset(s)"""
 	def __init__(self):
 		super(FreePlay, self).__init__()
 		self.modeName = 'freeplay'
+		
+		self.enableSlice()
 
 class TestPlay(PuzzleController):
+	"""
+	Assembly test play mode where the user is tasked with assembling the dataset
+	in a specific order based off of a provided prompt.
+	"""
 	def __init__(self):
 		super(TestPlay, self).__init__()
 		self.modeName = 'testplay'
@@ -468,10 +489,10 @@ class TestPlay(PuzzleController):
 		model.proxManager.onEnter(None, self.EnterProximity)
 		model.proxManager.onExit(None, self.ExitProximity)
 	
-		#Setup Key Bindings
+		# Setup Key Bindings
 		self.bindKeys()
 		
-		# start the clock
+		# Start the clock
 		time.clock()
 
 		self.score = PuzzleScore(self.modeName)
@@ -479,7 +500,6 @@ class TestPlay(PuzzleController):
 #		viztask.schedule(soundTask(glove))
 		self._meshesfToLoad = model.ds.getOntologySet(dataset)
 		self.loadControl(self._meshesToLoad)
-
 		# Hide all of the meshes
 		for m in self._meshes:
 			m.disable()
@@ -552,10 +572,37 @@ class TestPlay(PuzzleController):
 		"""Define list of objects to search for snapcheck"""
 		return [self._quizTarget]
 		
+class PinDrop():
+	"""
+	The complementary of the puzzle assembly test mode, where the task is to annotate an assembled
+	model instead of assemble a model from prompted annotations
+	"""
+	def __init__(self):
+		super(PinDrop, self).__init__()
+		self.modeName = 'pindrop'
+		
+		self._dropTarget = None
+		self._dropAttempts = 0
+		
+		self.implode()
+		
+	def pickLabelTarget(self):
+		unlabeled = [m for m in self._meshes if not m.labeled]
+		self._dropTarget = random.sample(unlabeled, 1)[0]
+	
+	def pinCheck(self):
+		if self._dropAttempts >= 3:
+			pass
+	
+	def bindKeys(self):
+		self._keyBindings.append(vizact.onkeydown('o', model.proxManager.setDebug, viz.TOGGLE)) #debug shapes
+		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, self.pinCheck))
+		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_L, self.pinCheck))
+		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
+	
+
 class PuzzleScore():
-	"""
-	Handles scoring for the puzzle game
-	"""
+	"""Handles scoring for the puzzle game"""
 	def __init__(self, modeName):
 		"""Init score datastructure, open up csv file"""
 		self.startTime = datetime.datetime.now()
@@ -575,9 +622,7 @@ class PuzzleScore():
 #		self.textbox.message('Score: ' + str(self.score))
 	
 	def event(self, event = None, description = None, source = None, destination = None):
-		"""
-		Record an event in the score history
-		"""
+		"""Record an event in the score history"""
 		print 'Score event!'
 		currentEvent = dict(zip(self.header,[time.clock(), event, description, source, destination]))
 		self.events.append(currentEvent)
@@ -586,9 +631,7 @@ class PuzzleScore():
 		self.update(self.events)
 		
 	def update(self, events):
-		"""
-		Iterative score calculation
-		"""
+		"""Iterative score calculation"""
 		curEvent = events[-1]
 		
 		if curEvent['event name'] == 'snap' or curEvent['event name'] == 'autosnap':
@@ -626,9 +669,7 @@ def end():
 #	del(controlInst)
 
 def start(mode, dataset):
-	"""
-	Start running the puzzle game
-	"""
+	"""Start running the puzzle game"""
 	global controlInst
 	global menuMode
 	
@@ -704,3 +745,10 @@ def playName(boneObj):
 	except ValueError:
 		print ("the name of the audio name file was wrong")
 		
+def planeProj(planePoint, planeNormal, targetPoint):
+	"""
+	Take in plane given by equation ax+by+cz+d=0 in the format [a, b, c, d] and
+	compute projected distance from point
+	"""
+	planeToTarget = numpy.subtract(targetPoint, planePoint)
+	return numpy.dot(planeNormal, planeToTarget)
