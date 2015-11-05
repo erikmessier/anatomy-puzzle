@@ -56,6 +56,8 @@ class MenuController(object):
 		"""
 		Start the game
 		"""
+		
+		
 		model.selected = Selection()
 		ignoreLayer = False
 		
@@ -63,14 +65,11 @@ class MenuController(object):
 		model.selected.modeSelected(self.modeMenu.radioButtons)
 		model.selected.objectsSelected(self.layerMenu)
 		
-		# Startup the game
-		if not model.selected.load:
-			return
-		anatomyTrainer.startGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
+		# Startup the game if there have been selections on layer menu
+		if model.selected.load:
+			yield self.changeMenu(self.layerMenu, self.loadingScreen)
+			anatomyTrainer.startGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
 		
-		self.changeMenu(self.layerMenu, self.inGameMenu)
-		
-		self.toggle()
 		
 	def restart(self):
 		anatomyTrainer.restartGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
@@ -99,17 +98,18 @@ class MenuController(object):
 		self.updateKeybindings()
 	
 	def updateKeybindings(self):
+		"""Menu keybinding state machine"""
 		for keybinding in self.keybindings:
 			keybinding.remove()
 		if self.activeMenu == self.inGameMenu:
 			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.toggle))
 		elif self.activeMenu == self.layerMenu:
-			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.start))
+			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, lambda: viztask.schedule(self.start)))
 			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.backMenu))
 		elif self.activeMenu == self.mainMenu:
 			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
 			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.exitGame))
-		else:
+		elif self.activeMenu == self.modeMenu:
 			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
 			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.backMenu))
 			
@@ -406,13 +406,25 @@ class LoadingScreen(MenuBase):
 	Loading Screen
 	"""
 	def __init__(self, canvas):
-		super(LoadingScreen, self).__init__(canvas, 'loading')
+		super(LoadingScreen, self).__init__(canvas, 'loading', 'Loading...')
+		#init variables
+		self.percentLoaded = ''
 		
 		#add message box
-		self.percent = viz.addTextbox(parent = canvas)
-		self.percent.message('hey')
-		self.addItem(self.percent)
+		self.percentMsg = viz.addTextbox(parent = canvas)
+		self.percentMsg.color(0,1,0)
+		self.percentMsg.message(self.percentLoaded)
+		self.addItem(self.percentMsg)
 		
+	def calcPercentLoaded(self, meshesToLoad, meshesLoaded):
+		self.percentLoaded = len(meshesLoaded)
+		print self.percentLoaded
+#	def updatePercentMsg(self):
+#		self.percentMsg.message(str(self.percentLoaded))
+	def finished(self):
+		pass
+	def updateLoad(self):
+		self.calcPercentLoaded(anatomyTrainer.model.gameController._meshesToLoad, anatomyTrainer.model.gameController._meshes)
 	
 class Selection():
 	"""Selection methods to determine GUI inputs, and storage format for GUI inputs"""

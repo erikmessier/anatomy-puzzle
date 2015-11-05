@@ -7,7 +7,7 @@ import csv, json
 
 # Vizard Modules
 import viz
-import vizact, vizshape, vizproximity
+import vizact, vizshape, vizproximity, viztask
 
 # Custom modules
 import config
@@ -95,12 +95,6 @@ class Mesh(viz.VizNode):
 		# This is the viznode that will be moved around to check distances for snapping
 		self.checker = vizshape.addCube(0.001)
 		
-		# Tooltip
-		self.tooltip = viz.addText(self.nameFormatted)
-		self.tooltip.color(0,5,1)
-		self.tooltip.billboard(viz.BILLBOARD_VIEW)
-		self.tooltip.setScale(0.001,0.001,0.001) #small scale for bounding box calc
-		
 		#Description
 
 #		if display.displayMode == 2:
@@ -121,20 +115,11 @@ class Mesh(viz.VizNode):
 		
 		# Setup heirarchy for proper movement behavior
 		self.mesh.setParent(self)
-		self.tooltip.setParent(self.center)
 		self.checker.setParent(self.mesh)
 		
 		# Offset mesh to lie in center of center viznode
 		self.mesh.setPosition(self.centerPointScaledFlipped, viz.ABS_PARENT)
 		self.checker.setPosition(self.centerPoint)
-	
-		self.addSensor()
-		
-		# Tooltip formatting
-		self.tooltip.setScale(0.1,0.1,0.1)#set to prefered scale
-		self.tooltip.setPosition(0,0,-1)
-		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
-		self.tooltip.visible(viz.OFF)
 		
 		#Line between tooltip and mesh centerPoint
 #		viz.startLayer(viz.LINES)
@@ -161,7 +146,7 @@ class Mesh(viz.VizNode):
 		# Group handling
 		self.group = MeshGroup([self])
 		groups.append(self.group)
-	
+		
 	def enable(self, animate = False):
 		self._enabled = True
 		if animate:
@@ -202,7 +187,17 @@ class Mesh(viz.VizNode):
 	def clearProxCounter(self):
 		"""resets the counter for how long glove is close to bone"""
 		self.proxCounter  = 0
-	
+		
+	def addToolTip(self):
+		self.tooltip = viz.addText(self.nameFormatted)
+		self.tooltip.visible(viz.OFF)
+		self.tooltip.color(0,5,1)
+		self.tooltip.setParent(self.center)
+		self.tooltip.billboard(viz.BILLBOARD_VIEW)
+		self.tooltip.setScale(0.1,0.1,0.1)#set to prefered scale
+		self.tooltip.setPosition(0,0,-1)
+		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
+		
 	def addSensor(self):
 		"""Add a sensor to a proximity manager"""
 		self._sensor = vizproximity.addBoundingSphereSensor(self)

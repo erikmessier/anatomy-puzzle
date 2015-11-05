@@ -14,6 +14,7 @@ import math
 import numpy
 import json, csv
 import time, datetime
+import threading
 
 # Custom modules
 import init
@@ -82,9 +83,10 @@ class PuzzleController(object):
 #		viztask.schedule(soundTask(glove))
 
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
-		self.loadMeshes(self._meshesToLoad)
+		viztask.schedule(self.loadControl())
 
 		# Set Keystone
+	def setKeystone(self):
 		for m in [self._meshes[i] for i in range(0,1)]:
 			cp = m.centerPointScaled
 			cp = [cp[0], -cp[2] + 0.150, cp[1]]
@@ -93,15 +95,17 @@ class PuzzleController(object):
 			m.group.grounded = True
 			self._keystones.append(m)
 		#snapGroup(smallBoneGroups)
-		
+
 	def loadMeshes(self, meshes = [], animate = False, randomize = True):
 		"""Load all of the files from the dataset into puzzle.mesh instances"""
+		print 'STARTED THE RENDERING PROCESS'
 		for i, fileName in enumerate(meshes):
 			# This is the actual mesh we will see
 			if not model.ds.getMetaData(file = fileName):
 				print "WARNING, UNKNOWN FILE ", fileName
 				continue
-			b = bp3d.Mesh(fileName)
+			meshDirector = yield viztask.waitDirector(bp3d.Mesh,fileName)
+			b = meshDirector.returnValue
 			if (not randomize):
 				#Hardcoded keystone
 				b.setPosition([0.0,1.5,0.0])
@@ -126,6 +130,14 @@ class PuzzleController(object):
 			
 			self._meshes.append(b)
 			self._meshesById[b.id] = b
+		print 'ENDED RENDERING PROCESS'
+		
+	def loadControl(self):
+		yield self.loadMeshes(self._meshesToLoad)
+		for m in self._meshes:
+			m.addSensor()
+			m.addToolTip
+		self.setKeystone()
 
 	def unloadBones(self):
 		"""Unload all of the bone objects to reset the puzzle game"""
@@ -466,7 +478,7 @@ class TestPlay(PuzzleController):
 		
 #		viztask.schedule(soundTask(glove))
 		self._meshesfToLoad = model.ds.getOntologySet(dataset)
-		self.loadMeshes(self._meshesToLoad)
+		self.loadControl(self._meshesToLoad)
 
 		# Hide all of the meshes
 		for m in self._meshes:

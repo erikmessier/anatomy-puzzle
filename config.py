@@ -142,7 +142,7 @@ SMPositionScale	= [.0001,.0001,.0001]
 SMEulerScale	= [0.001, 0.001, 0.001]
 
 # Ignore filenames with these concept names when calculating union/intersection for loading final dataset
-ignoreSets = ('portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery')
+ignoreSets = ('portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery', 'segment of bronchial tree')
 
 # Colors of the various tissue layes
 colors = { \

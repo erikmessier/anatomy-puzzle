@@ -12,7 +12,6 @@ def start():
 	"""
 	Run everything necessary for game startup
 	"""
-	
 	# Physics
 	viz.phys.enable()
 
