@@ -1,4 +1,8 @@
-﻿# Vizard modules
+﻿"""
+Primary file from which the Anatomy Trainer game is run.
+"""
+
+# Vizard modules
 import viz
 import vizact, vizshape
 
@@ -40,6 +44,14 @@ def start():
 	sky.disable(viz.DYNAMICS)
 	init.loadTemple()
 
+	# Lighting
+	lights = []
+	[lights.append(viz.addLight()) for _ in range(2)]
+	lights[0].setEuler(90, 40, 0)
+	lights[0].intensity(0.5)
+	lights[1].setEuler(270, 40, 0)
+	lights[1].intensity(0.5)
+	
 	# Initialize pointer controls
 	device = init.pointerInput(config.pointerMode, pointer, sky)
 

@@ -149,6 +149,7 @@ class Mesh(viz.VizNode):
 		# Turn off visibility of center and checker viznodes
 		self.mesh.color(self.metaData['color'])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
+		self.center.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 		
 		self.scale		= SF
 		self._enabled	= True
