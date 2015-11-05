@@ -15,6 +15,7 @@ import numpy
 import json, csv
 import time, datetime
 import threading
+import time
 
 # Custom modules
 import init
@@ -31,6 +32,9 @@ class PuzzleController(object):
 	"""
 	def __init__(self):
 		self.modeName = ''
+		
+		self._maxThreads = 75
+		self._curThreads = 0
 		
 		self._meshes		= []
 		self._meshesById	= {}
@@ -83,35 +87,19 @@ class PuzzleController(object):
 #		viztask.schedule(soundTask(glove))
 
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
-		viztask.schedule(self.loadControl())
-
-		# Set Keystone
-	def setKeystone(self):
-		for m in [self._meshes[i] for i in range(0,1)]:
-			cp = m.centerPointScaled
-			cp = [cp[0], -cp[2] + 0.150, cp[1]]
-			m.setPosition(cp, viz.ABS_GLOBAL)
-			m.setEuler([0.0,90.0,180.0])
-			m.group.grounded = True
-			self._keystones.append(m)
-		#snapGroup(smallBoneGroups)
-
-	def loadMeshes(self, meshes = [], animate = False, randomize = True):
-		"""Load all of the files from the dataset into puzzle.mesh instances"""
-		print 'STARTED THE RENDERING PROCESS'
-		for i, fileName in enumerate(meshes):
-			# This is the actual mesh we will see
-			if not model.ds.getMetaData(file = fileName):
-				print "WARNING, UNKNOWN FILE ", fileName
-				continue
-			meshDirector = yield viztask.waitDirector(bp3d.Mesh,fileName)
-			b = meshDirector.returnValue
-			if (not randomize):
-				#Hardcoded keystone
-				b.setPosition([0.0,1.5,0.0])
-				b.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical
-			else:		
-				# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
+		viztask.schedule(self.loadControl(self._meshesToLoad))
+		
+	def loadControl(self, meshes = [], animate = False):
+		"""control loading of meshes --- used to control multithreading"""
+		yield self.loadMeshes(meshes)
+		self.setKeystone()
+		for m in self._meshes:
+#			if (m.group.grounded):
+#				#Hardcoded keystone
+#				m.setPosition(m.center)
+#				m.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical		
+			# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
+			if not m.group.grounded:
 				angle	= random.random() * 2 * math.pi
 				radius	= random.random() + 1.5
 				
@@ -123,21 +111,81 @@ class PuzzleController(object):
 					move = vizact.moveTo(targetPosition, time = 2)
 					spin = vizact.spinTo(euler = targetEuler, time = 2)
 					transition = vizact.parallel(spin, move)
-					b.addAction(transition)
+					m.addAction(transition)
 				else:					
-					b.setPosition(targetPosition)
-					b.setEuler(targetEuler)
-			
-			self._meshes.append(b)
-			self._meshesById[b.id] = b
-		print 'ENDED RENDERING PROCESS'
-		
-	def loadControl(self):
-		yield self.loadMeshes(self._meshesToLoad)
-		for m in self._meshes:
+					m.setPosition(targetPosition)
+					m.setEuler(targetEuler)
 			m.addSensor()
-			m.addToolTip
-		self.setKeystone()
+			m.addToolTip()
+	
+#		Check to make sure that all requested meshes were loaded if they aren't then load the missing meshes
+		lingeringThreads = 0
+		while True:
+			if lingeringThreads >= 20:
+				self.printNoticeable('Error: Issue with loading, not everything was loaded, going to load the remaining meshes')
+				needToLoad = list(set(self._meshesToLoad) - set(self._meshes))
+				self.loadControl(needToLoad)
+				break
+			if len(self._meshes) < len(self._meshesToLoad)- self.unknownFiles:
+				self.printNoticeable('notice: some threads are still running, please wait')
+			else:
+				self.printNoticeable('notice: All Items Were Loaded!')
+				break
+			yield viztask.waitTime(0.2)
+			lingeringThreads += 1
+
+	def loadMeshes(self, meshes = [], animate = False):
+		"""Load all of the files from the dataset into puzzle.mesh instances"""
+		self.unknownFiles = 0
+		model.threads = 0
+		self.printNoticeable('start of rendering process')
+		for i, fileName in enumerate(meshes):
+			# This is the actual mesh we will see
+			if not model.ds.getMetaData(file = fileName):
+				print "WARNING, UNKNOWN FILE ", fileName
+				self.unknownFiles += 1
+				continue
+			#Wait to add thread if threadThrottle conditions are not met
+			model.threads += 1 #Add 1 for each new thread added --- new render started
+			yield viztask.waitTrue(self.threadThrottle,self._maxThreads, model.threads)
+			viz.director(self.renderMeshes, fileName)
+		self.printNoticeable('end of rendering process')
+	
+	def renderMeshes(self, fileName):
+		"""Creates a mesh class instance of the mesh fileName"""
+		m = bp3d.Mesh(fileName)
+		
+		self._meshes.append(m)
+		self._meshesById[m.id] = m
+		
+		model.threads -= 1 #Subtract 1 for each thread that has finished rendering
+		
+	def threadThrottle(self, maxThreads, curThreads, threadFlag = True):
+		"""If the number of current threads (curThreads) is greater than the decided maximum, then 
+		returns false --- and vice-versa"""
+		while threadFlag:
+			if curThreads <= maxThreads:
+				threadFlag = False
+			else:
+				threadFlag = True
+		return True
+	
+	def setKeystone(self):
+		# Set Keystone
+		for m in [self._meshes[i] for i in range(0,1)]:
+			cp = m.centerPointScaled
+			cp = [cp[0], -cp[2] + 0.150, cp[1]]
+			m.setPosition(cp, viz.ABS_GLOBAL)
+			m.setEuler([0.0,90.0,180.0])
+			m.group.grounded = True
+			self._keystones.append(m)
+		#snapGroup(smallBoneGroups)
+
+	def printNoticeable(self, text):
+		print '-'*len(text)
+		print text.upper()
+		print '-'*len(text)
+		
 
 	def unloadBones(self):
 		"""Unload all of the bone objects to reset the puzzle game"""

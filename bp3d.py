@@ -67,7 +67,7 @@ class Mesh(viz.VizNode):
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
 		
 		self.name = self.metaData['name']
-		print self.name, self.centerPoint
+#		print self.name, self.centerPoint
 
 		self.nameFormatted = ''
 		for i, w in enumerate(self.name.split()):
@@ -161,7 +161,7 @@ class Mesh(viz.VizNode):
 		else:
 			self.mesh.visible(viz.ON)
 			#self.tooltip.visible(viz.ON)
-		model.proxManager.addSensor(self._sensor)
+#		model.proxManager.addSensor(self._sensor)
 		
 	def disable(self):
 		self._enabled = False
