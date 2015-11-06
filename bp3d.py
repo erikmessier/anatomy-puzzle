@@ -67,7 +67,6 @@ class Mesh(viz.VizNode):
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
 		
 		self.name = self.metaData['name']
-		print self.name, self.centerPoint
 
 		self.nameFormatted = ''
 		for i, w in enumerate(self.name.split()):

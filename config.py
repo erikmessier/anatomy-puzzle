@@ -97,31 +97,32 @@ class menuLayerSelection:
 	""" Associates region with region concept name(s)"""
 	_key_value_Regions = [\
 		('Head',			['head']), \
-		('Thorax',		['body proper','muscle of shoulder', 'muscle of pectoral girdle', 'muscle of vertebral column', 'muscle of neck', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart']), \
+		('Thorax',			['body proper','muscle of shoulder', 'muscle of pectoral girdle', 'muscle of vertebral column', 'muscle of neck', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart']), \
 		('Upper Appen.',	['right free upper limb', 'left free upper limb', 'muscle of free upper limb']), \
 		('Lower Appen.', ['right free lower limb', 'left free lower limb', 'muscle of lower limb'])]
 	Regions = collections.OrderedDict(_key_value_Regions)
 	
 	""" Associates layer with the full layer concept name"""
 	_key_value_Layers = [\
-	('Bone', ['bone organ']), \
-	('Muscle', ['muscle organ']), \
-	('Organs', ['brain', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart'])]
+	('Bone',	['bone organ']), \
+	('Muscle',	['muscle organ']), \
+	('Organs',	['brain', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart'])]
 	Layers = collections.OrderedDict(_key_value_Layers)
 	
 	""" Developer Tool to disable checkboxes if no content is available for that layer
 		Format: List(Tuple(Region, List(layers to ignore)))"""
 	_key_value_RemoveCheckFromTab = [\
-	('Head', []), \
-	('Thorax', []), \
+	('Head',		[]), \
+	('Thorax',		[]), \
 	('Upper Appen.', ['Organs']), \
 	('Lower Appen.', ['Organs'])]
 	RemoveCheckFromTab = collections.OrderedDict(_key_value_RemoveCheckFromTab)
 	
 	""" Relates mode to its mode operation"""
 	_key_value_Modes = [ \
-		('Free Play', games.puzzleGame.FreePlay), \
-		('Quiz Mode', games.puzzleGame.TestPlay), \
+		('Free Play',		games.puzzleGame.FreePlay), \
+		('Puzzle Quiz',		games.puzzleGame.TestPlay), \
+		('Pin Drop Quiz',	games.puzzleGame.PinDrop), \
 		('Movement Tutorial', games.tutorialGame.InterfaceTutorial)]
 	Modes = collections.OrderedDict(_key_value_Modes)
 
@@ -132,6 +133,7 @@ Available modes for selection
 class Modes:
 	freePlay	= games.puzzleGame.FreePlay
 	quizPlay	= games.puzzleGame.TestPlay
+	pinDrop		= games.puzzleGame.PinDrop
 	tutorial	= games.tutorialGame.InterfaceTutorial
 
 """

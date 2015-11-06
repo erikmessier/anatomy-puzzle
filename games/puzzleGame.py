@@ -29,7 +29,7 @@ class PuzzleController(object):
 	Puzzle game controller base class. Not intended to be used directly, derive
 	children that feature the game mode functionality you want.
 	"""
-	def __init__(self):
+	def __init__(self, dataset):
 		self.modeName = ''
 		
 		self._meshes		= []
@@ -54,6 +54,8 @@ class PuzzleController(object):
 		self._pointerOrigColor = model.pointer.getColor()
 
 		self.viewcube = puzzleView.viewCube()
+		
+		self.load(dataset)
 		
 	def load(self, dataset):
 		"""
@@ -86,14 +88,16 @@ class PuzzleController(object):
 		viztask.schedule(self.loadControl())
 
 		# Set Keystone
-	def setKeystone(self):
-		for m in [self._meshes[i] for i in range(0,1)]:
+	def setKeystone(self, number):
+		for m in [self._meshes[i] for i in range(number)]:
 			cp = m.centerPointScaled
-			cp = [cp[0], -cp[2] + 0.150, cp[1]]
+			print cp
+#			cp = [cp[0], -cp[2] + 0.150, cp[1]]
 			m.setPosition(cp, viz.ABS_GLOBAL)
-			m.setEuler([0.0,90.0,180.0])
+			m.setEuler([0, 0, 0], viz.ABS_GLOBAL)
 			m.group.grounded = True
 			self._keystones.append(m)
+		rotateAbout(self._meshes, [0,0,0], [0,90,0])
 		#snapGroup(smallBoneGroups)
 
 	def loadMeshes(self, meshes = [], animate = False, randomize = True):
@@ -130,14 +134,16 @@ class PuzzleController(object):
 			
 			self._meshes.append(b)
 			self._meshesById[b.id] = b
+		model.menu.changeMenu(model.menu.loadingScreen, model.menu.inGameMenu)
+		model.menu.toggle()
 		print 'ENDED RENDERING PROCESS'
 		
 	def loadControl(self):
 		yield self.loadMeshes(self._meshesToLoad)
 		for m in self._meshes:
 			m.addSensor()
-			m.addToolTip
-		self.setKeystone()
+			m.addToolTip()
+		self.setKeystone(1)
 
 	def unloadBones(self):
 		"""Unload all of the bone objects to reset the puzzle game"""
@@ -363,7 +369,7 @@ class PuzzleController(object):
 	
 	def implode(self):
 		"""Move bones to solved positions"""
-		target = self._keystones[0] #keystone
+		target = self._keystones[0] # Move to the current keystone(s)
 		for m in self._meshes[1:]:
 			if m.getAction():
 				return
@@ -440,8 +446,8 @@ class PuzzleController(object):
 		
 class FreePlay(PuzzleController):
 	"""Free play mode allowing untimed, unguided exploration of the selected dataset(s)"""
-	def __init__(self):
-		super(FreePlay, self).__init__()
+	def __init__(self, dataset):
+		super(FreePlay, self).__init__(dataset)
 		self.modeName = 'freeplay'
 		
 		self.enableSlice()
@@ -451,8 +457,8 @@ class TestPlay(PuzzleController):
 	Assembly test play mode where the user is tasked with assembling the dataset
 	in a specific order based off of a provided prompt.
 	"""
-	def __init__(self):
-		super(TestPlay, self).__init__()
+	def __init__(self, dataset):
+		super(TestPlay, self).__init__(dataset)
 		self.modeName = 'testplay'
 		
 		self._meshesDisabled	= []
@@ -572,35 +578,42 @@ class TestPlay(PuzzleController):
 		"""Define list of objects to search for snapcheck"""
 		return [self._quizTarget]
 		
-class PinDrop():
+class PinDrop(PuzzleController):
 	"""
 	The complementary of the puzzle assembly test mode, where the task is to annotate an assembled
 	model instead of assemble a model from prompted annotations
 	"""
-	def __init__(self):
-		super(PinDrop, self).__init__()
+	def __init__(self, dataset):
+		super(PinDrop, self).__init__(dataset)
 		self.modeName = 'pindrop'
 		
 		self._dropTarget = None
 		self._dropAttempts = 0
 		
-		self.implode()
-		
 	def pickLabelTarget(self):
 		unlabeled = [m for m in self._meshes if not m.labeled]
 		self._dropTarget = random.sample(unlabeled, 1)[0]
 	
+	def highlightMesh(self, mesh):
+		pass
+		
 	def pinCheck(self):
 		if self._dropAttempts >= 3:
 			pass
-	
+
+	def loadControl(self):
+		yield self.loadMeshes(self._meshesToLoad)
+		for m in self._meshes:
+			m.addSensor()
+			m.addToolTip()
+		self.setKeystone(len(self._meshes))
+		
 	def bindKeys(self):
 		self._keyBindings.append(vizact.onkeydown('o', model.proxManager.setDebug, viz.TOGGLE)) #debug shapes
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, self.pinCheck))
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_L, self.pinCheck))
 		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
 	
-
 class PuzzleScore():
 	"""Handles scoring for the puzzle game"""
 	def __init__(self, modeName):
@@ -752,3 +765,19 @@ def planeProj(planePoint, planeNormal, targetPoint):
 	"""
 	planeToTarget = numpy.subtract(targetPoint, planePoint)
 	return numpy.dot(planeNormal, planeToTarget)
+
+def rotateAbout(meshes, point, euler):
+	pointCube = vizshape.addCube()
+	pointCube.setPosition(point, viz.ABS_GLOBAL)
+	
+	for m in meshes:
+		m.setParent(pointCube)
+		
+	pointCube.setEuler(euler)
+	
+	for m in meshes:
+		m.storeMat()
+		m.setParent(viz.WORLD)
+		m.setMatrix(m.loadMat())
+		
+	pointCube.remove()

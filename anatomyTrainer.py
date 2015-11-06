@@ -36,6 +36,9 @@ def start():
 	# Setup normal vector for alpha slicing plane calculation
 	planeVert.setNormal(0,[0,1,0])
 	model.planeVert = planeVert
+	slicePlane = vizshape.addPlane(size = [20, 20, 20], parent = pointer, cullFace = False)
+	slicePlane.alpha(0.20)
+	slicePlane.color(viz.ORANGE)
 	
 	### Initialize environment this will load the coliseum and sky
 	sky = viz.addChild('sky_day.osgb')
@@ -75,8 +78,8 @@ def start():
 def startGame(game, dataset):
 	if model.gameController:
 		return
-	model.gameController = game()
-	model.gameController.load(dataset)
+	model.gameController = game(dataset)
+#	model.gameController.load(dataset)
 
 def restartGame(game, dataset):
 	if not model.gameController:
