@@ -18,21 +18,30 @@ import anatomyTrainer
 import menu
 
 def main():
-	#Prompt for init config parameters
-	configurations = menu.modalityGUI()
-	
-	#Handling configuration selections
-	with open('.\\dataset\\configurations\\configurations.json','rb') as f:
-		configurations = json.load(f)
-		config.dispMode = int(configurations['dispMode'])
-		config.pointerMode = int(configurations['pointerMode'])
-		proceedFromConfigGUI = configurations['proceed']
-		f.close()
-	if proceedFromConfigGUI:
-	
-		#Initialize puzzle game
-		anatomyTrainer.start()
+	try:
+		#Prompt for init config parameters
+		configurations = menu.modalityGUI()
+		
+		#Handling configuration selections
+		with open('.\\dataset\\configurations\\configurations.json','rb') as f:
+			configurations = json.load(f)
+			config.dispMode = int(configurations['dispMode'])
+			config.pointerMode = int(configurations['pointerMode'])
+			proceedFromConfigGUI = configurations['proceed']
+			f.close()
+		if proceedFromConfigGUI:
+		
+			#Initialize puzzle game
+			anatomyTrainer.start()
+	except:
+		raise
 
 if __name__ == '__main__':
 	main()
+
+
+
+
+
+
 
