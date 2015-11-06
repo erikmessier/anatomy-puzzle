@@ -556,8 +556,8 @@ class TestPlay(PuzzleController):
 		
 		#load and prep meshes
 		yield self.loadControl(self._meshesToLoad)
-		yield self.setKeystone()
 		yield self.prepareMeshes()
+		yield self.setKeystone()
 		yield self.hideMeshes()
 		
 		
@@ -588,16 +588,6 @@ class TestPlay(PuzzleController):
 #		self.pickSnapPair()
 #		#snapGroup(smallBoneGroups)
 		
-	def testPrep(self):
-		keystone = random.sample(self._keystones, 1)[0]
-		self._keystoneAdjacent.update({keystone:[]})
-		keystone = random.sample(self._keystones, 1)[0]
-		self._keystoneAdjacent.update({keystone:[]})
-		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
-			print m
-			m.enable(animate = False)
-		self.pickSnapPair()
-		
 	def setKeystone(self):
 		rand = random.sample(self._meshes, 3)
 		print rand
@@ -606,7 +596,7 @@ class TestPlay(PuzzleController):
 		cp = [cp[0], -cp[2] + 0.150, cp[1]]
 		rand[0].setPosition(cp, viz.ABS_GLOBAL)
 		rand[0].setEuler([0.0,90.0,180.0])
-		rand[0].enable()
+#		rand[0].enable()
 		rand[0].group.grounded = True
 		for m in rand[1:]:
 			m.enable()
@@ -619,6 +609,8 @@ class TestPlay(PuzzleController):
 		meshes = set(self._meshes)
 		hideMeshes = meshes - adjacents - keystones
 		for m in hideMeshes:
+			m.addSensor()
+			m.addToolTip()
 			m.disable()
 			
 	def pickSnapPair(self):
