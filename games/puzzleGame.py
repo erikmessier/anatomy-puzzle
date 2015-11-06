@@ -15,6 +15,7 @@ import numpy
 import json, csv
 import time, datetime
 import threading
+import time
 
 # Custom modules
 import init
@@ -31,6 +32,9 @@ class PuzzleController(object):
 	"""
 	def __init__(self, dataset):
 		self.modeName = ''
+		
+		self._maxThreads = 4
+		self._curThreads = 0
 		
 		self._meshes		= []
 		self._meshesById	= {}
@@ -55,7 +59,7 @@ class PuzzleController(object):
 
 		self.viewcube = puzzleView.viewCube()
 		
-		self.load(dataset)
+		viztask.schedule(self.load(dataset))
 		
 	def load(self, dataset):
 		"""
@@ -73,7 +77,7 @@ class PuzzleController(object):
 
 		model.proxManager.onEnter(None, self.EnterProximity)
 		model.proxManager.onExit(None, self.ExitProximity)
-	
+
 		#Setup Key Bindings
 		self.bindKeys()
 		
@@ -85,10 +89,76 @@ class PuzzleController(object):
 #		viztask.schedule(soundTask(glove))
 
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
-		viztask.schedule(self.loadControl())
+		yield self.loadControl(self._meshesToLoad)
+		yield self.prepareMeshes()
+		yield self.setKeystone(1)
+		
+	def restart(self):
+		model.menu.restart()
+		
+	def loadControl(self, meshes = [], animate = False):
+		"""control loading of meshes --- used to control multithreading"""
+		while True:
+			yield self.loadMeshes(meshes)
+	#		Check to make sure that all requested meshes were loaded if they aren't then load the missing meshes
+			lingeringThreads = 0
+			while True:
+				if lingeringThreads >= 20:
+					self.printNoticeable('Error: Issue with loading, not everything was loaded, going to load the remaining meshes')
+					needToLoad = list(set(self._meshesToLoad) - set(self._meshes))
+					self.loadControl(needToLoad)
+					break
+				if len(self._meshes) < len(self._meshesToLoad)- self.unknownFiles:
+					self.printNoticeable('notice: some threads are still running, please wait')
+				else:
+					model.menu.updateLoad(len(self._meshes), len(self._meshesToLoad))
+					model.menu.finishedLoading()
+					self.printNoticeable('notice: All Items Were Loaded!')
+					break
+				yield viztask.waitTime(0.2)
+				lingeringThreads += 1
+			break
+			
+	def loadMeshes(self, meshes = [], animate = False):
+		"""Load all of the files from the dataset into puzzle.mesh instances"""
+		self.unknownFiles = 0
+		model.threads = 0
+		self.printNoticeable('start of rendering process')
+		for i, fileName in enumerate(meshes):
+			# This is the actual mesh we will see
+			if not model.ds.getMetaData(file = fileName):
+				print "WARNING, UNKNOWN FILE ", fileName
+				self.unknownFiles += 1
+				continue
+			#Wait to add thread if threadThrottle conditions are not met
+			model.threads += 1 #Add 1 for each new thread added --- new render started
+			yield viztask.waitTrue(self.threadThrottle,self._maxThreads)
+			viz.director(self.renderMeshes, fileName)
+			model.menu.updateLoad(len(self._meshes), len(self._meshesToLoad))
+		self.printNoticeable('end of rendering process')
+	
+	def renderMeshes(self, fileName):
+		"""Creates a mesh class instance of the mesh fileName"""
+		m = bp3d.Mesh(fileName)
+		
+		self._meshes.append(m)
+		self._meshesById[m.id] = m
+		
+		model.threads -= 1 #Subtract 1 for each thread that has finished rendering
+		
+	def threadThrottle(self, maxThreads, threadFlag = True):
+		"""If the number of current threads (curThreads) is greater than the decided maximum, then 
+		returns false --- and vice-versa"""
+		while threadFlag:
+			if model.threads <= maxThreads:
+				threadFlag = False
+			else:
+				threadFlag = True
+		return True
+	
 
-		# Set Keystone
 	def setKeystone(self, number):
+		"""Set Keystones"""
 		for m in [self._meshes[i] for i in range(number)]:
 			cp = m.centerPointScaled
 			print cp
@@ -99,23 +169,16 @@ class PuzzleController(object):
 			self._keystones.append(m)
 		rotateAbout(self._meshes, [0,0,0], [0,90,0])
 		#snapGroup(smallBoneGroups)
-
-	def loadMeshes(self, meshes = [], animate = False, randomize = True):
-		"""Load all of the files from the dataset into puzzle.mesh instances"""
-		print 'STARTED THE RENDERING PROCESS'
-		for i, fileName in enumerate(meshes):
-			# This is the actual mesh we will see
-			if not model.ds.getMetaData(file = fileName):
-				print "WARNING, UNKNOWN FILE ", fileName
-				continue
-			meshDirector = yield viztask.waitDirector(bp3d.Mesh,fileName)
-			b = meshDirector.returnValue
-			if (not randomize):
-				#Hardcoded keystone
-				b.setPosition([0.0,1.5,0.0])
-				b.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical
-			else:		
-				# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
+	
+	def prepareMeshes(self, animate = False):
+		"""Places meshes in circle around keystone(s)"""
+		for m in self._meshes:
+#			if (m.group.grounded):
+#				#Hardcoded keystone
+#				m.setPosition(m.center)
+#				m.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical		
+#	# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
+			if not m.group.grounded:
 				angle	= random.random() * 2 * math.pi
 				radius	= random.random() + 1.5
 				
@@ -127,24 +190,20 @@ class PuzzleController(object):
 					move = vizact.moveTo(targetPosition, time = 2)
 					spin = vizact.spinTo(euler = targetEuler, time = 2)
 					transition = vizact.parallel(spin, move)
-					b.addAction(transition)
+					m.addAction(transition)
 				else:					
-					b.setPosition(targetPosition)
-					b.setEuler(targetEuler)
-			
-			self._meshes.append(b)
-			self._meshesById[b.id] = b
-		model.menu.changeMenu(model.menu.loadingScreen, model.menu.inGameMenu)
-		model.menu.toggle()
-		print 'ENDED RENDERING PROCESS'
-		
-	def loadControl(self):
-		yield self.loadMeshes(self._meshesToLoad)
-		for m in self._meshes:
+					m.setPosition(targetPosition)
+					m.setEuler(targetEuler)
+					
 			m.addSensor()
 			m.addToolTip()
-		self.setKeystone(1)
 
+	def printNoticeable(self, text):
+		"""Highly visible printouts"""
+		print '-'*len(text)
+		print text.upper()
+		print '-'*len(text)
+		
 	def unloadBones(self):
 		"""Unload all of the bone objects to reset the puzzle game"""
 		for m in self._meshes:
@@ -306,9 +365,7 @@ class PuzzleController(object):
 		self._grabFlag = True
 
 	def release(self):
-		"""
-		Release grabbed object from pointer
-		"""
+		"""Release grabbed object from pointer"""
 		if self._gloveLink:
 			self.transparency(self._lastGrabbed, 1.0)
 			self._gloveLink.remove()
@@ -317,9 +374,11 @@ class PuzzleController(object):
 		self._grabFlag = False
 	
 	def getDisabled(self):
+		""""""
 		return [m for m in self._meshes if not m.getEnabled()]
 		
 	def getEnabled(self, includeGrounded = True):
+		""""""
 		if includeGrounded:
 			return [m for m in self._meshes if m.getEnabled()]
 		else:
@@ -441,6 +500,7 @@ class PuzzleController(object):
 					mesh.setAlpha(maxAlpha)
 	
 	def enableSlice(self):
+		"""Turn on slicing computation"""
 		viztask.schedule(self.alphaSliceUpdate())
 			
 		
@@ -484,8 +544,6 @@ class TestPlay(PuzzleController):
 		# Dataset
 		model.ds = bp3d.DatasetInterface()
 		
-		self._quizPanel = puzzleView.TestSnapPanel()
-		self._quizPanel.toggle()
 
 		# Proximity management
 		model.proxManager = vizproximity.Manager()
@@ -494,7 +552,21 @@ class TestPlay(PuzzleController):
 
 		model.proxManager.onEnter(None, self.EnterProximity)
 		model.proxManager.onExit(None, self.ExitProximity)
-	
+		
+		#create list of meshes to load
+		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		
+		#create and add quiz panel
+		self._quizPanel = puzzleView.TestSnapPanel()
+		self._quizPanel.toggle()
+		
+		#load and prep meshes
+		yield self.loadControl(self._meshesToLoad)
+		yield self.setKeystone()
+		yield self.prepareMeshes()
+		yield self.hideMeshes()
+		
+		
 		# Setup Key Bindings
 		self.bindKeys()
 		
@@ -503,35 +575,58 @@ class TestPlay(PuzzleController):
 
 		self.score = PuzzleScore(self.modeName)
 		
-#		viztask.schedule(soundTask(glove))
-		self._meshesfToLoad = model.ds.getOntologySet(dataset)
-		self.loadControl(self._meshesToLoad)
-		# Hide all of the meshes
-		for m in self._meshes:
-			m.disable()
-		
-		# Randomly select keystone(s)
-		rand = random.sample(self._meshes, 3)
-		print rand
-		self._keystones += rand
-		rand[0].enable()
-		rand[0].setPosition([0.0,1.5,0.0])
-		rand[0].setEuler([0.0,90.0,180.0])
-		rand[0].group.grounded = True
-		for m in rand[1:]:
-			m.enable()
-			self.snap(m, rand[0], add = False)
-			print 'snapping ', m.name
-		
-		# Randomly enable some adjacent meshes
+		keystone = random.sample(self._keystones, 1)[0]
+		self._keystoneAdjacent.update({keystone:[]})
 		keystone = random.sample(self._keystones, 1)[0]
 		self._keystoneAdjacent.update({keystone:[]})
 		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
 			print m
 			m.enable(animate = False)
 		self.pickSnapPair()
-		#snapGroup(smallBoneGroups)
+#		# Randomly enable some adjacent meshes
+#		keystone = random.sample(self._keystones, 1)[0]
+#		self._keystoneAdjacent.update({keystone:[]})
+#		keystone = random.sample(self._keystones, 1)[0]
+#		self._keystoneAdjacent.update({keystone:[]})
+#		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
+#			print m
+#			m.enable(animate = False)
+#		self.pickSnapPair()
+#		#snapGroup(smallBoneGroups)
 		
+	def testPrep(self):
+		keystone = random.sample(self._keystones, 1)[0]
+		self._keystoneAdjacent.update({keystone:[]})
+		keystone = random.sample(self._keystones, 1)[0]
+		self._keystoneAdjacent.update({keystone:[]})
+		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
+			print m
+			m.enable(animate = False)
+		self.pickSnapPair()
+		
+	def setKeystone(self):
+		rand = random.sample(self._meshes, 3)
+		print rand
+		self._keystones += rand
+		cp = rand[0].centerPointScaled
+		cp = [cp[0], -cp[2] + 0.150, cp[1]]
+		rand[0].setPosition(cp, viz.ABS_GLOBAL)
+		rand[0].setEuler([0.0,90.0,180.0])
+		rand[0].enable()
+		rand[0].group.grounded = True
+		for m in rand[1:]:
+			m.enable()
+			self.snap(m, rand[0], add = False)
+			print 'snapping ', m.name
+		
+	def hideMeshes(self):
+		keystones = set(self._keystones)
+		adjacents = set(self._keystoneAdjacent)
+		meshes = set(self._meshes)
+		hideMeshes = meshes - adjacents - keystones
+		for m in hideMeshes:
+			m.disable()
+			
 	def pickSnapPair(self):
 		self._quizTarget = random.sample(self._keystones, 1)[0]
 		enabled = self.getEnabled(includeGrounded = False)

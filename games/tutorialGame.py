@@ -53,8 +53,8 @@ class InterfaceTutorial(object):
 		model.pointer.setPosition(0,0,0)
 		self.gloveStart = model.pointer.getPosition()
 		self.iterations = 0
-		self.origPosVec = config.positionVector
-		self.origOrienVec = config.orientationVector
+		self.origPosVec = config.SMPositionScale
+		self.origOrienVec = config.SMEulerScale
 		
 		#creating directions panel
 #		viz.mouse.setVisible(False)
@@ -72,7 +72,6 @@ class InterfaceTutorial(object):
 		self.dog = viz.addChild('.\\dataset\\dog\\dog.obj')
 		self.dogStart = self.dog.getPosition()
 		self.dog.setScale([sf,sf,sf])
-		self.dogOutline.setScale([sf,sf,sf])
 		self.startColor = model.pointer.getColor()
 		
 		#creating dog outline

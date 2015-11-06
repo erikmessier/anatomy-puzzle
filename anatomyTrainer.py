@@ -4,7 +4,7 @@ Primary file from which the Anatomy Trainer game is run.
 
 # Vizard modules
 import viz
-import vizact, vizshape
+import vizact, vizshape, viztask
 
 # Custom modules
 import model
@@ -79,7 +79,6 @@ def startGame(game, dataset):
 	if model.gameController:
 		return
 	model.gameController = game(dataset)
-#	model.gameController.load(dataset)
 
 def restartGame(game, dataset):
 	if not model.gameController:

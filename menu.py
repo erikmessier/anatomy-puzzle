@@ -31,10 +31,9 @@ class MenuController(object):
 		
 		
 		# Compatibility for all display types
-		canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
 		canvas.setCursorSize([25,25])
 		canvas.setCursorPosition([0,0])
-		
+	
 		#init keybindings
 		self.keybindings = []
 		self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
@@ -51,7 +50,11 @@ class MenuController(object):
 		self.menuOrder = [self.mainMenu, self.modeMenu, self.layerMenu, self.loadingScreen, self.inGameMenu]
 		
 		self.activeMenu = self.mainMenu
-		
+	
+	######################################
+	"""layerMenu and inGameMenu methods"""
+	######################################
+	
 	def start(self):
 		"""
 		Start the game
@@ -66,52 +69,21 @@ class MenuController(object):
 		model.selected.objectsSelected(self.layerMenu)
 		
 		# Startup the game if there have been selections on layer menu
-		if model.selected.load:
+		if model.selected.mode != 'Movement Tutorial' and model.selected.load:
 			yield self.changeMenu(self.layerMenu, self.loadingScreen)
 			anatomyTrainer.startGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
-		
+		elif model.selected.mode == 'Movement Tutorial':
+			yield self.changeMenu(self.layerMenu, self.inGameMenu)
+			anatomyTrainer.startGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
 		
 	def restart(self):
 		anatomyTrainer.restartGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
-		self.toggle()
+		self.backMenu()
 		
 	def endGame(self):
 		anatomyTrainer.endGame()
 		self.changeMenu(self.inGameMenu, self.mainMenu)
 		
-	def backMenu(self):
-		i = self.menuOrder.index(self.activeMenu)
-		self.changeMenu(self.activeMenu,  self.menuOrder[i-1])
-		
-	def nextMenu(self):
-		i = self.menuOrder.index(self.activeMenu)
-		self.changeMenu(self.activeMenu,  self.menuOrder[i+1])
-
-	def changeMenu(self, leaveMenu, goToMenu):	
-		leaveMenu.setPanelVisible(viz.OFF, animate = False)
-		leaveMenu.menuVisible = False
-		leaveMenu.active = False
-		goToMenu.setPanelVisible(viz.ON, animate = True)
-		goToMenu.menuVisible = True
-		goToMenu.active = True
-		self.activeMenu = goToMenu
-		self.updateKeybindings()
-	
-	def updateKeybindings(self):
-		"""Menu keybinding state machine"""
-		for keybinding in self.keybindings:
-			keybinding.remove()
-		if self.activeMenu == self.inGameMenu:
-			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.toggle))
-		elif self.activeMenu == self.layerMenu:
-			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, lambda: viztask.schedule(self.start)))
-			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.backMenu))
-		elif self.activeMenu == self.mainMenu:
-			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
-			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.exitGame))
-		elif self.activeMenu == self.modeMenu:
-			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
-			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.backMenu))
 			
 	def onAllSelection(self, obj, state):
 		"""If entire layer was selected on layerMenu, then disable the individual checks for a specific layer, and viceversa"""
@@ -130,15 +102,63 @@ class MenuController(object):
 		for region in checkBoxes:
 			if not filter(lambda x: x == layer, config.menuLayerSelection.RemoveCheckFromTab[region]):
 				checkBoxes[region][layer].disable()
-				
-			
 		
 	def enableChecks(self, layer, checkBoxes):
 		"""Enable checkboxes of a specific layer on layerMenu"""
 		for region in checkBoxes:
 			if not filter(lambda x: x == layer, config.menuLayerSelection.RemoveCheckFromTab[region]):
 				checkBoxes[region][layer].enable()
+				
+	##########################			
+	"""Shared Menu Methods"""
+	##########################
+	
+	def backMenu(self):
+		i = self.menuOrder.index(self.activeMenu)
+		self.changeMenu(self.activeMenu,  self.menuOrder[i-1])
 		
+	def nextMenu(self):
+		i = self.menuOrder.index(self.activeMenu)
+		self.changeMenu(self.activeMenu,  self.menuOrder[i+1])
+
+	def changeMenu(self, leaveMenu, goToMenu):
+		leaveMenu.setPanelVisible(viz.OFF, animate = False)
+		leaveMenu.menuVisible = False
+		leaveMenu.active = False
+		if goToMenu == self.inGameMenu:
+			goToMenu.active = True
+		else:
+			goToMenu.setPanelVisible(viz.ON, animate = True)
+			goToMenu.menuVisible = True
+			goToMenu.active = True
+		self.activeMenu = goToMenu
+		self.updateCursorVisibility()
+		self.updateKeybindings()
+		
+	def updateCursorVisibility(self):
+		if self.activeMenu == self.loadingScreen:
+			self.canvas.setCursorVisible(viz.OFF)
+		elif self.activeMenu == self.inGameMenu and self.activeMenu.menuVisible == False:
+			self.canvas.setCursorVisible(viz.OFF)
+		else:
+			self.canvas.setCursorVisible(viz.ON)
+		
+	def updateKeybindings(self):
+		"""Menu keybinding state machine"""
+		for keybinding in self.keybindings:
+			keybinding.remove()
+		if self.activeMenu == self.inGameMenu:
+			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.toggle))
+		elif self.activeMenu == self.layerMenu:
+			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, lambda: viztask.schedule(self.start))) #use viztask to make loading screen appear before loading (necessary event when not multithreading)
+			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.backMenu))
+		elif self.activeMenu == self.mainMenu:
+			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
+			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.exitGame))
+		elif self.activeMenu == self.modeMenu:
+			self.keybindings.append(vizact.onkeydown(viz.KEY_RETURN, self.nextMenu))
+			self.keybindings.append(vizact.onkeydown(viz.KEY_ESCAPE, self.backMenu))
+			
 	def toggle(self):
 		self.activeMenu.toggle()
 		
@@ -146,11 +166,29 @@ class MenuController(object):
 		viz.quit()
 		print 'Visual Anatomy Trainer has closed'
 		
+	################################	
+	"""Loading Screen Methods"""
+	################################
+	
+	def calcPercentLoaded(self, meshesToLoad, meshesLoaded):
+		self.loadingScreen.percentLoaded = (float(meshesLoaded)/float(meshesToLoad))*100.00
+		
+	def updatePercentMsg(self):
+		self.loadingScreen.percentMsg.message('%.2f' % self.loadingScreen.percentLoaded + '%')
+		
+	def finishedLoading(self):
+		self.changeMenu(self.loadingScreen, self.inGameMenu)
+		self.loadingScreen.percentLoaded = 0
+		
+	def updateLoad(self, meshesLoaded, meshesToLoad):
+		self.calcPercentLoaded(meshesToLoad, meshesLoaded)
+		self.updatePercentMsg()
+			
 class MenuBase(vizinfo.InfoPanel):
 	"""Base Menu Class"""
-	def __init__(self, canvas, name = '', title = '', startVisible = False):
+	def __init__(self, canvas, name = '', title = '', startVisible = False, fontSize = 100):
 		"""initialize the menu"""
-		vizinfo.InfoPanel.__init__(self, '', title = title, fontSize = 100, parent = canvas, align = viz.ALIGN_CENTER_CENTER, icon = False)
+		vizinfo.InfoPanel.__init__(self, '', title = title, fontSize = fontSize, parent = canvas, align = viz.ALIGN_CENTER_CENTER, icon = False)
 		
 		#hide system mouse
 		viz.mouse.setVisible(False)
@@ -184,6 +222,8 @@ class MenuBase(vizinfo.InfoPanel):
 class MainMenu(MenuBase):
 	"""Main game menu"""
 	def __init__(self, canvas, controller):
+		# Add Virtual Mouse
+		canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
 		# Store controller instance
 		self.controller = controller
 	
@@ -351,7 +391,7 @@ class LayerMenu(MenuBase):
 		
 		#add back and state button actions
 		vizact.onbuttondown(backButton, self.controller.backMenu)
-		vizact.onbuttondown(startButton, self.controller.start)
+		vizact.onbuttondown(startButton, lambda: viztask.schedule(self.controller.start))
 		
 		############################
 		'''ADD ITEMS TO GAME MENU'''
@@ -380,13 +420,34 @@ class LayerMenu(MenuBase):
 		
 		viz.callback(viz.BUTTON_EVENT, controller.onAllSelection)
 		
+class LoadingScreen(MenuBase):
+	"""
+	Loading Screen
+	"""
+	def __init__(self, canvas):
+		super(LoadingScreen, self).__init__(canvas, 'loading', 'Loading...', fontSize = 200)
+		
+		#init variables
+		self.percentLoaded = '0'
+		
+		
+		#add another panel to the loading screen
+		centerPanel = vizdlg.Panel(align = viz.ALIGN_CENTER_CENTER, fontSize = 200)
+		self.addItem(centerPanel, align = viz.ALIGN_LEFT_CENTER)
+		
+		#add message box
+		self.percentMsg = viz.addText('', parent = canvas)
+		self.percentMsg.color(0,1,0)
+		self.percentMsg.fontSize(200)
+		self.percentMsg.message(self.percentLoaded)
+		centerPanel.addItem(self.percentMsg, align = viz.ALIGN_CENTER_CENTER)
+		
 class InGameMenu(MenuBase):
 	"""
 	In-game menu to be shown when games are running
 	"""
 	def __init__(self,canvas,controller):
 		super(InGameMenu, self).__init__(canvas, 'ingame', 'In Game Menu')
-		
 		# Store controller instance
 		self.controller = controller
 		
@@ -400,32 +461,7 @@ class InGameMenu(MenuBase):
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
-
-class LoadingScreen(MenuBase):
-	"""
-	Loading Screen
-	"""
-	def __init__(self, canvas):
-		super(LoadingScreen, self).__init__(canvas, 'loading', 'Loading...')
-		#init variables
-		self.percentLoaded = ''
 		
-		#add message box
-		self.percentMsg = viz.addTextbox(parent = canvas)
-		self.percentMsg.color(0,1,0)
-		self.percentMsg.message(self.percentLoaded)
-		self.addItem(self.percentMsg)
-		
-	def calcPercentLoaded(self, meshesToLoad, meshesLoaded):
-		self.percentLoaded = len(meshesLoaded)
-		print self.percentLoaded
-#	def updatePercentMsg(self):
-#		self.percentMsg.message(str(self.percentLoaded))
-	def finished(self):
-		pass
-	def updateLoad(self):
-		self.calcPercentLoaded(anatomyTrainer.model.gameController._meshesToLoad, anatomyTrainer.model.gameController._meshes)
-	
 class Selection():
 	"""Selection methods to determine GUI inputs, and storage format for GUI inputs"""
 	def __init__(self):
@@ -452,7 +488,7 @@ class Selection():
 					
 		for i in inputMenu.selectAllOf.keys():
 			if inputMenu.selectAllOf[i].get() == 1:
-				layer_region = (set.union, inputMenu.layers[i], 'All Regions')
+				layer_region = (set.union, inputMenu.layers[i])
 				self.load.append(layer_region)
 				self.unionFlag = True
 

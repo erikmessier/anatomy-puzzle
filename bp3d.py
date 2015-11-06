@@ -73,15 +73,7 @@ class Mesh(viz.VizNode):
 			if (i + 1) % 2 == 0 and i != 0: 
 				self.nameFormatted += w + '\n'
 			else:
-				self.nameFormatted += w + ' ' 
-		
-		#give a bone an information property
-#		self.info = ''
-#		for j,bd in enumerate(boneDesc['info'].split()):
-#			if(j+1) % 10 ==0 and j != 0:
-#				self.info += bd + ' \n'
-#			else: 
-#				self.info += bd + ' '
+				self.nameFormatted += w + ' '
 		
 		# We are using a 'center' viznode to make manipulation easy
 		self.center = vizshape.addCube(0.001) # An arbitrary placeholder cube
@@ -93,24 +85,6 @@ class Mesh(viz.VizNode):
 		
 		# This is the viznode that will be moved around to check distances for snapping
 		self.checker = vizshape.addCube(0.001)
-		
-		#Description
-
-#		if display.displayMode == 2:
-#			self.dialogue = viz.addText(self.info,pos = [0,3,0],parent=viz.WORLD)
-#			self.dialogue.billboard(viz.BILLBOARD_VIEW)
-#			self.dialogue.setBackdrop(viz.BACKDROP_CENTER_TOP)
-#			self.dialogue.setScale(0.15,0.15,0.15)
-#			self.dialogue.alignment(viz.ALIGN_CENTER_CENTER)
-#			#self.dialogue.setPosition([0.03,0.85,0])
-#			#self.dialogue.color(viz.BLACK)
-#		else:
-#			self.dialogue = viz.addText(self.info,parent=viz.SCREEN)
-#			#self.dialogue.setBackdrop(viz.BACKDROP_CENTER_TOP)
-#			self.dialogue.setScale(0.3,0.3,0.0)
-#			self.dialogue.alignment(viz.ALIGN_LEFT_BOTTOM)
-#			self.dialogue.setPosition([0.03,0.85,0])
-#			#self.dialogue.color(viz.BLACK)
 		
 		# Setup heirarchy for proper movement behavior
 		self.mesh.setParent(self)
@@ -148,6 +122,7 @@ class Mesh(viz.VizNode):
 		groups.append(self.group)
 		
 	def enable(self, animate = False):
+		"""Turn on visibility/set enabled flag"""
 		self._enabled = True
 		if animate:
 			fadein = vizact.fadeTo(1.0, time = 1.0)
@@ -160,32 +135,35 @@ class Mesh(viz.VizNode):
 		else:
 			self.mesh.visible(viz.ON)
 			#self.tooltip.visible(viz.ON)
-		model.proxManager.addSensor(self._sensor)
+#		model.proxManager.addSensor(self._sensor)
 		
 	def disable(self):
+		"""Turn off visibility/set enabled flag"""
 		self._enabled = False
 		self.mesh.visible(viz.OFF)
-		self.tooltip.visible(viz.OFF)
+#		self.tooltip.visible(viz.OFF)
 		model.proxManager.removeSensor(self._sensor)
 	
 	def getEnabled(self):
 		return self._enabled
 		
 	def storeMat(self):
+		"""Store current transformation matrix"""
 		self._savedMat = self.getMatrix(viz.ABS_GLOBAL)
 		
 	def loadMat(self):
+		"""Recall stored transformation matrix"""
 		return self._savedMat
 	
 	def incProxCounter(self):
 		"""
-		Used to determine how long the glove is close to a bone.
-		helps with debouncing for sound output
+		Used to determine how long the glove is close to a bone. Helps with
+		debouncing for sound output
 		"""
 		self.proxCounter += 1
 	
 	def clearProxCounter(self):
-		"""resets the counter for how long glove is close to bone"""
+		"""Resets the counter for how long glove is close to bone"""
 		self.proxCounter  = 0
 		
 	def addToolTip(self):
@@ -194,7 +172,7 @@ class Mesh(viz.VizNode):
 		self.tooltip.color(0,5,1)
 		self.tooltip.setParent(self.center)
 		self.tooltip.billboard(viz.BILLBOARD_VIEW)
-		self.tooltip.setScale(0.1,0.1,0.1)#set to prefered scale
+		self.tooltip.setScale(0.1,0.1,0.1) #set to prefered scale
 		self.tooltip.setPosition(0,0,-1)
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
 		
@@ -219,6 +197,7 @@ class Mesh(viz.VizNode):
 		self.mesh.alpha(level)
 		
 	def color(self, value = (1,1,1), reset = False):
+		"""Set the color of the mesh"""
 		if reset:
 			self.mesh.color(self.metaData['color'])
 		else:
@@ -244,33 +223,16 @@ class Mesh(viz.VizNode):
 			self.setPosition(targetPosition, viz.ABS_GLOBAL)
 			self.setEuler(targetEuler,viz.ABS_GLOBAL)
 
-	def grabSequence(self):
-		"""
-		i don't even
-		"""
-		self.tooltip.enable([viz.RENDERING])
-		
-		try: #play audio with the same name as the bone
-			viz.playSound(".\\dataset\\Skull\\audio_names\\" + self.name + ".wav")
-		except ValueError:
-			print ("the name of the audio file was wrong")
-		
 	def releaseSequence(self):
-		"""
-		calling this method will disable rendering on the bones tooltip
-		"""
+		"""Calling this method will disable rendering on the bones tooltip"""
 		self.tooltip.disable([viz.RENDERING])
 		
 	def setNameAudioFlag(self, flag):
-		"""
-		True to allow bone name playback
-		"""
+		"""True to allow bone name playback"""
 		self.nameAudioFlag = flag
 	
 	def playDescription(self):
-		"""
-		Play the Bone description audio
-		"""
+		"""Play the Bone description audio"""
 		try:
 			#print ("play " + boneObj.name + " description")
 			viz.playSound(path + "audio_descriptions2\\" + self.name + ".wav")
@@ -278,9 +240,7 @@ class Mesh(viz.VizNode):
 			print ("the name of the audio description file was wrong")
 	
 	def getNameAudioFlag(self):
-		"""
-		return self.nameAudioFlag
-		"""
+		"""Return self.nameAudioFlag"""
 		return self.nameAudioFlag
 		
 	def getGrabbedFlag(self):
@@ -289,9 +249,9 @@ class Mesh(viz.VizNode):
 		"""
 		return self.grabbedFlag
 		
-	def setGrabbedFlag(self,flag):
+	def setGrabbedFlag(self, flag):
 		"""
-		used for determining if a bone was grabbed or not
+		Used for determining if a bone was grabbed or not
 		True if bone was grabbed
 		"""
 		self.grabbedFlag = flag
@@ -302,13 +262,13 @@ class Mesh(viz.VizNode):
 		self.dialogue.enable([viz.RENDERING])
 		
 	def removeBoneInfo(self):
-		"""removes bone description and bone tool tip and clears the proximity counter used for debouncing"""
+		"""Removes bone description and bone tool tip and clears the proximity counter used for debouncing"""
 		self.tooltip.disable([viz.RENDERING])
 #		self.dialogue.disable([viz.RENDERING])
 		self.clearProxCounter()
 			
 	def getDescAudioFlag(self):
-		""" return seld.descAudioFlag """
+		"""Return seld.descAudioFlag """
 		return self.descAudioFlag
 		
 	def setDescAudioFlag(self,val):
@@ -334,15 +294,11 @@ class DatasetInterface():
 		self.allMetaData  = self.parseMetaData() # Dictionary of dictionary with concept ID as key
 		
 	def getByConcept(self, concept):
-		"""
-		Get filenames(s) by concept id
-		"""
+		"""Get filenames(s) by concept id"""
 		pass
 		
 	def getByName(self, name):
-		"""
-		Get filenames(s) by concept name
-		"""
+		"""Get filenames(s) by concept name"""
 		pass
 			
 	def getOntologySet(self, searchSets):
@@ -403,9 +359,7 @@ class DatasetInterface():
 		return thisMD
 		
 	def getColor(self, filename):
-		"""
-		Pull in coloring from config, if it is defined
-		"""
+		"""Pull in coloring from config, if it is defined"""
 		for ontologyName in config.colors.keys():
 			if filename in self.ontologyByName[ontologyName]['filenames']:
 				return config.colors[ontologyName]
