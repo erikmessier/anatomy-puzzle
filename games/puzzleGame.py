@@ -75,7 +75,7 @@ class PuzzleController(object):
 
 		model.proxManager.onEnter(None, self.EnterProximity)
 		model.proxManager.onExit(None, self.ExitProximity)
-	
+
 		#Setup Key Bindings
 		self.bindKeys()
 		
@@ -90,9 +90,6 @@ class PuzzleController(object):
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
 		yield self.setKeystone()
-		
-		
-		self.printNoticeable('Out')
 		
 	def restart(self):
 		model.menu.restart()
@@ -134,7 +131,7 @@ class PuzzleController(object):
 			#Wait to add thread if threadThrottle conditions are not met
 			model.threads += 1 #Add 1 for each new thread added --- new render started
 			yield viztask.waitTrue(self.threadThrottle,self._maxThreads)
-			yield viz.director(self.renderMeshes, fileName)
+			viz.director(self.renderMeshes, fileName)
 			model.menu.updateLoad(len(self._meshes), len(self._meshesToLoad))
 		self.printNoticeable('end of rendering process')
 	
@@ -171,11 +168,11 @@ class PuzzleController(object):
 	def prepareMeshes(self, animate = False):
 		"""Places meshes in circle around keystone(s)"""
 		for m in self._meshes:
-			if (m.group.grounded):
-				#Hardcoded keystone
-				m.setPosition(m.center)
-				m.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical		
-	# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
+#			if (m.group.grounded):
+#				#Hardcoded keystone
+#				m.setPosition(m.center)
+#				m.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical		
+#	# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
 			if not m.group.grounded:
 				angle	= random.random() * 2 * math.pi
 				radius	= random.random() + 1.5
@@ -192,6 +189,7 @@ class PuzzleController(object):
 				else:					
 					m.setPosition(targetPosition)
 					m.setEuler(targetEuler)
+					
 			m.addSensor()
 			m.addToolTip()
 
@@ -558,11 +556,10 @@ class TestPlay(PuzzleController):
 		
 		#load and prep meshes
 		yield self.loadControl(self._meshesToLoad)
-		yield self.prepareMeshes()
 		yield self.setKeystone()
+		yield self.prepareMeshes()
+		yield self.hideMeshes()
 		
-		#hide meshes
-		self.hideMeshes()
 		
 		# Setup Key Bindings
 		self.bindKeys()
@@ -572,30 +569,56 @@ class TestPlay(PuzzleController):
 
 		self.score = PuzzleScore(self.modeName)
 		
-		# Randomly enable some adjacent meshes
+		keystone = random.sample(self._keystones, 1)[0]
+		self._keystoneAdjacent.update({keystone:[]})
 		keystone = random.sample(self._keystones, 1)[0]
 		self._keystoneAdjacent.update({keystone:[]})
 		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
 			print m
 			m.enable(animate = False)
 		self.pickSnapPair()
-		#snapGroup(smallBoneGroups)
+#		# Randomly enable some adjacent meshes
+#		keystone = random.sample(self._keystones, 1)[0]
+#		self._keystoneAdjacent.update({keystone:[]})
+#		keystone = random.sample(self._keystones, 1)[0]
+#		self._keystoneAdjacent.update({keystone:[]})
+#		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
+#			print m
+#			m.enable(animate = False)
+#		self.pickSnapPair()
+#		#snapGroup(smallBoneGroups)
+		
+	def testPrep(self):
+		keystone = random.sample(self._keystones, 1)[0]
+		self._keystoneAdjacent.update({keystone:[]})
+		keystone = random.sample(self._keystones, 1)[0]
+		self._keystoneAdjacent.update({keystone:[]})
+		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
+			print m
+			m.enable(animate = False)
+		self.pickSnapPair()
 		
 	def setKeystone(self):
 		rand = random.sample(self._meshes, 3)
 		print rand
 		self._keystones += rand
-		rand[0].enable()
-		rand[0].setPosition([0.0,1.5,0.0])
+		cp = rand[0].centerPointScaled
+		cp = [cp[0], -cp[2] + 0.150, cp[1]]
+		rand[0].setPosition(cp, viz.ABS_GLOBAL)
 		rand[0].setEuler([0.0,90.0,180.0])
+		rand[0].enable()
 		rand[0].group.grounded = True
 		for m in rand[1:]:
 			m.enable()
 			self.snap(m, rand[0], add = False)
 			print 'snapping ', m.name
-			
+		
 	def hideMeshes(self):
-		for m in self._meshes:
+		keystones = set(self._keystones)
+		adjacents = set(self._keystoneAdjacent)
+		meshes = set(self._meshes)
+		hideMeshes = meshes - adjacents - keystones
+		for m in hideMeshes:
 			m.disable()
 			
 	def pickSnapPair(self):
