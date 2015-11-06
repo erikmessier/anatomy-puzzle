@@ -87,7 +87,13 @@ class PuzzleController(object):
 #		viztask.schedule(soundTask(glove))
 
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
-		viztask.schedule(self.loadControl(self._meshesToLoad))
+		yield self.loadControl(self._meshesToLoad)
+		yield self.prepareMeshes()
+		yield self.setKeystone()
+		
+		
+		self.printNoticeable('Out')
+		
 	def restart(self):
 		model.menu.restart()
 		
@@ -95,9 +101,6 @@ class PuzzleController(object):
 		"""control loading of meshes --- used to control multithreading"""
 		while True:
 			yield self.loadMeshes(meshes)
-			self.setKeystone()
-			self.prepareMeshes()
-		
 	#		Check to make sure that all requested meshes were loaded if they aren't then load the missing meshes
 			lingeringThreads = 0
 			while True:
@@ -115,7 +118,7 @@ class PuzzleController(object):
 					break
 				yield viztask.waitTime(0.2)
 				lingeringThreads += 1
-			return
+			break
 			
 	def loadMeshes(self, meshes = [], animate = False):
 		"""Load all of the files from the dataset into puzzle.mesh instances"""
@@ -168,11 +171,11 @@ class PuzzleController(object):
 	def prepareMeshes(self, animate = False):
 		"""Places meshes in circle around keystone(s)"""
 		for m in self._meshes:
-#			if (m.group.grounded):
-#				#Hardcoded keystone
-#				m.setPosition(m.center)
-#				m.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical		
-			# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
+			if (m.group.grounded):
+				#Hardcoded keystone
+				m.setPosition(m.center)
+				m.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical		
+	# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
 			if not m.group.grounded:
 				angle	= random.random() * 2 * math.pi
 				radius	= random.random() + 1.5
@@ -537,8 +540,6 @@ class TestPlay(PuzzleController):
 		# Dataset
 		model.ds = bp3d.DatasetInterface()
 		
-		self._quizPanel = puzzleView.TestSnapPanel()
-		self._quizPanel.toggle()
 
 		# Proximity management
 		model.proxManager = vizproximity.Manager()
@@ -547,13 +548,21 @@ class TestPlay(PuzzleController):
 
 		model.proxManager.onEnter(None, self.EnterProximity)
 		model.proxManager.onExit(None, self.ExitProximity)
-	
-		self._meshesToLoad = model.ds.getOntologySet(dataset)
-		viztask.schedule(self.loadControl(self._meshesToLoad))
 		
-		# Hide all of the meshes
-		for m in self._meshes:
-			m.disable()
+		#create list of meshes to load
+		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		
+		#create and add quiz panel
+		self._quizPanel = puzzleView.TestSnapPanel()
+		self._quizPanel.toggle()
+		
+		#load and prep meshes
+		yield self.loadControl(self._meshesToLoad)
+		yield self.prepareMeshes()
+		yield self.setKeystone()
+		
+		#hide meshes
+		self.hideMeshes()
 		
 		# Setup Key Bindings
 		self.bindKeys()
@@ -562,8 +571,6 @@ class TestPlay(PuzzleController):
 		time.clock()
 
 		self.score = PuzzleScore(self.modeName)
-		self.setKeystone
-#		viztask.schedule(soundTask(glove))
 		
 		# Randomly enable some adjacent meshes
 		keystone = random.sample(self._keystones, 1)[0]
@@ -575,7 +582,6 @@ class TestPlay(PuzzleController):
 		#snapGroup(smallBoneGroups)
 		
 	def setKeystone(self):
-		# Randomly select keystone(s)
 		rand = random.sample(self._meshes, 3)
 		print rand
 		self._keystones += rand
@@ -587,6 +593,10 @@ class TestPlay(PuzzleController):
 			m.enable()
 			self.snap(m, rand[0], add = False)
 			print 'snapping ', m.name
+			
+	def hideMeshes(self):
+		for m in self._meshes:
+			m.disable()
 			
 	def pickSnapPair(self):
 		self._quizTarget = random.sample(self._keystones, 1)[0]

@@ -53,8 +53,8 @@ class InterfaceTutorial(object):
 		model.pointer.setPosition(0,0,0)
 		self.gloveStart = model.pointer.getPosition()
 		self.iterations = 0
-		self.origPosVec = config.positionVector
-		self.origOrienVec = config.orientationVector
+		self.origPosVec = config.SMPositionScale
+		self.origOrienVec = config.SMEulerScale
 		
 		#creating directions panel
 #		viz.mouse.setVisible(False)
