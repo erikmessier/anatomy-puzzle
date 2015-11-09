@@ -135,7 +135,7 @@ class Mesh(viz.VizNode):
 		else:
 			self.mesh.visible(viz.ON)
 			#self.tooltip.visible(viz.ON)
-#		model.proxManager.addSensor(self._sensor)
+		model.proxManager.addSensor(self._sensor)
 		
 	def disable(self):
 		"""Turn off visibility/set enabled flag"""

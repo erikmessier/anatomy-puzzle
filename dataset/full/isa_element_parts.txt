@@ -234,7 +234,6 @@ FMA4944	hemiazygos vein	FJ3434
 FMA4950	left ascending lumbar vein	FJ3493
 FMA4951	left subcostal vein	FJ1987
 FMA5011	accessory hemiazygos vein	FJ1981
-FMA5018	bone organ	FJ2772
 FMA5018	bone organ	FJ3152
 FMA5018	bone organ	FJ3154
 FMA5018	bone organ	FJ3155
@@ -437,6 +436,9 @@ FMA5018	bone organ	FJ3392
 FMA5018	bone organ	FJ3393
 FMA5018	bone organ	FJ3394
 FMA5018	bone organ	FJ3395
+FMA5018	bone organ	FJ3153	added
+FMA5018	bone organ	FJ3178	added
+FMA5018	bone organ	FJ3290	added
 FMA5022	muscle organ	FJ1294
 FMA5022	muscle organ	FJ1295
 FMA5022	muscle organ	FJ1304

@@ -97,7 +97,7 @@ class menuLayerSelection:
 	""" Associates region with region concept name(s)"""
 	_key_value_Regions = [\
 		('Head',			['head']), \
-		('Thorax',			['body proper','muscle of shoulder', 'muscle of pectoral girdle', 'muscle of vertebral column', 'muscle of neck', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart']), \
+		('Thorax',			['body proper','muscle of shoulder', 'sternum', 'muscle of pectoral girdle', 'muscle of vertebral column', 'muscle of neck', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart']), \
 		('Upper Appen.',	['right free upper limb', 'left free upper limb', 'muscle of free upper limb']), \
 		('Lower Appen.', ['right free lower limb', 'left free lower limb', 'muscle of lower limb'])]
 	Regions = collections.OrderedDict(_key_value_Regions)

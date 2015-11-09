@@ -81,8 +81,6 @@ class PuzzleController(object):
 		#Setup Key Bindings
 		self.bindKeys()
 		
-		# start the clock
-		time.clock()
 
 		self.score = PuzzleScore(self.modeName)
 		
@@ -169,28 +167,29 @@ class PuzzleController(object):
 	
 	def prepareMeshes(self, animate = False):
 		"""Places meshes in circle around keystone(s)"""
+		self.printNoticeable(str(self._meshes))
 		for m in self._meshes:
 #			if (m.group.grounded):
 #				#Hardcoded keystone
 #				m.setPosition(m.center)
 #				m.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical		
 #	# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
-			if not m.group.grounded:
-				angle	= random.random() * 2 * math.pi
-				radius	= random.random() + 1.5
-				
-				targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
-				targetEuler		= [0.0,90.0,180.0]
-				#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
-				
-				if (animate):
-					move = vizact.moveTo(targetPosition, time = 2)
-					spin = vizact.spinTo(euler = targetEuler, time = 2)
-					transition = vizact.parallel(spin, move)
-					m.addAction(transition)
-				else:					
-					m.setPosition(targetPosition)
-					m.setEuler(targetEuler)
+#			if not m.group.grounded:
+			angle	= random.random() * 2 * math.pi
+			radius	= random.random() + 1.5
+			
+			targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
+			targetEuler		= [0.0,90.0,180.0]
+			#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
+			
+			if (animate):
+				move = vizact.moveTo(targetPosition, time = 2)
+				spin = vizact.spinTo(euler = targetEuler, time = 2)
+				transition = vizact.parallel(spin, move)
+				m.addAction(transition)
+			else:					
+				m.setPosition(targetPosition)
+				m.setEuler(targetEuler)
 					
 			m.addSensor()
 			m.addToolTip()
@@ -559,39 +558,17 @@ class TestPlay(PuzzleController):
 		
 		#load and prep meshes
 		yield self.loadControl(self._meshesToLoad)
-		yield self.setKeystone()
 		yield self.prepareMeshes()
+		yield self.setKeystone(3)
 		yield self.hideMeshes()
-		
+		yield self.testPrep()
 		
 		# Setup Key Bindings
 		self.bindKeys()
 		
-		# Start the clock
-		time.clock()
-
-		self.score = PuzzleScore(self.modeName)
-		
-		keystone = random.sample(self._keystones, 1)[0]
-		self._keystoneAdjacent.update({keystone:[]})
-		keystone = random.sample(self._keystones, 1)[0]
-		self._keystoneAdjacent.update({keystone:[]})
-		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
-			print m
-			m.enable(animate = False)
-		self.pickSnapPair()
-#		# Randomly enable some adjacent meshes
-#		keystone = random.sample(self._keystones, 1)[0]
-#		self._keystoneAdjacent.update({keystone:[]})
-#		keystone = random.sample(self._keystones, 1)[0]
-#		self._keystoneAdjacent.update({keystone:[]})
-#		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
-#			print m
-#			m.enable(animate = False)
-#		self.pickSnapPair()
-#		#snapGroup(smallBoneGroups)
 		
 	def testPrep(self):
+		self.score = PuzzleScore(self.modeName)
 		keystone = random.sample(self._keystones, 1)[0]
 		self._keystoneAdjacent.update({keystone:[]})
 		keystone = random.sample(self._keystones, 1)[0]
@@ -600,21 +577,6 @@ class TestPlay(PuzzleController):
 			print m
 			m.enable(animate = False)
 		self.pickSnapPair()
-		
-	def setKeystone(self):
-		rand = random.sample(self._meshes, 3)
-		print rand
-		self._keystones += rand
-		cp = rand[0].centerPointScaled
-		cp = [cp[0], -cp[2] + 0.150, cp[1]]
-		rand[0].setPosition(cp, viz.ABS_GLOBAL)
-		rand[0].setEuler([0.0,90.0,180.0])
-		rand[0].enable()
-		rand[0].group.grounded = True
-		for m in rand[1:]:
-			m.enable()
-			self.snap(m, rand[0], add = False)
-			print 'snapping ', m.name
 		
 	def hideMeshes(self):
 		keystones = set(self._keystones)
