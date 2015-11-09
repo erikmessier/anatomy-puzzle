@@ -178,7 +178,6 @@ class InterfaceTutorial(object):
 		self.outlineCenter.remove()
 		self.dogTargetMold.remove()
 		self.iterations = 0
-		model.pointer.color(self.startColor)
 		model.pointer.setParent(model.display.camcenter)
 		model.pointer.setPosition([0,1,0])
 		proxList = []
