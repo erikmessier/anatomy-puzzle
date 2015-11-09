@@ -1,7 +1,5 @@
 ﻿"""
-menu.py
-
-This is where all of the menu handling will go
+All menus of the game are defined here in both appearance and function
 """
 
 # Builtin module
@@ -56,11 +54,7 @@ class MenuController(object):
 	######################################
 	
 	def start(self):
-		"""
-		Start the game
-		"""
-		
-		
+		"""Start the game"""
 		model.selected = Selection()
 		ignoreLayer = False
 		
@@ -77,11 +71,13 @@ class MenuController(object):
 			anatomyTrainer.startGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
 		
 	def restart(self):
+		"""Restart the game"""
 		anatomyTrainer.restartGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
 		if model.selected.mode != 'Movement Tutorial':
 			self.backMenu()
 		
 	def endGame(self):
+		"""End the game"""
 		anatomyTrainer.endGame()
 		self.changeMenu(self.inGameMenu, self.mainMenu)
 		
@@ -211,6 +207,7 @@ class MenuBase(vizinfo.InfoPanel):
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 		
 	def toggle(self):
+		"""Toggle menu and cursor visibility"""
 		if self.menuVisible == True:
 			self.setPanelVisible(False)
 			self.canvas.setCursorVisible(False)
@@ -221,7 +218,7 @@ class MenuBase(vizinfo.InfoPanel):
 			self.menuVisible = True
 
 class MainMenu(MenuBase):
-	"""Main game menu"""
+	"""Main menu shown at launch"""
 	def __init__(self, canvas, controller):
 		# Add Virtual Mouse
 		canvas.setMouseStyle(viz.CANVAS_MOUSE_VIRTUAL)
@@ -256,7 +253,7 @@ class MainMenu(MenuBase):
 		print 'Help Button was Pressed'
 
 class ModeMenu(MenuBase):
-	"""Mode selection menu"""
+	"""Game mode selection menu"""
 	def __init__(self, canvas, controller):
 		super(ModeMenu, self).__init__(canvas, 'mode', 'Mode Selection')
 		
@@ -422,9 +419,7 @@ class LayerMenu(MenuBase):
 		viz.callback(viz.BUTTON_EVENT, controller.onAllSelection)
 		
 class LoadingScreen(MenuBase):
-	"""
-	Loading Screen
-	"""
+	"""Loading Screen"""
 	def __init__(self, canvas):
 		super(LoadingScreen, self).__init__(canvas, 'loading', 'Loading...', fontSize = 200)
 		
@@ -444,9 +439,7 @@ class LoadingScreen(MenuBase):
 		centerPanel.addItem(self.percentMsg, align = viz.ALIGN_CENTER_CENTER)
 		
 class InGameMenu(MenuBase):
-	"""
-	In-game menu to be shown when games are running
-	"""
+	"""In-game menu to be shown when games are running"""
 	def __init__(self,canvas,controller):
 		super(InGameMenu, self).__init__(canvas, 'ingame', 'In Game Menu')
 		# Store controller instance
@@ -589,14 +582,18 @@ class modalityGUI():
 	
 	def __CancelCommand(self):
 		pass
+		
 	def dispSelected(self):
 		radioValue = self.vDisp.get()
 		self.dispMode = radioValue
+
 	def pointSelected(self):
 		radioValue = self.vPoint.get()
 		self.pointerMode = radioValue
+	
 	def camSelected(self):
 		pass
+
 	def next(self, keyDown):
 		with open(self.PATH + 'configurations.json','wb') as f:
 			self.configurations = {'dispMode': self.dispMode, 'pointerMode': self.pointerMode, 'proceed': self.proceed}
@@ -605,6 +602,7 @@ class modalityGUI():
 					return
 			json.dump(self.configurations, f, indent = 1)
 		self.root.destroy()
+
 	def exit(self, keyDown):
 		self.proceed = False
 		with open(self.PATH + 'configurations.json','wb') as f:

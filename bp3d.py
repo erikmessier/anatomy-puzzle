@@ -202,12 +202,6 @@ class Mesh(viz.VizNode):
 			self.mesh.color(self.metaData['color'])
 		else:
 			self.mesh.color(value)
-	
-	def color(self, value = (1,1,1), reset = False):
-		if reset:
-			self.mesh.color(self.metaData['color'])
-		else:
-			self.mesh.color(value)
 
 	def moveTo(self, matrix, animate = True, time = 0.3):
 		"""
@@ -223,10 +217,6 @@ class Mesh(viz.VizNode):
 			self.setPosition(targetPosition, viz.ABS_GLOBAL)
 			self.setEuler(targetEuler,viz.ABS_GLOBAL)
 
-	def releaseSequence(self):
-		"""Calling this method will disable rendering on the bones tooltip"""
-		self.tooltip.disable([viz.RENDERING])
-		
 	def setNameAudioFlag(self, flag):
 		"""True to allow bone name playback"""
 		self.nameAudioFlag = flag
@@ -238,15 +228,19 @@ class Mesh(viz.VizNode):
 			viz.playSound(path + "audio_descriptions2\\" + self.name + ".wav")
 		except ValueError:
 			print ("the name of the audio description file was wrong")
+		
+	def removeBoneInfo(self):
+		"""Removes bone description and bone tool tip and clears the proximity counter used for debouncing"""
+		self.tooltip.disable([viz.RENDERING])
+#		self.dialogue.disable([viz.RENDERING])
+		self.clearProxCounter()
 	
 	def getNameAudioFlag(self):
 		"""Return self.nameAudioFlag"""
 		return self.nameAudioFlag
 		
 	def getGrabbedFlag(self):
-		"""
-		return self.grabbedFlag
-		"""
+		"""Return self.grabbedFlag"""
 		return self.grabbedFlag
 		
 	def setGrabbedFlag(self, flag):
@@ -260,12 +254,6 @@ class Mesh(viz.VizNode):
 		"""Displays the bone description and bone tool tip"""
 		self.tooltip.enable([viz.RENDERING])
 		self.dialogue.enable([viz.RENDERING])
-		
-	def removeBoneInfo(self):
-		"""Removes bone description and bone tool tip and clears the proximity counter used for debouncing"""
-		self.tooltip.disable([viz.RENDERING])
-#		self.dialogue.disable([viz.RENDERING])
-		self.clearProxCounter()
 			
 	def getDescAudioFlag(self):
 		"""Return seld.descAudioFlag """
