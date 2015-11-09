@@ -23,22 +23,6 @@ import menu
 import config
 import model
 import menu
-
-def init():
-	global proxList
-	global snapTransitionTime
-	global animateOutline
-	global tasks
-	global snapFlag
-	global gloveLink
-	global recordData
-	snapFlag = False
-	proxList = []
-	gloveLink = None
-	snapTransitionTime = 0.3
-	animateOutline = 1.25
-	tasks = viztask.Scheduler
-	recordData = TutorialData()
 		
 class InterfaceTutorial(object):
 	"""
@@ -46,7 +30,19 @@ class InterfaceTutorial(object):
 	interface hardware. The mechanics of this tutorial are heavily inspired by the
 	'teapot trainer' tutorial that ships with the SpaceMouse device.
 	"""
-	def __init__(self, canvas):
+	def __init__(self, dataset):
+		
+		
+		
+		
+		self.snapFlag = False
+		self.proxList = []
+		self.gloveLink = None
+		self.snapTransitionTime = 0.3
+		self.animateOutline = 1.25
+		self.tasks = viztask.Scheduler
+		self.recordData = TutorialData()
+		
 		
 		sf = 0.5
 #		model.pointer.setEuler(0,0,0)
@@ -116,14 +112,14 @@ class InterfaceTutorial(object):
 		self.manager.addTarget(self.dogTarget)
 		
 		#manager proximity events
-		self.manager.onEnter(self.dogGrabSensor, EnterProximity, self.gloveTarget, model.pointer)
-		self.manager.onExit(self.dogGrabSensor, ExitProximity, model.pointer, self.startColor)
-		self.manager.onEnter(self.dogSnapSensor, snapCheckEnter, self.dogTarget)
-		self.manager.onExit(self.dogSnapSensor, snapCheckExit, self.dogTargetMold)
+		self.manager.onEnter(self.dogGrabSensor, self.EnterProximity)
+		self.manager.onExit(self.dogGrabSensor, self.ExitProximity)
+		self.manager.onEnter(self.dogSnapSensor, self.snapCheckEnter)
+		self.manager.onExit(self.dogSnapSensor, self.snapCheckExit)
 		
 		#reset command
 		self.keybindings = []
-		self.keybindings.append(vizact.onkeydown('l', resetGlove, self.manager, self.gloveStart, self.dogCenter, self.outlineCenter))
+		self.keybindings.append(vizact.onkeydown('l', self.resetGlove))
 		self.keybindings.append(vizact.onkeydown('p', self.debugger))
 		
 		#task schedule
@@ -161,14 +157,17 @@ class InterfaceTutorial(object):
 		"""
 		while True:
 			yield viztask.waitKeyDown(' ')
-			grab(self.outlineCenter, self.dogCenter)
+			self.grab()
 			yield viztask.waitKeyUp(' ')
-			release(self)
+			self.release()
 			
 	def end(self):
 		"""
 		CLEANUP TUTORIAL
 		"""
+		print 'ending'
+		viztask.Task.kill(self.interface)
+		viztask.Task.kill(self.gameMechanics)
 		self.manager.clearSensors()
 		self.manager.clearTargets()
 		self.manager.remove()
@@ -180,13 +179,11 @@ class InterfaceTutorial(object):
 		self.iterations = 0
 		model.pointer.setParent(model.display.camcenter)
 		model.pointer.setPosition([0,1,0])
-		proxList = []
-		gloveLink = None
-		config.orientationVector = self.origOrienVec
-		config.positionVector = self.origPosVec
-		viztask.Task.kill(self.interface)
-		viztask.Task.kill(self.gameMechanics)
-		recordData.close()
+		self.proxList = []
+		self.gloveLink = None
+		config.SMEulerScale = self.origOrienVec
+		config.SMPositionScale = self.origPosVec
+		self.recordData.close()
 		for bind in self.keybindings:
 			bind.remove()
 			
@@ -196,18 +193,18 @@ class InterfaceTutorial(object):
 		if self.iterations ==0:
 			#setting conditions for position transformations along single axis
 #			model.pointer.setParent(viz.WORLD)
-			config.orientationVector = [0,0,0]
-			proxList.append(self.dogCenter)
+			config.SMEulerScale = [0,0,0]
+			self.proxList.append(self.dogCenter)
 	
 #		elif self.iterations ==3:
 #			#setting conditions for position transformations along all axes
-#			proxList.remove(self.dogCenter)
+#			self.proxList.remove(self.dogCenter)
 	
 #		elif self.iterations==4:
 #			#setting conditinos for angular transformations
-#			proxList.append(self.dogCenter)
-#			config.orientationVector = self.origOrienVec
-#			config.positionVector = [0,0,0]
+#			self.proxList.append(self.dogCenter)
+#			config.SMEulerScale = self.origOrienVec
+#			config.SMPositionScale = [0,0,0]
 ##			model.pointer.setPosition(0,1,-1)
 ##			model.pointer.color(0,0,5)
 	
@@ -215,208 +212,209 @@ class InterfaceTutorial(object):
 			#setting conditions for positional and angular transformations
 #			model.pointer.color(self.startColor)
 #			model.pointer.setParent(model.display.camcenter)
-			proxList.remove(self.dogCenter)
-			config.orientationVector = self.origOrienVec
-			config.positionVector = self.origPosVec
+			try: 
+				self.proxList.remove(self.dogCenter)
+			except ValueError:
+				print 'dogCenter is not in proximity'
+			config.SMEulerScale = self.origOrienVec
+			config.SMPositionScale = self.origPosVec
 	
 		if self.iterations<=0:
 			# X AXIS POS TRANSFORMATION
-			config.positionVector = [.0001,0,0]
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along x-axis')
+			config.SMPositionScale = [.0001,0,0]
+			self.recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along x-axis')
 			randomPos = [4*(random.random()-0.5), 0,0]
-			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = animateOutline)
+			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = self.animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 		
 		elif self.iterations>0 and self.iterations<=1:
 			#Y AXIS POS TRANS
-			config.positionVector = [0,.0001,0]
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along y-axis')
+			config.SMPositionScale = [0,.0001,0]
+			self.recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along y-axis')
 			randomPos = [0, 2*(random.random()-0.5),0]
-			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = animateOutline)
+			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = self.animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 	
 		elif self.iterations>1 and self.iterations<=2:
 			#Z AXIS POS TRANS
-			config.positionVector = [0,0,.0001]
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along z-axis')
+			config.SMPositionScale = [0,0,.0001]
+			self.recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along z-axis')
 			randomPos = [0,0,4*(random.random()-0.5)]
-			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = animateOutline)
+			self.movePos = vizact.move(randomPos[0],randomPos[1], randomPos[2], time = self.animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 	
 		elif self.iterations>2 and self.iterations<=3:
 			#ALL AXES POS TRANS
-			config.positionVector = self.origPosVec
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
+			config.SMPositionScale = self.origPosVec
+			self.recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
 			randomPos = [0,1,-1]
-			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
+			self.movePos = vizact.moveTo(randomPos, time = self.animateOutline)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, self.movePos)
 #		
 #		elif self.iterations>3 and self.iterations<=4:
 #			#X AXIS ANG TRANS
-#			config.orientationVector = [.01,0,0]
+#			config.SMEulerScale = [.01,0,0]
 #			model.pointer.setEuler(0,0,0)
-#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about x-axis')
+#			self.recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about x-axis')
 #			thisEuler = [0,0,0]
 #			thisEuler[1] = random.randint(-100,100)
-#			self.moveAng = vizact.spinTo(euler = thisEuler, time = animateOutline, mode = viz.REL_GLOBAL)
+#			self.moveAng = vizact.spinTo(euler = thisEuler, time = self.animateOutline, mode = viz.REL_GLOBAL)
 #			yield viztask.waitTime(1)
 #			yield viztask.addAction(self.outlineCenter, self.moveAng)
 #	
 #		elif self.iterations>4 and self.iterations<=5:
 #			#Y AXIS ANG TRANS
-#			config.orientationVector = [0,.01,0]
+#			config.SMEulerScale = [0,.01,0]
 #			model.pointer.setEuler(0,0,0)
-#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about y-axis')
+#			self.recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about y-axis')
 #			thisEuler = [0,0,0]
 #			thisEuler[0] = random.randint(-100,100)
-#			self.moveAng = vizact.spinTo(euler = thisEuler, time = animateOutline, mode = viz.REL_GLOBAL)
+#			self.moveAng = vizact.spinTo(euler = thisEuler, time = self.animateOutline, mode = viz.REL_GLOBAL)
 #			yield viztask.waitTime(1)
 #			yield viztask.addAction(self.outlineCenter, self.moveAng)
 #	
 #		elif self.iterations>5 and self.iterations<=6:
 #			#Z AXIS ANG TRANS
-#			config.orientationVector = [0,0,.01]
+#			config.SMEulerScale = [0,0,.01]
 #			model.pointer.setEuler(0,0,0)
-#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about z-axis')
+#			self.recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about z-axis')
 #			thisEuler = [0,0,0]
 #			thisEuler[2] = random.randint(-100,100)
-#			self.moveAng = vizact.spinTo(euler = thisEuler, time = animateOutline, mode = viz.REL_GLOBAL)
+#			self.moveAng = vizact.spinTo(euler = thisEuler, time = self.animateOutline, mode = viz.REL_GLOBAL)
 #			yield viztask.waitTime(1)
 #			yield viztask.addAction(self.outlineCenter, self.moveAng)
 #		
 #		elif self.iterations>6 and self.iterations<=7:
 #			#ALL AXES ANG TRANS
-#			config.orientationVector = self.origOrienVec
+#			config.SMEulerScale = self.origOrienVec
 #			model.pointer.setEuler(0,0,0)
-#			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about all axis')
+#			self.recordData.event(event = 'ROUND ' + str(self.iterations), result = 'euler about all axis')
 #			randomEuler = [random.randint(-100,100),random.randint(-100,100),random.randint(-100,100)]
-#			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
+#			self.moveAng = vizact.spinTo(euler = randomEuler, time = self.animateOutline)
 #			yield viztask.waitTime(1)
 #			yield viztask.addAction(self.outlineCenter, self.moveAng)
 	
 		elif self.iterations>3 and self.iterations<=9:
 			#ALL AXES POS AND ANG TRANS
-			recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
+			self.recordData.event(event = 'ROUND ' + str(self.iterations), result = 'move along all axis')
 			randomPos = [4*(random.random()-0.5),2*(random.random()-0.5),4*(random.random()-0.5)]
 #			randomEuler = [random.randint(-90,90),random.randint(-90,90),random.randint(-90,90)]
-			self.movePos = vizact.moveTo(randomPos, time = animateOutline)
-#			self.moveAng = vizact.spinTo(euler = randomEuler, time = animateOutline)
+			self.movePos = vizact.moveTo(randomPos, time = self.animateOutline)
+#			self.moveAng = vizact.spinTo(euler = randomEuler, time = self.animateOutline)
 			transition = vizact.parallel(self.movePos)
 			yield viztask.waitTime(1)
 			yield viztask.addAction(self.outlineCenter, transition)
 
 		else:
 			#END
-			menu.ingame.toggle()
-			config.orientationVector = self.origOrienVec
-			config.positionVector = self.origPosVec
-			recordData.event(event = 'FINISHED', result = 'FINISHED')
+			model.menu.toggle()
+			config.SMEulerScale = self.origOrienVec
+			config.SMPositionScale = self.origPosVec
+			self.recordData.event(event = 'FINISHED', result = 'FINISHED')
 		
 		self.iterations = self.iterations+1
 
-def resetGlove(manager, gloveStart, dogCenter, outlineCenter):
-	#move glove to starting position
-	model.pointer.setPosition(gloveStart)
+	def resetGlove(self):
+		#move glove to starting position
+		model.pointer.setPosition(self.gloveStart)
 
-def EnterProximity(e, gloveTarget, gloveObject):
-	"""
-	If the target entering the proximity is the gloveTarget, and the gloveTarget is active
-	then add the source of the proximity sensor to proxList
-	"""
-	"""@args vizproximity.ProximityEvent()"""
-	global proxList
-	source = e.sensor.getSourceObject()
-	target = e.target.getSourceObject()
-	targets = e.manager.getActiveTargets()
-	if target == gloveObject:
+	def EnterProximity(self, e):
+		"""
+		If the target entering the proximity is the gloveTarget, and the gloveTarget is active
+		then add the source of the proximity sensor to self.proxList
+		
+		"""
+		"""@args vizproximity.ProximityEvent()"""
+		source = e.sensor.getSourceObject()
+		target = e.target.getSourceObject()
+		targets = e.manager.getActiveTargets()
+		print self.iterations
+		if target == model.pointer:
+			for t in targets:
+				if t == self.gloveTarget:
+					model.pointer.color(4,1,1)
+					self.proxList.append(source)
+
+	def ExitProximity(self, e):
+		"""
+		If the target leaving the proximity sensor is the gloveTarget, then remove the source of 
+		the proximity sensor from self.proxList
+		"""
+		"""@args vizproximity.ProximityEvent()"""
+		
+		source = e.sensor.getSourceObject()
+		target = e.target.getSourceObject()
+		if target == model.pointer:
+			model.pointer.color(1,1,1)
+			
+			self.proxList.remove(source)
+
+	def grab(self):
+		"""
+		If the glove is not already linked to something, and the glove is within proximity of an object, link the 
+		object to the glove
+		"""
+		if self.outlineCenter.getAction() or self.dogCenter.getAction():
+			self.recordData.event(event = 'grab', result = 'Did Not Pick Up')
+			return
+		if not self.gloveLink and len(self.proxList)>0:
+			target = self.proxList[0]
+			self.gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
+			self.recordData.event(event = 'grab', result = 'Picked Up')
+		else:
+			self.recordData.event(event = 'grab', result = 'Did Not Pick Up')
+
+	def release(self):
+		"""
+		Unlink the glove and the object, and if the object is close enough to its target, and is within angular range, then
+		the object is snapped to its target.
+		"""
+		eulerThres = 45
+		eulerDiff = vizmat.QuatDiff(self.outlineCenter.getQuat(), self.dogCenter.getQuat())
+		if self.snapFlag == True and eulerDiff <= eulerThres and self.gloveLink:
+			self.recordData.event(event = 'release', result = 'Snapped!')
+			self.snap()
+		else:
+			self.recordData.event()
+		if self.gloveLink:
+			try:
+				self.gloveLink.remove()
+			except NameError:
+				self.gloveLink.removeItems(viz.grab(model.pointer, target, viz.ABS_GLOBAL))
+
+	def snap(self):
+		"""
+		Moves dog to the pos and euler of its target (dogTarget)
+		"""
+		movePos = vizact.moveTo(self.outlineCenter.getPosition(), time = self.snapTransitionTime)
+		moveAng = vizact.spinTo(euler = self.outlineCenter.getEuler(), time = self.snapTransitionTime)
+		transition = vizact.parallel(movePos, moveAng)
+		self.dogCenter.addAction(transition)
+		viz.playSound(".\\dataset\\snap.wav")
+		viztask.schedule(self.mechanics())
+
+	def snapCheckEnter(self, e):
+		"""
+		If the snap proximity sensor has its desired target within range, then snapFlag is True.
+		snapFlag is used in release to determine whether snap will be called or not.
+		"""
+		
+		targets = e.manager.getActiveTargets()
 		for t in targets:
-			if t == gloveTarget:
-				gloveObject.color(4,1,1)
-				proxList.append(source)
+			if t == self.dogTarget:
+				self.snapFlag = True
 
-def ExitProximity(e, glove, startColor):
-	"""
-	If the target leaving the proximity sensor is the gloveTarget, then remove the source of 
-	the proximity sensor from proxList
-	"""
-	"""@args vizproximity.ProximityEvent()"""
-	global proxList
-	source = e.sensor.getSourceObject()
-	target = e.target.getSourceObject()
-	if target == glove:
-		model.pointer.color(1,1,1)
-		proxList.remove(source)
-
-def grab(outline, dog):
-	"""
-	If the glove is not already linked to something, and the glove is within proximity of an object, link the 
-	object to the glove
-	"""
-	global gloveLink
-	global grabFlag
-	global glove
-	if outline.getAction() or dog.getAction():
-		recordData.event(event = 'grab', result = 'Did Not Pick Up')
-		return
-	if not gloveLink and len(proxList)>0:
-		target = proxList[0]
-		gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
-		recordData.event(event = 'grab', result = 'Picked Up')
-	else:
-		recordData.event(event = 'grab', result = 'Did Not Pick Up')
-
-def release(self):
-	"""
-	Unlink the glove and the object, and if the object is close enough to its target, and is within angular range, then
-	the object is snapped to its target.
-	"""
-	eulerThres = 45
-	eulerDiff = vizmat.QuatDiff(self.outlineCenter.getQuat(), self.dogCenter.getQuat())
-	if snapFlag == True and eulerDiff <= eulerThres and gloveLink:
-		recordData.event(event = 'release', result = 'Snapped!')
-		snap(self.dogCenter, self.outlineCenter)
-	else:
-		recordData.event()
-	if gloveLink:
-		try:
-			gloveLink.remove()
-		except NameError:
-			gloveLink.removeItems(viz.grab(model.pointer, target, viz.ABS_GLOBAL))
-
-def snap(dog, dogTarget):
-	"""
-	Moves dog to the pos and euler of its target (dogTarget)
-	"""
-	movePos = vizact.moveTo(dogTarget.getPosition(), time = snapTransitionTime)
-	moveAng = vizact.spinTo(euler = dogTarget.getEuler(), time = snapTransitionTime)
-	transition = vizact.parallel(movePos, moveAng)
-	dog.addAction(transition)
-	viz.playSound(".\\dataset\\snap.wav")
-	viztask.schedule(Tutorial.mechanics())
-
-def snapCheckEnter(e, dogTarget):
-	"""
-	If the snap proximity sensor has its desired target within range, then snapFlag is True.
-	snapFlag is used in release to determine whether snap will be called or not.
-	"""
-	global snapFlag
-	targets = e.manager.getActiveTargets()
-	for t in targets:
-		if t == dogTarget:
-			snapFlag = True
-
-def snapCheckExit(e, dogTarget):
-	"""
-	If the dogTarget has left the proximity sensor then snapFlag is False
-	"""
-	global snapFlag
-	target = e.target.getSourceObject()
-	if target == dogTarget:
-		snapFlag = False
+	def snapCheckExit(self, e):
+		"""
+		If the dogTarget has left the proximity sensor then snapFlag is False
+		"""
+		target = e.target.getSourceObject()
+		if target == self.dogTargetMold:
+			self.snapFlag = False
 
 class TutorialData():
 	"""

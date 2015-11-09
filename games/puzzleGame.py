@@ -93,9 +93,6 @@ class PuzzleController(object):
 		yield self.prepareMeshes()
 		yield self.setKeystone(1)
 		
-	def restart(self):
-		model.menu.restart()
-		
 	def loadControl(self, meshes = [], animate = False):
 		"""control loading of meshes --- used to control multithreading"""
 		while True:
@@ -457,7 +454,7 @@ class PuzzleController(object):
 
 	def end(self):
 		"""Do everything that needs to be done to end the puzzle game"""
-		print "Puzzle instance ending!"
+		self.printNoticeable("Puzzle instance ending!")
 #		self.score.close()
 		model.proxManager.clearSensors()
 		model.proxManager.clearTargets()

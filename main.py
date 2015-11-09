@@ -1,4 +1,5 @@
-﻿"""
+﻿
+"""
 STEREOSCOPIC ANATOMY GAME
 
 Originally started as a senior design project for the 2014-2015 academic year.

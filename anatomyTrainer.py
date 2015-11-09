@@ -90,10 +90,7 @@ def restartGame(game, dataset):
 def endGame():
 	if not model.gameController:
 		return
-	if model.selected.mode == 'Movement Tutorial':
-		model.selected.mode.end()
-	else:
-		model.gameController.end()
-		model.gameController = None
-		print model.gameController
+	model.gameController.end()
+	model.gameController = None
+	print model.gameController
 

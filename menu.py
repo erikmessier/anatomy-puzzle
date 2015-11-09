@@ -78,7 +78,8 @@ class MenuController(object):
 		
 	def restart(self):
 		anatomyTrainer.restartGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
-		self.backMenu()
+		if model.selected.mode != 'Movement Tutorial':
+			self.backMenu()
 		
 	def endGame(self):
 		anatomyTrainer.endGame()
