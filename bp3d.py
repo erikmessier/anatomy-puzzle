@@ -53,7 +53,8 @@ class MeshGroup():
 		#del source.group
 		for b in source.group.members:
 			b.setGroup(self)
-
+		
+		
 class Mesh(viz.VizNode):
 	"""
 	Mesh object is a customized version of VizNode that is design to accomodate
@@ -119,7 +120,7 @@ class Mesh(viz.VizNode):
 		
 		# Group handling
 		self.group = MeshGroup([self])
-		groups.append(self.group)
+#		groups.append(self.group)
 		
 	def enable(self, animate = False):
 		"""Turn on visibility/set enabled flag"""

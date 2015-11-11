@@ -346,10 +346,10 @@ def onCollide(e):
 def loadColiseum():
 	"""loads colosseum enviornment"""
 	sf = .5
-	colosseum = viz.addChild('.\\dataset\\environment\\coliseum.OSGB')
-	colosseum.setEuler([0,-90,0])
-	colosseum.setScale([sf,sf,sf])
-	colosseum.setPosition([-37.5*sf , 0, 0]) #center colisseum
+#	colosseum = viz.addChild('.\\dataset\\environment\\coliseum.OSGB')
+#	colosseum.setEuler([0,-90,0])
+#	colosseum.setScale([sf,sf,sf])
+#	colosseum.setPosition([-37.5*sf , 0, 0]) #center colisseum
 
 #	pedistal = viz.addChild('.\\dataset\\environment\\capital.OSGB')
 #	pedistal.setScale([100,100,100])
@@ -360,11 +360,11 @@ def loadTemple(bounding = True):
 	global boundingBox
 	global temple
 	
-	sf = 100
-	temple = viz.addChild('.\\dataset\\environment\\temple.OSGB')
-	temple.setEuler([0,90,0])
-	temple.setScale([sf,sf,sf])
-	temple.setPosition([0,-1.569, 0]) #Found by measuring
+#	sf = 100
+#	temple = viz.addChild('.\\dataset\\environment\\temple.OSGB')
+#	temple.setEuler([0,90,0])
+#	temple.setScale([sf,sf,sf])
+#	temple.setPosition([0,-1.569, 0]) #Found by measuring
 
 #	pedistal = viz.addChild('.\\dataset\\environment\\Column.OSGB')
 #	pedistal.setScale([3.0,3.0,3.0])

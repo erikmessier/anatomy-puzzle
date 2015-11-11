@@ -39,6 +39,7 @@ for i, name in enumerate(filenames):
 			thisData['concept'] = re.search(r'FMA[0123456789]+',header).group(0)
 			thisData['representation'] = re.search(r'BP[0123456789]+',header).group(0)
 			thisData['name'] = re.search(r'(?:English name : )[a-zA-Z ]+',header).group(0)[15:]
+			thisData['volume'] = float(re.search(r'(?:Volume\(cm3\):) [0-9.]+',header).group(0)[13:])
 			thisData['filename'] = name.strip('.obj')
 		except (AttributeError, KeyError):
 			print "File " + name + ' is missing metadata.'

@@ -146,6 +146,9 @@ SMEulerScale	= [0.001, 0.001, 0.001]
 # Ignore filenames with these concept names when calculating union/intersection for loading final dataset
 ignoreSets = ('portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery', 'segment of bronchial tree')
 
+#presnap meshes
+preSnapMeshes = {'Right Carpal Bone': ['carpal bone', 'right free upper limb']}
+
 # Colors of the various tissue layes
 colors = { \
 	'muscle organ':	(1.0, 0.5, 0.5), \

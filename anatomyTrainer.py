@@ -41,7 +41,8 @@ def start():
 	slicePlane.color(viz.ORANGE)
 	
 	### Initialize environment this will load the coliseum and sky
-	sky = viz.addChild('sky_day.osgb')
+	sky = viz.addChild('gallery.osgb')
+	sky.setPosition([0, 0, -5])
 	sky.collideMesh()
 	sky.disable(viz.DYNAMICS)
 	init.loadTemple()
@@ -52,7 +53,7 @@ def start():
 	lights[0].setEuler(90, 40, 0)
 	lights[0].intensity(0.5)
 	lights[1].setEuler(270, 40, 0)
-	lights[1].intensity(0.5)
+	lights[1].intensity(0.3)
 	
 	# Initialize pointer controls
 	device = init.pointerInput(config.pointerMode, pointer, sky)

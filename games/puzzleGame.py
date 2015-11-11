@@ -33,7 +33,7 @@ class PuzzleController(object):
 	def __init__(self, dataset):
 		self.modeName = ''
 		
-		self._maxThreads = 4
+		self._maxThreads = 3
 		self._curThreads = 0
 		
 		self._meshes		= []
@@ -163,18 +163,15 @@ class PuzzleController(object):
 			m.group.grounded = True
 			self._keystones.append(m)
 		rotateAbout(self._meshes, [0,0,0], [0,90,0])
+			
+		for m in self._keystones[1:]:
+			self._keystones[0].group.merge(m)
+			
 		#snapGroup(smallBoneGroups)
 	
 	def prepareMeshes(self, animate = False):
 		"""Places meshes in circle around keystone(s)"""
-		self.printNoticeable(str(self._meshes))
 		for m in self._meshes:
-#			if (m.group.grounded):
-#				#Hardcoded keystone
-#				m.setPosition(m.center)
-#				m.setEuler([0.0,90.0,180.0]) # [0,0,180] flip upright [0,90,180] flip upright and vertical		
-#	# b.setPosition([(random.random()-0.5)*3, 1.0, (random.random()-0.5)*3]) # random sheet, not a donut
-#			if not m.group.grounded:
 			angle	= random.random() * 2 * math.pi
 			radius	= random.random() + 1.5
 			
@@ -193,6 +190,36 @@ class PuzzleController(object):
 					
 			m.addSensor()
 			m.addToolTip()
+		self.preSnap()
+			
+	def preSnap(self, percentCut = 0.1, distance = 0.1):
+		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
+		average = 0 
+		self._meshesToPreSnap = []
+		
+		for i, m in enumerate(self._meshes):
+			average += m.metaData['volume']
+			
+			if i+1 == len(self._meshes):
+				average = average/i+1
+				self.printNoticeable(str('The Average Volume Is: ' + str(average) + ' cm3'))
+		
+		for m in self._meshes:
+			if m.metaData['volume'] < average * percentCut:
+				self._meshesToPreSnap.append(m)
+				
+		meshesToPreSnap = set(self._meshesToPreSnap)
+		keystoneMeshes = set(self._keystones)
+		self._meshesToPreSnap = meshesToPreSnap - keystoneMeshes
+		
+		for m1 in self._meshesToPreSnap:
+			m1Pos = m1.getPosition()
+			for m2 in self._meshesToPreSnap:
+				m2Pos = m2.getPosition()
+				meshDist = vizmat.Distance(m1Pos, m2Pos)
+				if meshDist <= distance:
+					self.snap(m2, m1)
+			
 
 	def printNoticeable(self, text):
 		"""Highly visible printouts"""
