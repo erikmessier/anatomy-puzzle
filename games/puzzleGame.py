@@ -61,6 +61,8 @@ class PuzzleController(object):
 		
 		viztask.schedule(self.load(dataset))
 		
+#		viztask.schedule(self.updateClosestBone())
+		
 	def load(self, dataset):
 		"""
 		Load datasets and initialize everything necessary to commence
@@ -90,6 +92,8 @@ class PuzzleController(object):
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
 		yield self.setKeystone(1)
+		
+		viztask.schedule(self.updateClosestBone())
 		
 	def loadControl(self, meshes = [], animate = False):
 		"""control loading of meshes --- used to control multithreading"""
@@ -127,7 +131,7 @@ class PuzzleController(object):
 				continue
 			#Wait to add thread if threadThrottle conditions are not met
 			model.threads += 1 #Add 1 for each new thread added --- new render started
-			yield viztask.waitTrue(self.threadThrottle,self._maxThreads)
+			yield viz.director(self.threadThrottle, self._maxThreads)
 			viz.director(self.renderMeshes, fileName)
 			model.menu.updateLoad(len(self._meshes), len(self._meshesToLoad))
 		self.printNoticeable('end of rendering process')
@@ -147,9 +151,9 @@ class PuzzleController(object):
 		while threadFlag:
 			if model.threads <= maxThreads:
 				threadFlag = False
+				return True
 			else:
 				threadFlag = True
-		return True
 	
 
 	def setKeystone(self, number):
@@ -190,35 +194,34 @@ class PuzzleController(object):
 					
 			m.addSensor()
 			m.addToolTip()
-		self.preSnap()
 			
-	def preSnap(self, percentCut = 0.1, distance = 0.1):
-		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
-		average = 0 
-		self._meshesToPreSnap = []
-		
-		for i, m in enumerate(self._meshes):
-			average += m.metaData['volume']
-			
-			if i+1 == len(self._meshes):
-				average = average/i+1
-				self.printNoticeable(str('The Average Volume Is: ' + str(average) + ' cm3'))
-		
-		for m in self._meshes:
-			if m.metaData['volume'] < average * percentCut:
-				self._meshesToPreSnap.append(m)
-				
-		meshesToPreSnap = set(self._meshesToPreSnap)
-		keystoneMeshes = set(self._keystones)
-		self._meshesToPreSnap = meshesToPreSnap - keystoneMeshes
-		
-		for m1 in self._meshesToPreSnap:
-			m1Pos = m1.getPosition()
-			for m2 in self._meshesToPreSnap:
-				m2Pos = m2.getPosition()
-				meshDist = vizmat.Distance(m1Pos, m2Pos)
-				if meshDist <= distance:
-					self.snap(m2, m1)
+#	def preSnap(self, percentCut = 0.1, distance = 0.1):
+#		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
+#		average = 0 
+#		self._meshesToPreSnap = []
+#		
+#		for i, m in enumerate(self._meshes):
+#			average += m.metaData['volume']
+#			
+#			if i+1 == len(self._meshes):
+#				average = average/i+1
+#				self.printNoticeable(str('The Average Volume Is: ' + str(average) + ' cm3'))
+#		
+#		for m in self._meshes:
+#			if m.metaData['volume'] < average * percentCut:
+#				self._meshesToPreSnap.append(m)
+#				
+#		meshesToPreSnap = set(self._meshesToPreSnap)
+#		keystoneMeshes = set(self._keystones)
+#		self._meshesToPreSnap = meshesToPreSnap - keystoneMeshes
+#		
+#		for m1 in self._meshesToPreSnap:
+#			m1Pos = m1.getPosition()
+#			for m2 in self._meshesToPreSnap:
+#				m2Pos = m2.getPosition()
+#				meshDist = vizmat.Distance(m1Pos, m2Pos)
+#				if meshDist <= distance:
+#					self.snap(m2, m1)
 			
 
 	def printNoticeable(self, text):
@@ -428,6 +431,29 @@ class PuzzleController(object):
 					proxList[i] = proxList[0]
 					proxList[0] = tempBone
 		return proxList[0]
+		
+	def updateClosestBone(self):
+		self._lastMesh = []
+		while True:
+			yield viztask.waitFrame(1)
+			
+			if self._proximityList and not self._gloveLink:
+				self._closestMesh = self.getClosestBone(model.pointer, self._proximityList)
+				
+				
+				if self._lastMesh and self._lastMesh != self._closestMesh:
+					if set.intersection(set(self._proximityList), set(self._lastMesh)):
+						self._lastMesh[0].color([1.0,1.0,0.5])
+					else:
+						self._lastMesh[0].color(reset = True)
+						
+				self._closestMesh.color([4,0.5,0.5])
+					
+				self._lastMesh = [self._closestMesh]
+			
+			if not self._proximityList and self._lastGrabbed:
+				self._lastGrabbed.color([0,1,0.5])
+			
 
 	def EnterProximity(self, e):
 		"""Callback for a proximity entry event between the pointer and a mesh"""

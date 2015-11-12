@@ -169,24 +169,24 @@ class CameraKeyboardControl(viz.EventClass):
 				yield viztask.waitTime( .0066666666666667 )
 				
 				#check direction arrows (numpad keys 123 and 5)
-				if (self.right == True and self.left == True):
-					
-					#decrease viewing radius
-					if self.up == True:
-						camlink.preTrans([0,0,.05])
-						
-					#increase viewing radius
-					elif self.down == True:
-						camlink.preTrans([0,0,-.05])
+#				if (self.right == True and self.left == True):
+#					
+#					#decrease viewing radius
+#					if self.up == True:
+#						camlink.preTrans([0,0,.05])
+#						
+#					#increase viewing radius
+#					elif self.down == True:
+#						camlink.preTrans([0,0,-.05])
 				
 				#move right (only right pressed)
-				elif self.right == True: 
-					camcenter.setEuler([-1.5,0,0] , viz.REL_GLOBAL)
+				if self.right == True: 
+					camcenter.setEuler([1.5,0,0] , viz.REL_GLOBAL)
 				
 				
 				#move left (only left pressed)
 				elif self.left == True:
-					camcenter.setEuler([1.5,0,0] , viz.REL_GLOBAL)
+					camcenter.setEuler([-1.5,0,0] , viz.REL_GLOBAL)
 				
 					
 				#move up
@@ -259,7 +259,7 @@ class DisplayInstance():
 
 		# Initial direction of main view
 		viz.MainView.setEuler([0,0,0])
-		viz.MainView.setPosition([0,0,-3], viz.REL_LOCAL)
+		viz.MainView.setPosition([0,0,-3], viz.ABS_GLOBAL)
 	
 	def cameraInput(self):
 		"""
@@ -294,25 +294,28 @@ class DisplayInstance():
 			else:
 				camlink = viz.link(self.camcenter,viz.MainView)
 			
-				#set initial positions
+#				#set initial positions
 				camlink.preEuler([0,30,0])
-				camlink.preTrans([0,0,-5])
+#				camlink.preTrans([0,0,0])
+				
+				self.camcenter.setPosition(0,3.2,-3.5)
+				
 
 			
 			#instantiate control class
 			controlScheme = CameraKeyboardControl()
 			
 			#schedule the control loop to be called
-			viztask.schedule(controlScheme.performKeyMovements(self.camcenter, camlink))
-			viztask.schedule(controlScheme.cameraFocus(self.camcenter, camlink))		
+#			viztask.schedule(controlScheme.performKeyMovements(self.camcenter, camlink))
+#			viztask.schedule(controlScheme.cameraFocus(self.camcenter, camlink))		
 			
 			#backup control functions:
-			vizact.whilekeydown(viz.KEY_RIGHT,self.camcenter.setEuler,[vizact.elapsed(-90),0,0],viz.REL_GLOBAL)
-			vizact.whilekeydown(viz.KEY_LEFT,self.camcenter.setEuler,[vizact.elapsed(90),0,0],viz.REL_GLOBAL)
-			vizact.whilekeydown(viz.KEY_UP,self.camcenter.setEuler,[0,vizact.elapsed(90),0],viz.REL_LOCAL)
-			vizact.whilekeydown(viz.KEY_DOWN,self.camcenter.setEuler,[0,vizact.elapsed(-90),0],viz.REL_LOCAL)
-			vizact.whilekeydown( 't' , camlink.preTrans,[0,0,vizact.elapsed(-4)])
-			vizact.whilekeydown( 'g' ,  camlink.preTrans,[0,0,vizact.elapsed(4)])
+			vizact.whilekeydown(viz.KEY_RIGHT,self.camcenter.setEuler,[vizact.elapsed(90),0,0],viz.REL_GLOBAL)
+			vizact.whilekeydown(viz.KEY_LEFT,self.camcenter.setEuler,[vizact.elapsed(-90),0,0],viz.REL_GLOBAL)
+			vizact.whilekeydown(viz.KEY_UP,self.camcenter.setEuler,[0,vizact.elapsed(-90),0],viz.REL_LOCAL)
+			vizact.whilekeydown(viz.KEY_DOWN,self.camcenter.setEuler,[0,vizact.elapsed(90),0],viz.REL_LOCAL)
+#			vizact.whilekeydown( 't' , self.camcenter.setPosition,[0,0,vizact.elapsed(4)],viz.REL_LOCAL)
+#			vizact.whilekeydown( 'g' ,  self.camcenter.setPosition,[0,0,vizact.elapsed(-4)],viz.REL_LOCAL)
 		
 		
 			default = self.camcenter.getPosition()

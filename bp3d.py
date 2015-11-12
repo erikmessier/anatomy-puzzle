@@ -179,7 +179,11 @@ class Mesh(viz.VizNode):
 		
 	def addSensor(self):
 		"""Add a sensor to a proximity manager"""
-		self._sensor = vizproximity.addBoundingSphereSensor(self)
+		if self.metaData['volume'] < 12:
+			SF = 2*(12 - self.metaData['volume'])/12
+			self._sensor = vizproximity.addBoundingSphereSensor(self, scale = (1+ 1*SF))
+		else:
+			self._sensor = vizproximity.addBoundingSphereSensor(self)
 		model.proxManager.addSensor(self._sensor)
 		
 	def setGroupParent(self):
