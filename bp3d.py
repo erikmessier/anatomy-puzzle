@@ -85,7 +85,7 @@ class Mesh(viz.VizNode):
 		self.mesh.setScale([SF,SF,SF])
 		
 		# This is the viznode that will be moved around to check distances for snapping
-		self.checker = vizshape.addCube(0.001)
+		self.checker = vizshape.addCube(5)
 		
 		# Setup heirarchy for proper movement behavior
 		self.mesh.setParent(self)
@@ -107,7 +107,7 @@ class Mesh(viz.VizNode):
 		
 		# Turn off visibility of center and checker viznodes
 		self.mesh.color(self.metaData['color'])
-		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
+#		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 		self.center.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 		
 		self.scale		= SF
@@ -179,7 +179,8 @@ class Mesh(viz.VizNode):
 		
 	def addSensor(self):
 		"""Add a sensor to a proximity manager"""
-		self._sensor = vizproximity.addBoundingSphereSensor(self)
+#		self._sensor = vizproximity.addBoundingSphereSensor(self)
+		self._sensor = vizproximity.Sensor(vizproximity.Sphere(0.35), self)
 		model.proxManager.addSensor(self._sensor)
 		
 	def setGroupParent(self):

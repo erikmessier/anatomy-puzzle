@@ -459,9 +459,9 @@ class InGameMenu(MenuBase):
 class Selection():
 	"""Selection methods to determine GUI inputs, and storage format for GUI inputs"""
 	def __init__(self):
-		self.load		= []
-		self.mode		= []
-		self.unionFlag	= False
+		self.load				= []
+		self.mode				= []
+		self.unionFlag			= False
 		
 	def modeSelected(self, modeRadiosDict):
 		"""Determines the selected game mode from the GUI"""

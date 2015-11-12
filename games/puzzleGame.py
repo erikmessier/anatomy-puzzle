@@ -33,7 +33,7 @@ class PuzzleController(object):
 	def __init__(self, dataset):
 		self.modeName = ''
 		
-		self._maxThreads = 3
+		self._maxThreads = 8
 		self._curThreads = 0
 		
 		self._meshes		= []
@@ -89,7 +89,8 @@ class PuzzleController(object):
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
-		yield self.setKeystone(1)
+		yield self.preSnap()
+#		yield self.setKeystone(1)
 		
 	def loadControl(self, meshes = [], animate = False):
 		"""control loading of meshes --- used to control multithreading"""
@@ -155,8 +156,8 @@ class PuzzleController(object):
 	def setKeystone(self, number):
 		"""Set Keystones"""
 		for m in [self._meshes[i] for i in range(number)]:
+			m.setGroupParent()
 			cp = m.centerPointScaled
-			print cp
 #			cp = [cp[0], -cp[2] + 0.150, cp[1]]
 			m.setPosition(cp, viz.ABS_GLOBAL)
 			m.setEuler([0, 0, 0], viz.ABS_GLOBAL)
@@ -190,9 +191,9 @@ class PuzzleController(object):
 					
 			m.addSensor()
 			m.addToolTip()
-		self.preSnap()
 			
-	def preSnap(self, percentCut = 0.1, distance = 0.1):
+			
+	def preSnap(self, percentCut = 0.75 , distance = 0.075):
 		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
 		average = 0 
 		self._meshesToPreSnap = []
@@ -210,16 +211,14 @@ class PuzzleController(object):
 				
 		meshesToPreSnap = set(self._meshesToPreSnap)
 		keystoneMeshes = set(self._keystones)
-		self._meshesToPreSnap = meshesToPreSnap - keystoneMeshes
+		self._meshesToPreSnap = list(meshesToPreSnap - keystoneMeshes)
 		
 		for m1 in self._meshesToPreSnap:
-			m1Pos = m1.getPosition()
-			for m2 in self._meshesToPreSnap:
-				m2Pos = m2.getPosition()
-				meshDist = vizmat.Distance(m1Pos, m2Pos)
-				if meshDist <= distance:
-					self.snap(m2, m1)
-			
+			snapToM1 = self.getAdjacent(m1, self._meshesToPreSnap, maxDist = distance)
+			for m2 in snapToM1:
+				self.printNoticeable(str(m2) +' was snapped to' + str(m1))
+				self.snap(m1, m2, children = True, animate = False)
+			self._meshesToPreSnap.remove(m1)
 
 	def printNoticeable(self, text):
 		"""Highly visible printouts"""
@@ -253,7 +252,7 @@ class PuzzleController(object):
 		for bone in [b for b in self._meshes if b != source]:
 			bone.checker.setPosition(source.centerPoint, viz.ABS_PARENT)
 
-	def getAdjacent(self, mesh, pool):
+	def getAdjacent(self, mesh, pool, maxDist = None):
 		"""Sort pool by distance from mesh"""
 		self.moveCheckers(mesh)
 		neighbors = []
@@ -264,7 +263,10 @@ class PuzzleController(object):
 			dist = vizmat.Distance(centerPos, checkerPos)	
 			neighbors.append([m,dist])
 		
-		sorted(neighbors, key = lambda a: a[1])
+		neighbors = sorted(neighbors, key = lambda a: a[1])
+		
+		if maxDist:
+			neighbors = [m for m in neighbors if m[1] < maxDist]
 		
 		return [l[0] for l in neighbors]
 		
@@ -331,11 +333,15 @@ class PuzzleController(object):
 			end()
 			menu.ingame.endButton()
 
-	def snap(self, sourceMesh, targetMesh, children = False):
+	def snap(self, sourceMesh, targetMesh, children = False, animate = True):
 		self.moveCheckers(sourceMesh)
 		if children:
 			sourceMesh.setGroupParent()
-		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+		if animate:
+			sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+		else:
+			sourceMesh.setPosition(targetMesh.checker.getPosition(viz.ABS_GLOBAL))
+			sourceMesh.setEuler(targetMesh.checker.getEuler(viz.ABS_GLOBAL))
 		targetMesh.group.merge(sourceMesh)
 		if sourceMesh.group.grounded:
 			self._keystones.append(sourceMesh)
