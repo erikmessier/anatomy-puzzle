@@ -212,13 +212,13 @@ class PuzzleController(object):
 		keystoneMeshes = set(self._keystones)
 		self._meshesToPreSnap = meshesToPreSnap - keystoneMeshes
 		
-		for m1 in self._meshesToPreSnap:
-			m1Pos = m1.getPosition()
-			for m2 in self._meshesToPreSnap:
-				m2Pos = m2.getPosition()
-				meshDist = vizmat.Distance(m1Pos, m2Pos)
-				if meshDist <= distance:
-					self.snap(m2, m1)
+#		for m1 in self._meshesToPreSnap:
+#			m1Pos = m1.getPosition()
+#			for m2 in self._meshesToPreSnap:
+#				m2Pos = m2.getPosition()
+#				meshDist = vizmat.Distance(m1Pos, m2Pos)
+#				if meshDist <= distance:
+#					self.snap(m2, m1)
 			
 
 	def printNoticeable(self, text):

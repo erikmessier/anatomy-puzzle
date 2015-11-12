@@ -92,22 +92,26 @@ Dictionary of lists:
 #	'Lower Appen.': ['right free lower limb', 'left free lower limb', 'pelvic girdle', 'pelvis'], \
 #	'Tissues': ['bone organ', 'muscle organ', 'neck', 'muscle of free upper limb']}
 #
-class menuLayerSelection:
-	"""Used to model region-layer relationship, and to relate modes to their mode operations"""
-	""" Associates region with region concept name(s)"""
+
+class OntologicalGroups:
+	"""Manually defined ontological groups"""
+	#Associates regions of the body with region concept name(s)
 	_key_value_Regions = [\
 		('Head',			['head']), \
 		('Thorax',			['body proper','muscle of shoulder', 'sternum', 'muscle of pectoral girdle', 'muscle of vertebral column', 'muscle of neck', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart']), \
 		('Upper Appen.',	['right free upper limb', 'left free upper limb', 'muscle of free upper limb']), \
-		('Lower Appen.', ['right free lower limb', 'left free lower limb', 'muscle of lower limb'])]
-	Regions = collections.OrderedDict(_key_value_Regions)
+		('Lower Appen.',	['right free lower limb', 'left free lower limb', 'muscle of lower limb'])]
+	regions = collections.OrderedDict(_key_value_Regions)
 	
-	""" Associates layer with the full layer concept name"""
+	#Associates tissue layers of the body with the full layer concept name
 	_key_value_Layers = [\
 	('Bone',	['bone organ']), \
 	('Muscle',	['muscle organ']), \
 	('Organs',	['brain', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart'])]
-	Layers = collections.OrderedDict(_key_value_Layers)
+	layers = collections.OrderedDict(_key_value_Layers)
+
+class MenuConfig:
+	"""Used to model region-layer relationship, and to relate modes to their mode operations"""
 	
 	""" Developer Tool to disable checkboxes if no content is available for that layer
 		Format: List(Tuple(Region, List(layers to ignore)))"""

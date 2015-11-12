@@ -83,7 +83,7 @@ class TestGrabPanel(vizdlg.Panel):
 	def __init__(self):
 		pass
 
-def wireframeCube(dimensions):
+def wireframeCube(dimensions, center = [0,0,0]):
 	"""Draw a wireframe rectangle. Currently comes in green only."""
 	edges = [[x,y,z] for x in [-1,0,1] for y in [-1,0,1] for z in [-1,0,1] if abs(x)+abs(y)+abs(z) == 2]
 	for edge in edges:
@@ -95,8 +95,8 @@ def wireframeCube(dimensions):
 		edge[i] = -1
 		viz.vertex(map(lambda a,b:a*b,edge,dimensions))
 	cube = viz.endLayer()
+	cube.setPosition(center, viz.ABS_GLOBAL)
 	return cube
-
 
 class viewCube():
 	"""
