@@ -194,9 +194,10 @@ class PuzzleController(object):
 					
 			m.addSensor()
 			m.addToolTip()
+		self.preSnap()
 			
 	def preSnap(self, percentCut = 0.75 , distance = 0.075):
-		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
+		"""Snaps meshes that are a certain degree smaller than the average volume"""
 		average = 0 
 		self._meshesToPreSnap = []
 		
@@ -255,7 +256,7 @@ class PuzzleController(object):
 		for bone in [b for b in self._meshes if b != source]:
 			bone.checker.setPosition(source.centerPoint, viz.ABS_PARENT)
 
-	def getAdjacent(self, mesh, pool):
+	def getAdjacent(self, mesh, pool, maxDist = None):
 		"""Sort pool by distance from mesh"""
 		self.moveCheckers(mesh)
 		neighbors = []
@@ -266,7 +267,10 @@ class PuzzleController(object):
 			dist = vizmat.Distance(centerPos, checkerPos)	
 			neighbors.append([m,dist])
 		
-		sorted(neighbors, key = lambda a: a[1])
+		neighbors = sorted(neighbors, key = lambda a: a[1])
+		
+		if maxDist:
+			neighbors = [m for m in neighbors if m[1] < maxDist]
 		
 		return [l[0] for l in neighbors]
 		
@@ -333,11 +337,14 @@ class PuzzleController(object):
 			end()
 			menu.ingame.endButton()
 
-	def snap(self, sourceMesh, targetMesh, children = False):
+	def snap(self, sourceMesh, targetMesh, children = False, animate = True):
 		self.moveCheckers(sourceMesh)
 		if children:
 			sourceMesh.setGroupParent()
-		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+		if animate:
+			sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+		else:
+			sourceMesh.setMatrix(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
 		targetMesh.group.merge(sourceMesh)
 		if sourceMesh.group.grounded:
 			self._keystones.append(sourceMesh)
