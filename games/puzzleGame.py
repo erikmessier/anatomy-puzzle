@@ -195,33 +195,32 @@ class PuzzleController(object):
 			m.addSensor()
 			m.addToolTip()
 			
-#	def preSnap(self, percentCut = 0.1, distance = 0.1):
-#		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
-#		average = 0 
-#		self._meshesToPreSnap = []
-#		
-#		for i, m in enumerate(self._meshes):
-#			average += m.metaData['volume']
-#			
-#			if i+1 == len(self._meshes):
-#				average = average/i+1
-#				self.printNoticeable(str('The Average Volume Is: ' + str(average) + ' cm3'))
-#		
-#		for m in self._meshes:
-#			if m.metaData['volume'] < average * percentCut:
-#				self._meshesToPreSnap.append(m)
-#				
-#		meshesToPreSnap = set(self._meshesToPreSnap)
-#		keystoneMeshes = set(self._keystones)
-#		self._meshesToPreSnap = meshesToPreSnap - keystoneMeshes
-#		
-#		for m1 in self._meshesToPreSnap:
-#			m1Pos = m1.getPosition()
-#			for m2 in self._meshesToPreSnap:
-#				m2Pos = m2.getPosition()
-#				meshDist = vizmat.Distance(m1Pos, m2Pos)
-#				if meshDist <= distance:
-#					self.snap(m2, m1)
+	def preSnap(self, percentCut = 0.75 , distance = 0.075):
+		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
+		average = 0 
+		self._meshesToPreSnap = []
+		
+		for i, m in enumerate(self._meshes):
+			average += m.metaData['volume']
+			
+			if i+1 == len(self._meshes):
+				average = average/i+1
+				self.printNoticeable(str('The Average Volume Is: ' + str(average) + ' cm3'))
+		
+		for m in self._meshes:
+			if m.metaData['volume'] < average * percentCut:
+				self._meshesToPreSnap.append(m)
+				
+		meshesToPreSnap = set(self._meshesToPreSnap)
+		keystoneMeshes = set(self._keystones)
+		self._meshesToPreSnap = list(meshesToPreSnap - keystoneMeshes)
+		
+		for m1 in self._meshesToPreSnap:
+			snapToM1 = self.getAdjacent(m1, self._meshesToPreSnap, maxDist = distance)
+			for m2 in snapToM1:
+				self.printNoticeable(str(m2) +' was snapped to' + str(m1))
+				self.snap(m1, m2, children = True, animate = False)
+		self._meshesToPreSnap.remove(m1)
 			
 
 	def printNoticeable(self, text):
