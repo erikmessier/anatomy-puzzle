@@ -33,7 +33,7 @@ class PuzzleController(object):
 	def __init__(self, dataset):
 		self.modeName = ''
 		
-		self._maxThreads = 3
+		self._maxThreads = 5
 		self._curThreads = 0
 		
 		self._meshes			= []

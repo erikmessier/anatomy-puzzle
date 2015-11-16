@@ -144,7 +144,17 @@ SMPositionScale	= [.0001,.0001,.0001]
 SMEulerScale	= [0.001, 0.001, 0.001]
 
 # Ignore filenames with these concept names when calculating union/intersection for loading final dataset
-ignoreSets = ('portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery', 'segment of bronchial tree')
+ignoreSets = (\
+				'portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery', \
+				'segment of bronchial tree', 'right hepatic biliary tree', 'left hepatic biliary tree', \
+				'mitral valve', 'aortic valve', 'pulmonary valve', 'left hepatic duct', 'right hepatic duct', \
+				'common hepatic duct', 'pancreatic duct tree', 'cystic duct', 'trunk of right portal vein', \
+				'trunk of left portal vein', 'hepatic artery proper', 'pancreatic duct', 'coronary artery' \
+				'leaf of cardiac valve', 'trunk of coronary artery', 'region of papillary muscle', \
+				'leaflet of tricuspid valve', 'branch of left coronary artery', 'branch of right coronary artery', \
+				'coronary sinus', 'region of papillary muscle', 'trunk of anterior interventricular branch of left coronary artery', \
+				'trunk of right apical segmental vein', 'subdivision of left hepatic artery', 'subdivision of right hepatic artery', \
+				'anterolateral head of lateral papillary muscle of left ventricle', 'anterolateral head of lateral papillary muscle of right ventricle')
 
 
 # Colors of the various tissue layes
