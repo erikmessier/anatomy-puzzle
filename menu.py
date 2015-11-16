@@ -461,7 +461,8 @@ class Selection():
 	def __init__(self):
 		self.load		= []
 		self.mode		= []
-		self.unionFlag	= False
+		self.regions	= []
+		self.layers		= []
 		
 	def modeSelected(self, modeRadiosDict):
 		"""Determines the selected game mode from the GUI"""
@@ -471,20 +472,17 @@ class Selection():
 				break
 	
 	def objectsSelected(self, inputMenu):
-		"""
-		Determines which selections were made on the tabs, and entire layer selections made
-		"""
+		"""Determines which selections were made on the tabs, and entire layer selections made"""
 		for i in inputMenu.regions.iterkeys():
 			for j in inputMenu.layers.iterkeys():
-				if inputMenu.checkBox[i][j].get() == 1:
-					layer_region = (set.intersection, inputMenu.layers[j], inputMenu.regions[i])
-					self.load.append(layer_region)
+				if inputMenu.checkBox[i][j].get() == 1:		
+					ontologySearch = (set.intersection, inputMenu.layers[j], inputMenu.regions[i])
+					self.load.append(ontologySearch)
 					
 		for i in inputMenu.selectAllOf.keys():
 			if inputMenu.selectAllOf[i].get() == 1:
 				layer_region = (set.union, inputMenu.layers[i])
 				self.load.append(layer_region)
-				self.unionFlag = True
 
 class modalityGUI():
 	def __init__(self):

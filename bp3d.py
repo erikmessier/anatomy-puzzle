@@ -68,6 +68,13 @@ class Mesh(viz.VizNode):
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
 		
 		self.name = self.metaData['name']
+		for region, names in config.OntologicalGroups.regions.iteritems():
+			files = model.ds.getOntologySet([(set.union, names)])
+			if self.metaData['filename'] in files:
+				self.region = region
+				break
+		else:
+			self.region = None
 
 		self.nameFormatted = ''
 		for i, w in enumerate(self.name.split()):
@@ -145,6 +152,15 @@ class Mesh(viz.VizNode):
 #		self.tooltip.visible(viz.OFF)
 		model.proxManager.removeSensor(self._sensor)
 	
+	def enterProximity(self):
+		self.color([1.0,1.0,0.5])
+	
+	def exitProximity(self):
+		self.color(reset = True)
+	
+	def grab(self):
+		pass
+		
 	def getEnabled(self):
 		return self._enabled
 		

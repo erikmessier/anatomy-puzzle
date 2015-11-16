@@ -370,10 +370,10 @@ def loadTemple(bounding = True):
 #	pedistal.setScale([3.0,3.0,3.0])
 #	pedistal.setPosition([0,-1.5,0]) #Found by testing
 	if bounding == True:
-		dimensions = [1,2,0.5]
+		dimensions = [2,4,1]
 
-		boundingBox = games.puzzleView.wireframeCube(dimensions)
-		boundingBox.setPosition(0,dimensions[1]/2,0)
+		boundingBox = games.puzzleView.WireFrameCube(dimensions)
+#		boundingBox.setPosition(0,dimensions[1],0)
 		boundingBox.alpha(0.25)
 
 def pointerInput(mode, pointer,arena):

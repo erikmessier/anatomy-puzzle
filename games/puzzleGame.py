@@ -37,11 +37,13 @@ class PuzzleController(object):
 		self._curThreads = 0
 		
 		self._meshes		= []
-		self._meshesById	= {}
 		self._keystones		= []
 		self._proximityList	= []
+		self._boundingBoxes	= {}
 		self._keyBindings	= []
 		self._inRange		= []
+		
+		self._meshesById	= {}
 		
 		self._boneInfo		= None
 		self._closestBoneIdx = None
@@ -169,8 +171,25 @@ class PuzzleController(object):
 			
 		#snapGroup(smallBoneGroups)
 	
-	def prepareMeshes(self, animate = False):
+	def addToBoundingBox(self, meshes):
+		"""
+		Populate environment with bounding boxes allowing easy manipulation
+		of subassemblies of the entire model. Currently partitioned by region.
+		"""
+		for m in meshes:
+			if m.region not in self._boundingBoxes.keys():
+				self._boundingBoxes[m.region] = BoundingBox([m])
+			else:
+				self._boundingBoxes[m.region].addMembers([m])
+	
+	def prepareMeshes(self):
 		"""Places meshes in circle around keystone(s)"""
+		for m in self._meshes:
+			m.addSensor()
+			m.addToolTip()
+		self.preSnap()
+	
+	def disperseRandom(self, animate = False):
 		for m in self._meshes:
 			angle	= random.random() * 2 * math.pi
 			radius	= random.random() + 1.5
@@ -187,11 +206,7 @@ class PuzzleController(object):
 			else:					
 				m.setPosition(targetPosition)
 				m.setEuler(targetEuler)
-					
-			m.addSensor()
-			m.addToolTip()
-		self.preSnap()
-			
+				
 	def preSnap(self, percentCut = 0.1, distance = 0.1):
 		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
 		average = 0 
@@ -364,9 +379,12 @@ class PuzzleController(object):
 		"""Grab in-range objects with the pointer"""
 		grabList = self._proximityList # Needed for disabling grab of grounded bones
 		
-		if len(grabList) > 0 and not self._grabFlag:
-			target = self.getClosestBone(model.pointer,grabList)
-			
+		if len(grabList) == 0 or self._grabFlag:
+			return
+
+		target = self.getClosestObject(model.pointer,grabList)
+		
+		if type(target) is bp3d.Mesh:
 			if target.group.grounded:
 				target.color([0,1,0.5])
 				target.tooltip.visible(viz.ON)
@@ -378,13 +396,17 @@ class PuzzleController(object):
 				target.color([0,1,0.5])
 				target.tooltip.visible(viz.ON)
 				
-			if target != self._lastGrabbed and self._lastGrabbed:
+			if target != self._lastGrabbed and type(self._lastGrabbed) is bp3d.Mesh:
 				self._lastGrabbed.color(reset = True)
 				self._lastGrabbed.tooltip.visible(viz.OFF)
 				for m in self._proximityList: 
 					if m == self._lastGrabbed:
 						self._lastGrabbed.color([1.0,1.0,0.5])
-			self._lastGrabbed = target
+		else:
+			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
+			target.grab()
+			
+		self._lastGrabbed = target
 		self._grabFlag = True
 
 	def release(self):
@@ -407,7 +429,7 @@ class PuzzleController(object):
 		else:
 			return [m for m in self._meshes if m.getEnabled() if not m.group.grounded]		
 
-	def getClosestBone(self, pointer, proxList):
+	def getClosestObject(self, pointer, proxList):
 		"""
 		Looks through proximity list and searches for the closest bone to the glove and puts it at
 		the beginning of the list
@@ -433,10 +455,8 @@ class PuzzleController(object):
 		"""Callback for a proximity entry event between the pointer and a mesh"""
 		source = e.sensor.getSourceObject()
 		model.pointer.color([4.0,1.5,1.5])
-		obj = self._meshesById[source.id]
 		if source != self._lastGrabbed:
-			obj.mesh.color([1.0,1.0,0.5])
-			obj.setNameAudioFlag(1)
+			source.enterProximity()
 		self._proximityList.append(source)
 	
 	def ExitProximity(self, e):
@@ -445,8 +465,7 @@ class PuzzleController(object):
 		if len(self._proximityList) and not self._gloveLink:
 			model.pointer.color(1,1,1)
 		if source != self._lastGrabbed:
-			self._meshesById[source.id].color(reset = True)
-			self._meshesById[source.id].setNameAudioFlag(0)
+			source.exitProximity()
 		self._proximityList.remove(source)
 	
 	def implode(self):
@@ -532,8 +551,38 @@ class FreePlay(PuzzleController):
 	def __init__(self, dataset):
 		super(FreePlay, self).__init__(dataset)
 		self.modeName = 'freeplay'
+	
+	def load(self, dataset):
+		"""
+		Load datasets and initialize everything necessary to commence
+		the puzzle game.
+		"""
 		
-		self.enableSlice()
+		# Dataset
+		model.ds = bp3d.DatasetInterface()
+
+		# Proximity management
+		model.proxManager = vizproximity.Manager()
+		target = vizproximity.Target(model.pointer)
+		model.proxManager.addTarget(target)
+
+		model.proxManager.onEnter(None, self.EnterProximity)
+		model.proxManager.onExit(None, self.ExitProximity)
+
+		#Setup Key Bindings
+		self.bindKeys()
+		
+
+		self.score = PuzzleScore(self.modeName)
+		
+#		viztask.schedule(soundTask(glove))
+
+		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		yield self.loadControl(self._meshesToLoad)
+		yield self.prepareMeshes()
+		yield self.setKeystone(1)
+		yield self.enableSlice()
+		yield self.addToBoundingBox(self._meshes)
 
 class TestPlay(PuzzleController):
 	"""
@@ -695,6 +744,82 @@ class PinDrop(PuzzleController):
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_L, self.pinCheck))
 		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
 	
+class BoundingBox(viz.VizNode):
+	def __init__(self, meshes):
+		"""
+		Populate environment with bounding boxes allowing easy manipulation
+		of subassemblies of the entire model. Currently partitioned by region.
+		"""
+		
+		self.members = []
+		self.wireFrame = None
+		
+		self.axis = vizshape.addAxes()
+		self.cube = vizshape.addCube()
+		
+		super(BoundingBox, self).__init__(self.cube.id)
+		
+		self.cube.disable(viz.RENDERING)
+		self.axis.setParent(self)
+		self.axis.setScale([0.3, 0.3, 0.3])
+		
+		self.addSensor()
+		self.addMembers(meshes)
+		self.alpha(0.5)
+#		self.moveToCenter()
+	
+	def alpha(self, val):
+		self.axis.alpha(val)
+		self.wireFrame.alpha(val)
+		
+	def addMembers(self, meshes):
+		for m in meshes:
+			self.members.append(m)
+			changeParent(m, self.axis)
+		self.updateWireframe()
+	
+	def removeMembers(self, meshes):
+		for m in meshes:
+			if m in self.members:
+				changeParent(m)
+				self.members.remove(m)
+				
+	def moveToCenter(self, meshes):
+		for m in meshes:
+			pass
+		
+	def updateWireframe(self):
+		if self.wireFrame:
+			self.wireFrame.remove()
+		self.wireFrame = puzzleView.WireFrameCube(self.computeBounds(), corner = True)
+		self.wireFrame.setParent(self)
+			
+	def computeBounds(self):
+		min, max = self.members[0].metaData['bounds']		
+		for m in self.members[1:]:
+			for i, v in enumerate(m.metaData['bounds'][0]):
+				if v < min[i]:
+					min[i] = v
+			for i, v in enumerate(m.metaData['bounds'][1]):
+				if v > max[i]:
+					max[i] = v
+		return [(v[0]-v[1])/500.0 for v in zip(max,min)]
+	
+	def addSensor(self):
+		"""Add a sensor to a proximity manager"""
+		self._sensor = vizproximity.Sensor(vizproximity.Sphere(0.4),self)
+		model.proxManager.addSensor(self._sensor)
+	
+	def grab(self):
+		for m in self.members:
+			changeParent(m, self.axis)
+
+	def enterProximity(self):
+		self.alpha(1.0)
+		
+	def exitProximity(self):
+		self.alpha(0.5)
+
 class PuzzleScore():
 	"""Handles scoring for the puzzle game"""
 	def __init__(self, modeName):
@@ -862,3 +987,9 @@ def rotateAbout(meshes, point, euler):
 		m.setMatrix(m.loadMat())
 		
 	pointCube.remove()
+
+def changeParent(mesh, newParent = viz.WORLD):
+	"""Set a new parent while maintaining position"""
+	curMat = mesh.getMatrix(viz.ABS_GLOBAL)
+	mesh.setParent(newParent)
+	mesh.setMatrix(curMat, viz.ABS_GLOBAL)

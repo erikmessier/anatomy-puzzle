@@ -36,11 +36,18 @@ for i, name in enumerate(filenames):
 		f.seek(0)
 		thisData = {}
 		try:
-			thisData['concept'] = re.search(r'FMA[0123456789]+',header).group(0)
-			thisData['representation'] = re.search(r'BP[0123456789]+',header).group(0)
-			thisData['name'] = re.search(r'(?:English name : )[a-zA-Z ]+',header).group(0)[15:]
-			thisData['volume'] = float(re.search(r'(?:Volume\(cm3\):) [0-9.]+',header).group(0)[13:])
-			thisData['filename'] = name.strip('.obj')
+			thisData['concept']		= re.search(r'FMA[0123456789]+', header).group(0)
+			thisData['representation'] = re.search(r'BP[0123456789]+', header).group(0)
+			thisData['name']		= re.search(r'(?:English name : )([a-zA-Z ]+)', header).group(1)
+			thisData['volume']		= float(re.search(r'(?:Volume\(cm3\): )([0-9.]+)', header).group(1))
+			thisData['filename']	= name.strip('.obj')
+			
+			boundsRe				= re.search(r'(?:Bounds\(mm\): )\(([0-9.,-]+)\)-\(([0-9.,-]+)\)', header)
+			boundsStr				= [boundsRe.group(1), boundsRe.group(2)]
+			thisData['bounds']		= []
+			for bound in boundsStr:
+				thisData['bounds'].append([float(v) for v in bound.split(',')])
+				
 		except (AttributeError, KeyError):
 			print "File " + name + ' is missing metadata.'
 			continue
@@ -53,7 +60,6 @@ for i, name in enumerate(filenames):
 			
 		metadata[thisData['filename']] = thisData
 		knownFiles += 1
-
 
 print knownFiles, ' files were parsed.'
 print unknownFiles, ' files were not found. Possibly assembly names.'
