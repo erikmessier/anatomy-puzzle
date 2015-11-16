@@ -202,7 +202,7 @@ class PuzzleController(object):
 			m.addSensor()
 			m.addToolTip()
 			
-	def preSnap(self, percentCut = 0.1 , distance = 0.1):
+	def preSnap(self, percentCut = 0.075 , distance = 0.05):
 		"""Snaps meshes that are a certain degree smaller than the average volume and meshes that are determined to be snapped together in config"""
 		
 		self._smallMeshes = []
@@ -499,9 +499,11 @@ class PuzzleController(object):
 				self._closestMesh.color([4,0.5,0.5])
 					
 				self._lastMesh = [self._closestMesh]
+			else:
+				self._closestMesh = None
 			
-			if not self._proximityList and self._lastGrabbed:
-				self._lastGrabbed.color([0,1,0.5])
+			if self._lastGrabbed and self._closestMesh != self._lastGrabbed:
+					self._lastGrabbed.color([0,1,0.5])
 			
 
 	def EnterProximity(self, e):
@@ -523,6 +525,7 @@ class PuzzleController(object):
 			self._meshesById[source.id].color(reset = True)
 			self._meshesById[source.id].setNameAudioFlag(0)
 		self._proximityList.remove(source)
+			
 	
 	def implode(self):
 		"""Move bones to solved positions"""
