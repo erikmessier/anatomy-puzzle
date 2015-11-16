@@ -23,6 +23,7 @@ def main():
 		#Prompt for init config parameters
 		configurations = menu.modalityGUI()
 		
+		
 		#Handling configuration selections
 		with open('.\\dataset\\configurations\\configurations.json','rb') as f:
 			configurations = json.load(f)
@@ -39,3 +40,10 @@ def main():
 
 if __name__ == '__main__':
 	main()
+	
+	
+	
+	
+	
+	
+	

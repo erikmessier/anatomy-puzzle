@@ -27,18 +27,18 @@ def start():
 	pointer.setEuler(0, -115, 0)
 	pointer.disable([viz.PHYSICS, viz.DYNAMICS])
 	
-	### Alpha slice plane setup
-	viz.startLayer(viz.POINTS)
-	viz.vertex(0,0,0)
-	planeVert = viz.endLayer(parent = pointer)
-	planeVert.dynamic()
-	
-	# Setup normal vector for alpha slicing plane calculation
-	planeVert.setNormal(0,[0,1,0])
-	model.planeVert = planeVert
-	slicePlane = vizshape.addPlane(size = [20, 20, 20], parent = pointer, cullFace = False)
-	slicePlane.alpha(0.20)
-	slicePlane.color(viz.ORANGE)
+#	### Alpha slice plane setup
+#	viz.startLayer(viz.POINTS)
+#	viz.vertex(0,0,0)
+#	planeVert = viz.endLayer(parent = pointer)
+#	planeVert.dynamic()
+#	
+#	# Setup normal vector for alpha slicing plane calculation
+#	planeVert.setNormal(0,[0,1,0])
+#	model.planeVert = planeVert
+#	slicePlane = vizshape.addPlane(size = [20, 20, 20], parent = pointer, cullFace = False)
+#	slicePlane.alpha(0.20)
+#	slicePlane.color(viz.ORANGE)
 	
 	### Initialize environment this will load the coliseum and sky
 	sky = viz.addChild('gallery.osgb')

@@ -146,8 +146,6 @@ SMEulerScale	= [0.001, 0.001, 0.001]
 # Ignore filenames with these concept names when calculating union/intersection for loading final dataset
 ignoreSets = ('portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery', 'segment of bronchial tree')
 
-#presnap meshes
-preSnapMeshes = {'Right Carpal Bone': ['carpal bone', 'right free upper limb']}
 
 # Colors of the various tissue layes
 colors = { \
@@ -159,6 +157,19 @@ colors = { \
 	'gastrointestinal tract':	(1.0, 0.85, 0.6), \
 	'heart':		(1.0, 0.45, 0.4), \
 	'urinary system':		(1.0, 1.0, 0.4)}
+
+#PreSnap Meshes (region: feature)
+preSnapMeshes = {\
+	'left free upper limb':		['phalanx of finger', 'metacarpal bone', 'carpal bone'], \
+	'right free upper limb':	['phalanx of finger', 'metacarpal bone', 'carpal bone'], \
+	'left free lower limb':		['phalanx of toe', 'metatarsal bone', 'tarsal bone'], \
+	'right free lower limb':	['phalanx of toe', 'metatarsal bone', 'tarsal bone'], \
+	'vertebral column':			['cervical vertebral column', 'thoracic vertebral column', 'lumbar vertebral column'], \
+	'zone of jejunum':			['zone of jejunum'], \
+	'zone of ileum':			['zone of ileum']}
+
+# Scaling Factor for meshes
+SF = 1.0/500
 
 class modalityGUI():
 	def __init__(self):

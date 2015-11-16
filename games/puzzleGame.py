@@ -36,12 +36,13 @@ class PuzzleController(object):
 		self._maxThreads = 3
 		self._curThreads = 0
 		
-		self._meshes		= []
-		self._meshesById	= {}
-		self._keystones		= []
-		self._proximityList	= []
-		self._keyBindings	= []
-		self._inRange		= []
+		self._meshes			= []
+		self._meshesByFilename	= {}
+		self._meshesById		= {}
+		self._keystones			= []
+		self._proximityList		= []
+		self._keyBindings		= []
+		self._inRange			= []
 		
 		self._boneInfo		= None
 		self._closestBoneIdx = None
@@ -89,8 +90,11 @@ class PuzzleController(object):
 #		viztask.schedule(soundTask(glove))
 
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		self._filesToPreSnap = model.ds.getPreSnapSet()
+			
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
+		yield self.preSnap()
 		yield self.setKeystone(1)
 		
 		viztask.schedule(self.updateClosestBone())
@@ -138,7 +142,7 @@ class PuzzleController(object):
 	
 	def renderMeshes(self, fileName):
 		"""Creates a mesh class instance of the mesh fileName"""
-		m = bp3d.Mesh(fileName)
+		m = bp3d.Mesh(fileName, SF = config.SF)
 		
 		self._meshes.append(m)
 		self._meshesById[m.id] = m
@@ -159,19 +163,22 @@ class PuzzleController(object):
 	def setKeystone(self, number):
 		"""Set Keystones"""
 		for m in [self._meshes[i] for i in range(number)]:
+			if len(m.group.members) > 1:
+				m.setGroupParent()
 			cp = m.centerPointScaled
-			print cp
-#			cp = [cp[0], -cp[2] + 0.150, cp[1]]
+			cp = [cp[0], -cp[2] + 0.150, cp[1]]
 			m.setPosition(cp, viz.ABS_GLOBAL)
-			m.setEuler([0, 0, 0], viz.ABS_GLOBAL)
+			m.setEuler([0, 90, 0], viz.ABS_GLOBAL)
 			m.group.grounded = True
-			self._keystones.append(m)
+			for keystone in m.group.members:
+				self._keystones.append(keystone)
 		rotateAbout(self._meshes, [0,0,0], [0,90,0])
 			
 		for m in self._keystones[1:]:
 			self._keystones[0].group.merge(m)
 			
 		#snapGroup(smallBoneGroups)
+		
 	
 	def prepareMeshes(self, animate = False):
 		"""Places meshes in circle around keystone(s)"""
@@ -194,34 +201,49 @@ class PuzzleController(object):
 					
 			m.addSensor()
 			m.addToolTip()
-		self.preSnap()
 			
-	def preSnap(self, percentCut = 0.75 , distance = 0.075):
-		"""Snaps meshes that are a certain degree smaller than the average volume"""
-		average = 0 
-		self._meshesToPreSnap = []
+	def preSnap(self, percentCut = 0.1 , distance = 0.1):
+		"""Snaps meshes that are a certain degree smaller than the average volume and meshes that are determined to be snapped together in config"""
 		
-		for i, m in enumerate(self._meshes):
-			average += m.metaData['volume']
-			
-			if i+1 == len(self._meshes):
-				average = average/i+1
-				self.printNoticeable(str('The Average Volume Is: ' + str(average) + ' cm3'))
+		self._smallMeshes = []
+		self._meshesToPreSnap = []
+		average = 27
+		
+		#Create dictionary associating filename with mesh
+		self._meshesByFilename = self.getMeshesByFilename(self._meshes)
+		
+		#Convert self._meshesToPreSnap from filenames to meshes
+		for fileList in self._filesToPreSnap:
+			meshList = self.convertListOfFiles(fileList)
+			self._meshesToPreSnap.append(meshList)
+		
+		#snap together items that are stated in config
+		for snapList in self._meshesToPreSnap:
+			if set.intersection(set(snapList), set(self._meshes)):
+				for m in snapList[1:]:
+					print (set.intersection(set(snapList), set(self._meshesToLoad)))
+					try:
+						self.snap(snapList[0], m, children = True, animate = False)
+					except KeyError:
+						continue
 		
 		for m in self._meshes:
 			if m.metaData['volume'] < average * percentCut:
-				self._meshesToPreSnap.append(m)
-				
-		meshesToPreSnap = set(self._meshesToPreSnap)
-		keystoneMeshes = set(self._keystones)
-		self._meshesToPreSnap = list(meshesToPreSnap - keystoneMeshes)
+				self._smallMeshes.append(m)
 		
-		for m1 in self._meshesToPreSnap:
-			snapToM1 = self.getAdjacent(m1, self._meshesToPreSnap, maxDist = distance)
+		for meshList in self._meshesToPreSnap:
+				self._smallMeshes = list(set(self._smallMeshes) - set(meshList))
+				
+#		keystoneMeshes = set(self._keystones)
+#		self._smallMeshes = list(meshesToPreSnap - keystoneMeshes)
+				
+			
+		for m1 in self._smallMeshes:
+			snapToM1 = self.getAdjacent(m1, self._smallMeshes, maxDist = distance)
 			for m2 in snapToM1:
 				self.printNoticeable(str(m2) +' was snapped to' + str(m1))
 				self.snap(m1, m2, children = True, animate = False)
-		self._meshesToPreSnap.remove(m1)
+				
 			
 
 	def printNoticeable(self, text):
@@ -229,6 +251,26 @@ class PuzzleController(object):
 		print '-'*len(text)
 		print text.upper()
 		print '-'*len(text)
+	
+	def convertListOfFiles(self, fileNames):
+		'''Converts a list of filenames to a list of meshes'''
+		listOfMeshes = []
+		
+		for fileName in fileNames:
+			try:
+				listOfMeshes.append(self._meshesByFilename[fileName])
+			except KeyError:
+				print 'File not Found in convertListOfFiles'
+				continue
+			
+		return listOfMeshes
+		
+	def getMeshesByFilename(self, meshes):
+		'''Creates a dictionary that associates obj filename with the mesh'''
+		meshesByFilename = {}
+		for m in meshes:
+			meshesByFilename[m.metaData['filename']] = m
+		return meshesByFilename
 		
 	def unloadBones(self):
 		"""Unload all of the bone objects to reset the puzzle game"""
@@ -344,7 +386,8 @@ class PuzzleController(object):
 		if animate:
 			sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
 		else:
-			sourceMesh.setMatrix(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+			sourceMesh.setPosition(targetMesh.checker.getPosition(viz.ABS_GLOBAL))
+			sourceMesh.setEuler(targetMesh.checker.getEuler(viz.ABS_GLOBAL))
 		targetMesh.group.merge(sourceMesh)
 		if sourceMesh.group.grounded:
 			self._keystones.append(sourceMesh)
@@ -464,7 +507,7 @@ class PuzzleController(object):
 	def EnterProximity(self, e):
 		"""Callback for a proximity entry event between the pointer and a mesh"""
 		source = e.sensor.getSourceObject()
-		model.pointer.color([4.0,1.5,1.5])
+		model.pointer.color([4.0,0.5,0.5])
 		obj = self._meshesById[source.id]
 		if source != self._lastGrabbed:
 			obj.mesh.color([1.0,1.0,0.5])
@@ -485,21 +528,29 @@ class PuzzleController(object):
 		"""Move bones to solved positions"""
 		target = self._keystones[0] # Move to the current keystone(s)
 		for m in self._meshes[1:]:
-			if m.getAction():
-				return
-			for bone in [b for b in self._meshes if b != m]:
-				bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
-			m.storeMat()
-			m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+			if not m.group.grounded:
+				if m.getAction():
+					return
+				curMat = m.getMatrix(viz.ABS_GLOBAL)
+				m.setParent(viz.WORLD)
+				m.setMatrix(curMat, viz.ABS_GLOBAL)
+				for bone in [b for b in self._meshes if b != m]:
+					bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
+				m.storeMat()
+				m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
 		self._imploded = True
 		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
 
 	def explode(self):
 		"""Move bones to position before implode was called"""
 		for m in self._meshes[1:]:
-			if m.getAction():
-				return
-			m.moveTo(m.loadMat(), time = 0.6)
+			if not m.group.grounded:
+				if m.getAction():
+					return
+				curMat = m.getMatrix(viz.ABS_GLOBAL)
+				m.setParent(viz.WORLD)
+				m.setMatrix(curMat, viz.ABS_GLOBAL)
+				m.moveTo(m.loadMat(), time = 0.6)
 		self._imploded = False
 		self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
 
@@ -565,7 +616,7 @@ class FreePlay(PuzzleController):
 		super(FreePlay, self).__init__(dataset)
 		self.modeName = 'freeplay'
 		
-		self.enableSlice()
+#		self.enableSlice()
 
 class TestPlay(PuzzleController):
 	"""
@@ -609,7 +660,7 @@ class TestPlay(PuzzleController):
 		model.proxManager.onExit(None, self.ExitProximity)
 		
 		#create list of meshes to load
-		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		self._meshesToLoad, self._meshesToPreSnap = model.ds.getOntologySet(dataset)
 		
 		#create and add quiz panel
 		self._quizPanel = puzzleView.TestSnapPanel()

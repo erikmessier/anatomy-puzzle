@@ -330,7 +330,35 @@ class DatasetInterface():
 		
 		modelSet = set(modelSet) - removeFromModelSet
 		
-		return modelSet
+		return list(modelSet)
+		
+	def getPreSnapSet(self):
+		#create lists of filenames that should be presnapped together
+		preSnapSets = config.preSnapMeshes
+		preSnap = []
+		regionSet = []
+		featureSet = []
+		for preSnapSetRegion in preSnapSets.keys():
+			try:
+				regionSet.extend(self.ontologyByName[preSnapSetRegion]['filenames'])
+			except KeyError:
+				print 'Unknown name for ignore set: ', str(ignoreSet)
+				continue
+			for preSnapSetFeature in preSnapSets[preSnapSetRegion]:
+				if preSnapSetFeature:
+					try:
+						featureSet.extend(self.ontologyByName[preSnapSetFeature]['filenames'])
+					except KeyError:
+						print 'Unknown name for ignore set: ', str(ignoreSet)
+						continue
+				else:
+					featureSet = regionSet
+				listOfFiles = set.intersection(set(regionSet), set(featureSet))
+				featureSet = []
+				preSnap.append(list(listOfFiles))
+			regionSet = []
+				
+		return preSnap
 		
 	def getMetaData(self, concept = None, file = None):
 		"""
