@@ -428,8 +428,12 @@ def pointerInput(mode, pointer,arena):
 		pointer.setVelocity([0,0,0])
 		pointer.setAngularVelocity([0,0,0])
 	
-	proxy.onEnter(None,EnterProximity)
-	proxy.onExit(None,ExitProximity)	
+	"""
+	Enables bounding of the environment for the pointer. If the pointer leaves the bounding box, 
+	then the pointer is moved to a position above where it left the bounding of the environment.
+	"""
+#	proxy.onEnter(None,EnterProximity)
+#	proxy.onExit(None,ExitProximity)	
 		
 	vizact.onkeydown('l',pointer.setPosition,[0,1,0])
 	vizact.onkeydown('l',pointer.setVelocity,[0,0,0])	
