@@ -172,7 +172,7 @@ class PuzzleController(object):
 			m.group.grounded = True
 			for keystone in m.group.members:
 				self._keystones.append(keystone)
-		rotateAbout(self._meshes, [0,0,0], [0,90,0])
+#		rotateAbout(self._meshes, [0,0,0], [0,90,0])
 			
 		for m in self._keystones[1:]:
 			self._keystones[0].group.merge(m)
@@ -660,7 +660,8 @@ class TestPlay(PuzzleController):
 		model.proxManager.onExit(None, self.ExitProximity)
 		
 		#create list of meshes to load
-		self._meshesToLoad, self._meshesToPreSnap = model.ds.getOntologySet(dataset)
+		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		self._filesToPreSnap = model.ds.getPreSnapSet()
 		
 		#create and add quiz panel
 		self._quizPanel = puzzleView.TestSnapPanel()
@@ -669,6 +670,7 @@ class TestPlay(PuzzleController):
 		#load and prep meshes
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
+		yield self.preSnap()
 		yield self.setKeystone(3)
 		yield self.hideMeshes()
 		yield self.testPrep()
@@ -685,7 +687,8 @@ class TestPlay(PuzzleController):
 		self._keystoneAdjacent.update({keystone:[]})
 		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
 			print m
-			m.enable(animate = False)
+			for mGroup in m.group.members:
+				mGroup.enable(animate = False)
 		self.pickSnapPair()
 		
 	def hideMeshes(self):
@@ -706,12 +709,16 @@ class TestPlay(PuzzleController):
 		self.score.event(event = 'pickpair', description = 'Picked new pair of bones to snap', \
 			source = self._quizSource.name, destination = self._quizTarget.name)
 				
-	def snap(self, sourceMesh, targetMesh, children = False, add = True):
+	def snap(self, sourceMesh, targetMesh, children = False, animate = True, add = True):
 		"""Overridden snap that supports adding more bones"""
 		self.moveCheckers(sourceMesh)
 		if children:
 			sourceMesh.setGroupParent()
-		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+		if animate:
+			sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+		else:
+			sourceMesh.setPosition(targetMesh.checker.getPosition(viz.ABS_GLOBAL))
+			sourceMesh.setEuler(targetMesh.checker.getEuler(viz.ABS_GLOBAL))
 		targetMesh.group.merge(sourceMesh)
 		if sourceMesh.group.grounded:
 			self._keystones.append(sourceMesh)
@@ -728,7 +735,8 @@ class TestPlay(PuzzleController):
 			m = self.getAdjacent(keystone, disabled)[random.randint(0,3)]
 		except (ValueError, IndexError):
 			m = self.getAdjacent(keystone, disabled)[0]
-		m.enable(animate = True)
+		for mGroup in m.group.members:
+			mGroup.enable(animate = True)
 	
 	def getSnapSource(self):
 		"""Define source object for snapcheck"""
