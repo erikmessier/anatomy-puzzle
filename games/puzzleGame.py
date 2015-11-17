@@ -37,9 +37,11 @@ class PuzzleController(object):
 		self._curThreads = 0
 		
 		self._meshes		= []
+		self._typeMesh 		= None
 		self._keystones		= []
 		self._proximityList	= []
 		self._boundingBoxes	= {}
+		self._typeBounding	= None
 		self._keyBindings	= []
 		self._inRange		= []
 		
@@ -181,6 +183,9 @@ class PuzzleController(object):
 				self._boundingBoxes[m.region] = BoundingBox([m])
 			else:
 				self._boundingBoxes[m.region].addMembers([m])
+		
+		#Declare Bounding Box Type
+		self._typeBounding = type(self._boundingBoxes.values()[0])
 	
 	def prepareMeshes(self):
 		"""Places meshes in circle around keystone(s)"""
@@ -188,7 +193,10 @@ class PuzzleController(object):
 			m.addSensor()
 			m.addToolTip()
 		self.preSnap()
-	
+		
+		#Declare Mesh Type
+		self._typeMesh = type(self._meshes[0])
+		
 	def disperseRandom(self, nodes, animate = False):
 		for m in nodes:
 			angle	= random.random() * 2 * math.pi
@@ -772,6 +780,8 @@ class BoundingBox(viz.VizNode):
 		self.addSensor()
 		self.addMembers(meshes)
 		self.alpha(0.5)
+		
+		self.regionGroup = RegionGroup([self])
 #		self.moveToCenter()
 	
 	def alpha(self, val):
@@ -837,6 +847,8 @@ class BoundingBox(viz.VizNode):
 	def grab(self):
 		for m in self.members:
 			changeParent(m, self.axis)
+			
+		self.setRegionGroupParent()
 
 	def enterProximity(self):
 		self.alpha(1.0)
@@ -858,6 +870,63 @@ class BoundingBox(viz.VizNode):
 			
 			m.setPosition(targetPosition)
 			m.setEuler(targetEuler)
+			
+	def setGroup(self, group):
+		"""Set bone group"""
+		self.regionGroup = group
+		
+	def setRegionGroupParent(self):
+		"""
+		When manipulating a group of bones, the grabbed bone must move all
+		of the other group members
+		"""
+		self.regionGroup.setParent(self)
+		
+	def snapToBB(self, BB):
+		"""Snaps Bounding Box to Another Bounding Box, BB"""
+		self.setEuler(BB.getEuler())
+		
+		
+#	def snap(self, sourceMesh, targetMesh, children = False):
+#		self.moveCheckers(sourceMesh)
+#		if children:
+#			sourceMesh.setGroupParent()
+#		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
+#		targetMesh.group.merge(sourceMesh)
+#		if sourceMesh.group.grounded:
+#			self._keystones.append(sourceMesh)	
+		
+class RegionGroup ():
+		def __init__(self, members):
+			self.members = []
+			self.parent = members[0]
+			self.addMembers(members)
+			
+		def setParent(self, parent):
+			"""Set region bounding box to parent of all other bouding boxes in the group"""
+			self.parent = parent
+			curMat = parent.getMatrix(viz.ABS_GLOBAL)
+			parent.setParent(viz.WORLD)
+			parent.setMatrix(curMat, viz.ABS_GLOBAL)
+			
+			for r in [r for r in self.members if r != parent]:
+				curMat = r.getMatrix(viz.ABS_GLOBAL)
+				r.setParent(parent)
+				r.setMatrix(curMat, viz.ABS_GLOBAL)
+		
+		def addMembers(self, members):
+			"""Add a list of regions to members list"""
+			self.members += members 
+			for r in members:
+				r.regionGroup = self
+				
+		def merge(self, source):
+			"""Merge group members into source group"""
+			self.members += source.regionGroup.members
+			self.members = list(set(self.members))
+			#delet source.group
+			for r in source.regionGroup.members:
+				r.setGroup(self)
 
 class PuzzleScore():
 	"""Handles scoring for the puzzle game"""
