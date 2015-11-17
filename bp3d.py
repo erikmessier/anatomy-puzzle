@@ -16,7 +16,7 @@ import model
 # Bone groups
 groups = []
 
-class MeshGroup():
+class MeshGroup(object):
 	"""
 	MeshGroup object manages a group of bones that need to stay
 	fused to each other. Besides keeping a list of bones, it also

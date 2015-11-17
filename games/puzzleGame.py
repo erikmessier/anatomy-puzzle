@@ -159,10 +159,8 @@ class PuzzleController(object):
 		"""Set Keystones"""
 		for m in [self._meshes[i] for i in range(number)]:
 			cp = m.centerPointScaled
-			print cp
-#			cp = [cp[0], -cp[2] + 0.150, cp[1]]
 			m.setPosition(cp, viz.ABS_GLOBAL)
-			m.setEuler([0, 0, 0], viz.ABS_GLOBAL)
+#			m.setEuler([0, 0, 0], viz.ABS_GLOBAL)
 			m.group.grounded = True
 			self._keystones.append(m)
 			
@@ -586,7 +584,7 @@ class FreePlay(PuzzleController):
 		yield self.prepareMeshes()
 		yield self.addToBoundingBox(self._meshes)
 		yield self.setKeystone(1)
-		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
+#		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
 		yield self.disperseRandom(self._boundingBoxes.values())
 #		yield self.enableSlice()
 
@@ -783,7 +781,7 @@ class BoundingBox(viz.VizNode):
 		"""Add members, updating bounds of cube"""
 		for m in meshes:
 			self.members.append(m)
-			changeParent(m, self.axis)
+			changeParent(m, self)
 		self.updateWireframe()
 	
 	def removeMembers(self, meshes):
@@ -816,10 +814,12 @@ class BoundingBox(viz.VizNode):
 				if v > max[i]:
 					max[i] = v
 					
-		self.cornerPoint = min #In case we want to implode/explode the region
-		self.bounds = [(v[0]-v[1])/500.0 for v in zip(max,min)]
-		self.centerPoint = [(v[1] + v[0]/2.0) for v in zip(self.bounds,min)]
-		return self.bounds
+		self.bounds			= [(v[0]-v[1]) for v in zip(max,min)]
+		self.boundsScaled	= [v/500.0 for v in self.bounds]
+		self.cornerPoint	= min
+		self.centerPoint	= [(v[0]/2.0 + v[1]) for v in zip(self.bounds,min)]
+		
+		return self.boundsScaled
 	
 	def addSensor(self):
 		"""Add a sensor around the axis to a proximity manager"""
@@ -836,7 +836,7 @@ class BoundingBox(viz.VizNode):
 		
 	def grab(self):
 		for m in self.members:
-			changeParent(m, self.axis)
+			changeParent(m, self)
 
 	def enterProximity(self):
 		self.alpha(1.0)
@@ -845,15 +845,15 @@ class BoundingBox(viz.VizNode):
 		self.alpha(0.5)
 		
 	def disperseMembers(self):
-		radius = max(self.bounds)
+		majorLength = max(self.computeBounds())
 		
 		for m in self.members:
 			angle	= random.random() * 2 * math.pi
-			radius	= random.random()*radius/10 + radius
+			radius	= random.random()*majorLength/2 + majorLength
 			
 			targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
-			targetEuler		= m.getEuler()
-#			targetEuler		= [0.0,90.0,180.0]
+#			targetEuler		= m.getEuler()
+			targetEuler		= [180,90.0,180]
 			#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
 			
 			m.setPosition(targetPosition)
