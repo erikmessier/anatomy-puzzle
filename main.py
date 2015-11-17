@@ -17,7 +17,7 @@ import json
 import config
 import anatomyTrainer
 import menu
-
+                 
 def main():
 	try:
 		#Prompt for init config parameters

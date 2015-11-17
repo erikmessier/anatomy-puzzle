@@ -19,7 +19,7 @@ class TestSnapPanel(vizdlg.Panel):
 		viz.mouse.setVisible(False)
 		self.name = 'test'
 		
-		self._theme = viz.Theme()
+		self._theme					= viz.Theme()
 		self._theme.borderColor		= (0.1,0.1,0.1,1)
 		self._theme.backColor		= (0.4,0.4,0.4,1)
 		self._theme.lightBackColor	= (0.6,0.6,0.6,1)

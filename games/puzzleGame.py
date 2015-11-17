@@ -56,8 +56,8 @@ class PuzzleController(object):
 		self._snapAttempts	= 0
 		self._imploded		= False
 		
-		self._pointerTexture = model.pointer.getTexture()
-		self._pointerOrigColor = model.pointer.getColor()
+		self._pointerTexture	= model.pointer.getTexture()
+		self._pointerOrigColor	= model.pointer.getColor()
 
 		self.viewcube = puzzleView.viewCube()
 		
@@ -82,7 +82,6 @@ class PuzzleController(object):
 
 		#Setup Key Bindings
 		self.bindKeys()
-		
 
 		self.score = PuzzleScore(self.modeName)
 		
@@ -97,7 +96,7 @@ class PuzzleController(object):
 		"""control loading of meshes --- used to control multithreading"""
 		while True:
 			yield self.loadMeshes(meshes)
-	#		Check to make sure that all requested meshes were loaded if they aren't then load the missing meshes
+			#Check to make sure that all requested meshes were loaded if they aren't then load the missing meshes
 			lingeringThreads = 0
 			while True:
 				if lingeringThreads >= 20:
@@ -127,11 +126,13 @@ class PuzzleController(object):
 				print "WARNING, UNKNOWN FILE ", fileName
 				self.unknownFiles += 1
 				continue
+				
 			#Wait to add thread if threadThrottle conditions are not met
 			model.threads += 1 #Add 1 for each new thread added --- new render started
 			yield viztask.waitTrue(self.threadThrottle,self._maxThreads)
 			viz.director(self.renderMeshes, fileName)
 			model.menu.updateLoad(len(self._meshes), len(self._meshesToLoad))
+			
 		self.printNoticeable('end of rendering process')
 	
 	def renderMeshes(self, fileName):
@@ -164,7 +165,6 @@ class PuzzleController(object):
 			m.setEuler([0, 0, 0], viz.ABS_GLOBAL)
 			m.group.grounded = True
 			self._keystones.append(m)
-		rotateAbout(self._meshes, [0,0,0], [0,90,0])
 			
 		for m in self._keystones[1:]:
 			self._keystones[0].group.merge(m)
@@ -189,13 +189,14 @@ class PuzzleController(object):
 			m.addToolTip()
 		self.preSnap()
 	
-	def disperseRandom(self, animate = False):
-		for m in self._meshes:
+	def disperseRandom(self, nodes, animate = False):
+		for m in nodes:
 			angle	= random.random() * 2 * math.pi
 			radius	= random.random() + 1.5
 			
 			targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
-			targetEuler		= [0.0,90.0,180.0]
+			targetEuler		= m.getEuler()
+#			targetEuler		= [0.0,90.0,180.0]
 			#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
 			
 			if (animate):
@@ -207,6 +208,9 @@ class PuzzleController(object):
 				m.setPosition(targetPosition)
 				m.setEuler(targetEuler)
 				
+			if type(m) is BoundingBox:
+				m.disperseMembers()
+
 	def preSnap(self, percentCut = 0.1, distance = 0.1):
 		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
 		average = 0 
@@ -580,9 +584,11 @@ class FreePlay(PuzzleController):
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
-		yield self.setKeystone(1)
-		yield self.enableSlice()
 		yield self.addToBoundingBox(self._meshes)
+		yield self.setKeystone(1)
+		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
+		yield self.disperseRandom(self._boundingBoxes.values())
+#		yield self.enableSlice()
 
 class TestPlay(PuzzleController):
 	"""
@@ -769,32 +775,38 @@ class BoundingBox(viz.VizNode):
 #		self.moveToCenter()
 	
 	def alpha(self, val):
+		"""Set the alpha of both the axis and wireframe"""
 		self.axis.alpha(val)
 		self.wireFrame.alpha(val)
 		
 	def addMembers(self, meshes):
+		"""Add members, updating bounds of cube"""
 		for m in meshes:
 			self.members.append(m)
 			changeParent(m, self.axis)
 		self.updateWireframe()
 	
 	def removeMembers(self, meshes):
+		"""Remove members, updating bounds of cube"""
 		for m in meshes:
 			if m in self.members:
 				changeParent(m)
 				self.members.remove(m)
 				
 	def moveToCenter(self, meshes):
+		"""Move any stray meshes to within bounds of cube"""
 		for m in meshes:
 			pass
 		
 	def updateWireframe(self):
+		"""Compute size of wireframe and update given current members"""
 		if self.wireFrame:
 			self.wireFrame.remove()
 		self.wireFrame = puzzleView.WireFrameCube(self.computeBounds(), corner = True)
 		self.wireFrame.setParent(self)
 			
 	def computeBounds(self):
+		"""Compute bounding box given current members"""
 		min, max = self.members[0].metaData['bounds']		
 		for m in self.members[1:]:
 			for i, v in enumerate(m.metaData['bounds'][0]):
@@ -803,13 +815,25 @@ class BoundingBox(viz.VizNode):
 			for i, v in enumerate(m.metaData['bounds'][1]):
 				if v > max[i]:
 					max[i] = v
-		return [(v[0]-v[1])/500.0 for v in zip(max,min)]
+					
+		self.cornerPoint = min #In case we want to implode/explode the region
+		self.bounds = [(v[0]-v[1])/500.0 for v in zip(max,min)]
+		self.centerPoint = [(v[1] + v[0]/2.0) for v in zip(self.bounds,min)]
+		return self.bounds
 	
 	def addSensor(self):
-		"""Add a sensor to a proximity manager"""
+		"""Add a sensor around the axis to a proximity manager"""
 		self._sensor = vizproximity.Sensor(vizproximity.Sphere(0.4),self)
 		model.proxManager.addSensor(self._sensor)
 	
+	def storeMat(self):
+		"""Store current transformation matrix"""
+		self._savedMat = self.getMatrix(viz.ABS_GLOBAL)
+		
+	def loadMat(self):
+		"""Recall stored transformation matrix"""
+		return self._savedMat
+		
 	def grab(self):
 		for m in self.members:
 			changeParent(m, self.axis)
@@ -819,6 +843,21 @@ class BoundingBox(viz.VizNode):
 		
 	def exitProximity(self):
 		self.alpha(0.5)
+		
+	def disperseMembers(self):
+		radius = max(self.bounds)
+		
+		for m in self.members:
+			angle	= random.random() * 2 * math.pi
+			radius	= random.random()*radius/10 + radius
+			
+			targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
+			targetEuler		= m.getEuler()
+#			targetEuler		= [0.0,90.0,180.0]
+			#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
+			
+			m.setPosition(targetPosition)
+			m.setEuler(targetEuler)
 
 class PuzzleScore():
 	"""Handles scoring for the puzzle game"""
