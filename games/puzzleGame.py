@@ -360,21 +360,16 @@ class PuzzleController(object):
 			#If lastGrabbed is a bounding box carry out this snap check procedure...
 			sourceBB = self.getSnapSource()
 			
-			#Closest bounding box (BB)
-			targetBB = sourceBB.findClosestBB(self._boundingBoxes.values())
+			# Find closest bounding box
+			targetBB, distance = sourceBB.findClosestBB(self._boundingBoxes.values())
 			
-			#Calculate target distance and euler for source BB in relation to target BB
-			tPos, tEuler = sourceBB.getTargetsForSnap(targetBB)
+			# Find Target Position and Euler for the Source BB
+			tPos, tEuler = sourceBB.moveChecker(targetBB)
 			
-			#Check to See if tPos and tEuler are within defined threshold
-			eulerDiff = vizmat.QuatDiff(sourceBB.getQuat(), targetBB.getQuat())
-			posDiff = vizmat.Distance(sourceBB.getPosition(), tPos)
-			
-			if abs(eulerDiff) <= ANGLE_THRESHOLD and abs(posDiff) <= SNAP_THRESHOLD:
+			# If the Source is close enough to the target position and euler then snap
+			eulerDiff = vizmat.QuatDiff(targetBB.checker.getQuat(viz.ABS_GLOBAL), sourceBB.getQuat(viz.ABS_GLOBAL))
+			if abs(distance) <= DISTANCE_THRESHOLD and abs(eulerDiff) <= ANGLE_THRESHOLD:
 				sourceBB.snapToBB(targetBB)
-			else:
-				self.printNoticeable('snapping criteria for bounding box were not met')
-			
 
 	def snap(self, sourceMesh, targetMesh, children = False):
 		self.moveCheckers(sourceMesh)
@@ -810,6 +805,11 @@ class BoundingBox(viz.VizNode):
 		
 		self.regionGroup = RegionGroup([self])
 #		self.moveToCenter()
+
+		# Add Bounding Box checker
+		self.checker = vizshape.addCube(0.001)
+		self.checker.setParent(self)
+		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 	
 	def alpha(self, val):
 		"""Set the alpha of both the axis and wireframe"""
@@ -860,6 +860,7 @@ class BoundingBox(viz.VizNode):
 		self.cornerPoint	= min
 		self.cornerPointScaled = [v/500.0 for v in min]
 		self.centerPoint	= [(v[0]/2.0 + v[1]) for v in zip(self.bounds,min)]
+		self.centerPointScaled = [v/500.0 for v in self.centerPoint]
 		
 		return self.boundsScaled
 	
@@ -914,12 +915,14 @@ class BoundingBox(viz.VizNode):
 		"""
 		self.regionGroup.setParent(self)
 	
-	def getTargetsForSnap(self, BB):
+	def moveChecker(self, BB):
 		"""Find the position that 'self' bounding box should move to in relation to BB"""
 		BBVec = BB.getPosition(viz.ABS_GLOBAL)
 		vecDiff = list(numpy.subtract(self.cornerPointScaled, BB.cornerPointScaled))
-		targetPos = list(numpy.add(BBVec, vecDiff))
-		targetEuler = BB.getEuler(viz.ABS_GLOBAL)
+		BB.checker.setPosition(vecDiff, mode = viz.ABS_PARENT)
+		
+		targetEuler = BB.checker.getEuler(viz.ABS_GLOBAL)
+		targetPos = BB.checker.getPosition(viz.ABS_GLOBAL)
 		
 		return targetPos, targetEuler
 	
@@ -927,28 +930,26 @@ class BoundingBox(viz.VizNode):
 		"""Find and return the bounding box closest to self"""
 		lastDistance = None
 		closestBB = None
+		distanceBtwn = None
 		for bb in [bb for bb in BBs if bb is not self]:
-			distanceBtwn = vizmat.Distance(bb.getPosition(), self.getPosition())
+			tPos, tEuler = self.moveChecker(bb)
+			distanceBtwn = vizmat.Distance(self.getPosition(viz.ABS_GLOBAL), tPos)
 			if distanceBtwn <= lastDistance or not lastDistance:
 				closestBB = bb
 				
-		return closestBB
+		return closestBB, distanceBtwn
 		
 	def snapToBB(self, BB):
 		"""Snaps Bounding Box to Another Bounding Box, BB"""
-		
-		targetPos, targetEuler = self.getTargetsForSnap(BB)
-		
-		#Move self to target position and euler
-		self.moveTo(targetPos, targetEuler)
-		
-		#Merge the region groups of both bounding boxes
+		self.moveTo(BB)
 		self.regionGroup.merge(BB)
 			
-	def moveTo(self, targetPos, targetEuler, animate = True, time = 0.3):
+	def moveTo(self, BB, animate = True, time = 0.3):
 		"""
 		move bounding box to new targetPos and targetEuler
 		"""
+		targetPos = BB.checker.getPosition(viz.ABS_GLOBAL)
+		targetEuler = BB.checker.getEuler(viz.ABS_GLOBAL)
 		if (animate):
 			move = vizact.moveTo(pos = targetPos, time = time, mode = viz.ABS_GLOBAL)
 			spin = vizact.spinTo(euler = targetEuler, time = time, mode = viz.ABS_GLOBAL)
