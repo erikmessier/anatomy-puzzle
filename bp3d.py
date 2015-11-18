@@ -119,9 +119,8 @@ class Mesh(viz.VizNode):
 		
 		self.scale		= SF
 		self._enabled	= True
+		self.grounded	= False
 
-		self.nameAudioFlag	= 1    #defualt: 1, 1 allows name to be played, 0 does not allow name playback
-		self.descAudioFlag	= 1		#default: 1, 1 allows description to be played, 0 does not allow dec playback
 		self.grabbedFlag	= 0
 		self.proxCounter	= 0
 		
@@ -164,9 +163,9 @@ class Mesh(viz.VizNode):
 	def getEnabled(self):
 		return self._enabled
 		
-	def storeMat(self):
+	def storeMat(self, relation = viz.ABS_GLOBAL):
 		"""Store current transformation matrix"""
-		self._savedMat = self.getMatrix(viz.ABS_GLOBAL)
+		self._savedMat = self.getMatrix(relation)
 		
 	def loadMat(self):
 		"""Recall stored transformation matrix"""
@@ -181,7 +180,7 @@ class Mesh(viz.VizNode):
 	
 	def clearProxCounter(self):
 		"""Resets the counter for how long glove is close to bone"""
-		self.proxCounter  = 0
+		self.proxCounter = 0
 		
 	def addToolTip(self):
 		self.tooltip = viz.addText(self.nameFormatted)
@@ -220,19 +219,19 @@ class Mesh(viz.VizNode):
 		else:
 			self.mesh.color(value)
 
-	def moveTo(self, matrix, animate = True, time = 0.3):
+	def moveTo(self, matrix, animate = True, time = 0.3, relation = viz.ABS_GLOBAL):
 		"""
 		Invoked by the puzzle.snap method to handle local business
 		"""
 		# WARNING the full setMatrix cannot be assigned because scale is different!
 		if (animate):
-			move = vizact.moveTo(matrix.getPosition(), time = time, mode = viz.ABS_GLOBAL)
-			spin = vizact.spinTo(euler = matrix.getEuler(), time = time, mode = viz.ABS_GLOBAL)
+			move = vizact.moveTo(matrix.getPosition(), time = time, mode = relation)
+			spin = vizact.spinTo(euler = matrix.getEuler(), time = time, mode = relation)
 			transition = vizact.parallel(spin, move)
 			self.addAction(transition)
 		else:
-			self.setPosition(targetPosition, viz.ABS_GLOBAL)
-			self.setEuler(targetEuler,viz.ABS_GLOBAL)
+			self.setPosition(targetPosition, relation)
+			self.setEuler(targetEuler, relation)
 
 	def setNameAudioFlag(self, flag):
 		"""True to allow bone name playback"""
