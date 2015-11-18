@@ -10,12 +10,10 @@ import vizshape
 
 # Python built-in modules
 import random
-import math
-import numpy
+import math, numpy
 import json, csv
 import time, datetime
 import threading
-import time
 
 # Custom modules
 import init
@@ -159,19 +157,17 @@ class PuzzleController(object):
 
 	def setKeystone(self, number):
 		"""Set Keystones"""
-		for m in [self._meshes[i] for i in range(number)]:
-			cp = m.centerPointScaled
-			print cp
-#			cp = [cp[0], -cp[2] + 0.150, cp[1]]
-			m.setPosition(cp, viz.ABS_GLOBAL)
-			m.setEuler([0, 0, 0], viz.ABS_GLOBAL)
-			m.group.grounded = True
-			self._keystones.append(m)
-			
-		for m in self._keystones[1:]:
-			self._keystones[0].group.merge(m)
-			
-		#snapGroup(smallBoneGroups)
+		for m in self._boundingBoxes.values():
+			m.setKeystones(number)
+#		for m in [self._meshes[i] for i in range(number)]:
+#			cp = m.centerPointScaled
+#			m.setPosition(cp, viz.ABS_GLOBAL)
+##			m.setEuler([0, 0, 0], viz.ABS_GLOBAL)
+#			m.group.grounded = True
+#			self._keystones.append(m)
+#			
+#		for m in self._keystones[1:]:
+#			self._keystones[0].group.merge(m)
 	
 	def addToBoundingBox(self, meshes):
 		"""
@@ -216,8 +212,8 @@ class PuzzleController(object):
 				m.setPosition(targetPosition)
 				m.setEuler(targetEuler)
 				
-			if type(m) is BoundingBox:
-				m.disperseMembers()
+#			if type(m) is BoundingBox:
+#				m.disperseMembers()
 
 	def preSnap(self, percentCut = 0.1, distance = 0.1):
 		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
@@ -482,25 +478,33 @@ class PuzzleController(object):
 	
 	def implode(self):
 		"""Move bones to solved positions"""
-		target = self._keystones[0] # Move to the current keystone(s)
-		for m in self._meshes[1:]:
-			if m.getAction():
-				return
-			for bone in [b for b in self._meshes if b != m]:
-				bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
-			m.storeMat()
-			m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
-		self._imploded = True
-		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
+		if self._boundingBoxes:
+			for box in self._boundingBoxes.values():
+				box.implode()
+		else:
+			target = self._keystones[0] # Move to the current keystone(s)
+			for m in self._meshes[1:]:
+				if m.getAction():
+					return
+				for bone in [b for b in self._meshes if b != m]:
+					bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
+				m.storeMat()
+				m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+			self._imploded = True
+			self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
 
 	def explode(self):
 		"""Move bones to position before implode was called"""
-		for m in self._meshes[1:]:
-			if m.getAction():
-				return
-			m.moveTo(m.loadMat(), time = 0.6)
-		self._imploded = False
-		self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
+		if self._boundingBoxes:
+			for box in self._boundingBoxes.values():
+				box.explode()
+		else:
+			for m in self._meshes[1:]:
+				if m.getAction():
+					return
+				m.moveTo(m.loadMat(), time = 0.6)
+			self._imploded = False
+			self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
 
 	def solve(self):
 		"""Operator used to toggle between implode and explode"""
@@ -593,8 +597,8 @@ class FreePlay(PuzzleController):
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
 		yield self.addToBoundingBox(self._meshes)
-		yield self.setKeystone(1)
-		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
+		yield self.setKeystone(8)
+#		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
 		yield self.disperseRandom(self._boundingBoxes.values())
 #		yield self.enableSlice()
 
@@ -765,8 +769,9 @@ class BoundingBox(viz.VizNode):
 		of subassemblies of the entire model. Currently partitioned by region.
 		"""
 		
-		self.members = []
-		self.wireFrame = None
+		self._members	= []
+		self._keystones = []
+		self.wireFrame	= None
 		
 		self.axis = vizshape.addAxes()
 		self.cube = vizshape.addCube()
@@ -792,16 +797,16 @@ class BoundingBox(viz.VizNode):
 	def addMembers(self, meshes):
 		"""Add members, updating bounds of cube"""
 		for m in meshes:
-			self.members.append(m)
-			changeParent(m, self.axis)
+			self._members.append(m)
+			changeParent(m, self)
 		self.updateWireframe()
 	
 	def removeMembers(self, meshes):
 		"""Remove members, updating bounds of cube"""
 		for m in meshes:
-			if m in self.members:
+			if m in self._members:
 				changeParent(m)
-				self.members.remove(m)
+				self._members.remove(m)
 				
 	def moveToCenter(self, meshes):
 		"""Move any stray meshes to within bounds of cube"""
@@ -817,19 +822,24 @@ class BoundingBox(viz.VizNode):
 			
 	def computeBounds(self):
 		"""Compute bounding box given current members"""
-		min, max = self.members[0].metaData['bounds']		
-		for m in self.members[1:]:
+		min, max = self._members[0].metaData['bounds']		
+		for m in self._members[1:]:
 			for i, v in enumerate(m.metaData['bounds'][0]):
 				if v < min[i]:
 					min[i] = v
 			for i, v in enumerate(m.metaData['bounds'][1]):
 				if v > max[i]:
 					max[i] = v
-					
-		self.cornerPoint = min #In case we want to implode/explode the region
-		self.bounds = [(v[0]-v[1])/500.0 for v in zip(max,min)]
-		self.centerPoint = [(v[1] + v[0]/2.0) for v in zip(self.bounds,min)]
-		return self.bounds
+		
+		min = rightToLeft(min) # WHY VIZARD WHY
+		max = rightToLeft(max) # WHY WHYYYY
+		self.bounds			= [(v[0]-v[1]) for v in zip(max,min)]
+		self.boundsScaled	= [v/500.0 for v in self.bounds]
+		self.cornerPoint	= min
+		self.cornerPointScaled = [v/500.0 for v in min]
+		self.centerPoint	= [(v[0]/2.0 + v[1]) for v in zip(self.bounds,min)]
+		
+		return self.boundsScaled
 	
 	def addSensor(self):
 		"""Add a sensor around the axis to a proximity manager"""
@@ -845,7 +855,7 @@ class BoundingBox(viz.VizNode):
 		return self._savedMat
 		
 	def grab(self):
-		for m in self.members:
+		for m in self._members:
 			changeParent(m, self.axis)
 			
 		self.setRegionGroupParent()
@@ -857,11 +867,11 @@ class BoundingBox(viz.VizNode):
 		self.alpha(0.5)
 		
 	def disperseMembers(self):
-		radius = max(self.bounds)
+		majorLength = max(self.computeBounds())
 		
-		for m in self.members:
+		for m in self._members:
 			angle	= random.random() * 2 * math.pi
-			radius	= random.random()*radius/10 + radius
+			radius	= random.random() * majorLength/2 + majorLength
 			
 			targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
 			targetEuler		= m.getEuler()
@@ -881,20 +891,68 @@ class BoundingBox(viz.VizNode):
 		of the other group members
 		"""
 		self.regionGroup.setParent(self)
+	
+	def targetsForSnap(self, BB):
+		"""Find the position that 'self' bounding box should move to in relation to BB"""
+		BBVec = BB.getPosition(viz.ABS_GLOBAL)
+		vecDiff = list(numpy.subtract(self.cornerPointScaled, BB.cornerPointScaled))
+		targetPos = list(numpy.add(BBVec, vecDiff))
+		targetEuler = BB.getEuler(viz.ABS_GLOBAL)
 		
+		return targetPos, targetEuler
+	
 	def snapToBB(self, BB):
 		"""Snaps Bounding Box to Another Bounding Box, BB"""
-		self.setEuler(BB.getEuler())
 		
+		targetPos, targetEuler = self.targetsForSnap(BB)
 		
-#	def snap(self, sourceMesh, targetMesh, children = False):
-#		self.moveCheckers(sourceMesh)
-#		if children:
-#			sourceMesh.setGroupParent()
-#		sourceMesh.moveTo(targetMesh.checker.getMatrix(viz.ABS_GLOBAL))
-#		targetMesh.group.merge(sourceMesh)
-#		if sourceMesh.group.grounded:
-#			self._keystones.append(sourceMesh)	
+		#Move self to target position and euler
+		self.moveTo(targetPos, targetEuler)
+		
+		#Merge the region groups of both bounding boxes
+		self.regionGroup.merge(BB)
+			
+	def moveTo(self, targetPos, targetEuler, animate = True, time = 0.3):
+		"""
+		move bounding box to new targetPos and targetEuler
+		"""
+		if (animate):
+			move = vizact.moveTo(pos = targetPos, time = time, mode = viz.ABS_GLOBAL)
+			spin = vizact.spinTo(euler = targetEuler, time = time, mode = viz.ABS_GLOBAL)
+			transition = vizact.parallel(spin, move)
+			self.addAction(transition)
+		else:
+			self.setPosition(targetPosition, viz.ABS_GLOBAL)
+			self.setEuler(targetEuler,viz.ABS_GLOBAL)
+		
+	def setKeystones(self, count):
+		for k in random.sample(self._members, count):
+			diff = list(numpy.subtract(k.centerPointScaled, self.cornerPointScaled))
+			print 'setting keystone position to ', diff
+			k.setPosition(diff, viz.REL_PARENT)
+			self._keystones.append(k)
+	
+	def implode(self):
+		"""Move bones to solved positions"""
+		target = self._keystones[0] # Move to the current keystone(s)
+		for m in self._members[1:]:
+			if m.getAction():
+				return
+			for bone in [b for b in self._members if b != m]:
+				bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
+			m.storeMat()
+			m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+		self._imploded = True
+#		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
+
+	def explode(self):
+		"""Move bones to position before implode was called"""
+		for m in self._members[1:]:
+			if m.getAction():
+				return
+			m.moveTo(m.loadMat(), time = 0.6)
+		self._imploded = False
+#		self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
 		
 class RegionGroup ():
 		def __init__(self, members):
@@ -927,6 +985,7 @@ class RegionGroup ():
 			#delet source.group
 			for r in source.regionGroup.members:
 				r.setGroup(self)
+	
 
 class PuzzleScore():
 	"""Handles scoring for the puzzle game"""
@@ -1101,3 +1160,9 @@ def changeParent(mesh, newParent = viz.WORLD):
 	curMat = mesh.getMatrix(viz.ABS_GLOBAL)
 	mesh.setParent(newParent)
 	mesh.setMatrix(curMat, viz.ABS_GLOBAL)
+
+def rightToLeft(center):
+	"""
+	Convert from right handed coordinate system to left handed
+	"""
+	return [center[0], center[1], center[2]*-1]

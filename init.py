@@ -231,7 +231,7 @@ class DisplayInstance():
 			viz.fov(60)
 			viz.window.setSize([1280,720])
 			viz.go()
-			viz.window.setFullscreenMonitor(1)
+			viz.window.setFullscreenMonitor(2)
 #			viz.go(viz.FULLSCREEN) #viz.FULLSCREEN
 
 		elif self.displayMode == 1:

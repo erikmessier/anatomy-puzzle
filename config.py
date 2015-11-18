@@ -144,22 +144,22 @@ class Modes:
 Position and Orientation Vectors Scales for spacemouse control 
 """
 
-SMPositionScale	= [.0001,.0001,.0001]
-SMEulerScale	= [0.001, 0.001, 0.001]
+SMPositionScale	= [0.0001, 0.0001, 0.0001]
+SMEulerScale	= [0.0010, 0.0010, 0.0010]
 
 # Ignore filenames with these concept names when calculating union/intersection for loading final dataset
-ignoreSets = ('portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery', 'segment of bronchial tree')
+ignoreSets = ('portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery', 'segment of bronchial tree', 'sesamoid bone')
 
 #presnap meshes
 preSnapMeshes = {'Right Carpal Bone': ['carpal bone', 'right free upper limb']}
 
 # Colors of the various tissue layes
 colors = { \
-	'muscle organ':		(1.0, 0.5, 0.5), \
-	'bone organ':		(1.0, 1.0, 0.8), \
-	'brain':			(0.45, 0.7, 0.7), \
-	'left lung':		(1.0, 0.70, 0.85), \
-	'right lung':		(1.0, 0.70, 0.85), \
-	'gastrointestinal tract': (1.0, 0.85, 0.6), \
-	'heart':			(1.0, 0.45, 0.4), \
-	'urinary system':	(1.0, 1.0, 0.4)}
+	'muscle organ':		(1.00, 0.50, 0.50), \
+	'bone organ':		(1.00, 1.00, 0.80), \
+	'brain':			(0.45, 0.70, 0.70), \
+	'left lung':		(1.00, 0.70, 0.85), \
+	'right lung':		(1.00, 0.70, 0.85), \
+	'gastrointestinal tract': (1.00, 0.85, 0.6), \
+	'heart':			(1.00, 0.45, 0.40), \
+	'urinary system':	(1.00, 1.00, 0.40)}
