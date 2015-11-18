@@ -368,8 +368,9 @@ class PuzzleController(object):
 			
 			# If the Source is close enough to the target position and euler then snap
 			eulerDiff = vizmat.QuatDiff(targetBB.checker.getQuat(viz.ABS_GLOBAL), sourceBB.getQuat(viz.ABS_GLOBAL))
-			if abs(distance) <= DISTANCE_THRESHOLD and abs(eulerDiff) <= ANGLE_THRESHOLD:
+			if distance <= SNAP_THRESHOLD and abs(eulerDiff) <= ANGLE_THRESHOLD:
 				sourceBB.snapToBB(targetBB)
+				sourceBB.formatAxisAfterSnap()
 
 	def snap(self, sourceMesh, targetMesh, children = False):
 		self.moveCheckers(sourceMesh)
@@ -926,18 +927,19 @@ class BoundingBox(viz.VizNode):
 		
 		return targetPos, targetEuler
 	
-	def findClosestBB(self, BBs):
+	def findClosestBB(self, boundingBoxes):
 		"""Find and return the bounding box closest to self"""
-		lastDistance = None
+		leastDistance = None
 		closestBB = None
 		distanceBtwn = None
-		for bb in [bb for bb in BBs if bb is not self]:
+		BBs = set(boundingBoxes) - set(self.regionGroup.members)
+		for bb in BBs:
 			tPos, tEuler = self.moveChecker(bb)
 			distanceBtwn = vizmat.Distance(self.getPosition(viz.ABS_GLOBAL), tPos)
-			if distanceBtwn <= lastDistance or not lastDistance:
+			if distanceBtwn <= leastDistance or leastDistance is None:
 				closestBB = bb
-				
-		return closestBB, distanceBtwn
+				leastDistance = distanceBtwn
+		return closestBB, leastDistance
 		
 	def snapToBB(self, BB):
 		"""Snaps Bounding Box to Another Bounding Box, BB"""
@@ -958,6 +960,24 @@ class BoundingBox(viz.VizNode):
 		else:
 			self.setPosition(targetPosition, viz.ABS_GLOBAL)
 			self.setEuler(targetEuler,viz.ABS_GLOBAL)
+			
+	def formatAxisAfterSnap(self):
+		lowestRegion = self
+		bottom = 0
+		a = set(self.regionGroup.members) - set([self])
+		for bb in a:
+			pos = bb.getPosition()
+			print bb
+			print pos
+#			if pos > bottom:
+#				lowestRegion = bb
+#				bottom = pos
+#				
+#		for bb in list(set(self.regionGroup.members) - set([lowestRegion])):
+#			bb.axis.disable(viz.RENDERING)
+			
+	def hideAxis(self):
+		self.axis.disable(viz.RENDERING)
 		
 	def setKeystones(self, count):
 		for k in random.sample(self._members, count):
