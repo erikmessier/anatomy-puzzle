@@ -300,59 +300,81 @@ class PuzzleController(object):
 			print 'nothing to snap'
 			return
 
-		SNAP_THRESHOLD	= 0.5;
-		DISTANCE_THRESHOLD = 1.5;
-		ANGLE_THRESHOLD	= 45;
-		sourceMesh		= self.getSnapSource()
-		targetMesh		= self.getSnapTarget()
-		searchMeshes	= self.getSnapSearch()
+		SNAP_THRESHOLD	= 0.5; #how far apart the mesh you are snapping is from where it should be
+		DISTANCE_THRESHOLD = 1.5; #distance source mesh is from other meshes
+		ANGLE_THRESHOLD	= 45; #min euler difference source mesh can be from target mesh
 		
-		self.moveCheckers(sourceMesh)
+		if type(self.getSnapSource()) == self._typeMesh:
+			sourceMesh		= self.getSnapSource()
+			targetMesh		= self.getSnapTarget()
+			searchMeshes	= self.getSnapSearch()
 			
-		# Search through all of the checkers, and snap to the first one meeting our snap
-		# criteria
-		
-		if self._snapAttempts >= 3 and not sourceMesh.group.grounded:
-			self.snap(sourceMesh, targetMesh, children = True)
-			viz.playSound(".\\dataset\\snap.wav")
-			print 'Three unsuccessful snap attempts, snapping now!'
-			self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
-				source = sourceMesh.name, destination = targetMesh.name)
-			self._snapAttempts = 0
-			if self.modeName == 'testplay':
-				self.pickSnapPair()
-		elif sourceMesh.group.grounded:
-			print 'That object is grounded. Returning!'
-		else:
-			for bone in [b for b in searchMeshes if b not in sourceMesh.group.members]:
-				targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
-				targetPosition = bone.getPosition(viz.ABS_GLOBAL)
-				targetQuat = bone.getQuat(viz.ABS_GLOBAL)
+			self.moveCheckers(sourceMesh)
 				
-				currentPosition = sourceMesh.getPosition(viz.ABS_GLOBAL)
-				currentQuat = sourceMesh.getQuat(viz.ABS_GLOBAL)		
-				
-				snapDistance = vizmat.Distance(targetSnap, currentPosition)
-				proximityDistance = vizmat.Distance(targetPosition, currentPosition)
-				angleDifference = vizmat.QuatDiff(bone.getQuat(), sourceMesh.getQuat())
-				
-				if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
-						and (angleDifference < ANGLE_THRESHOLD):
-					print 'Snap! ', sourceMesh, ' to ', bone
-					self.score.event(event = 'snap', description = 'Successful snap', source = sourceMesh.name, destination = bone.name)
-					viz.playSound(".\\dataset\\snap.wav")
-					self.snap(sourceMesh, bone, children = True)
-					if self.modeName == 'testplay':
-						self.pickSnapPair()
-					break
+			# Search through all of the checkers, and snap to the first one meeting our snap
+			# criteria
+			
+			if self._snapAttempts >= 3 and not sourceMesh.group.grounded:
+				self.snap(sourceMesh, targetMesh, children = True)
+				viz.playSound(".\\dataset\\snap.wav")
+				print 'Three unsuccessful snap attempts, snapping now!'
+				self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
+					source = sourceMesh.name, destination = targetMesh.name)
+				self._snapAttempts = 0
+				if self.modeName == 'testplay':
+					self.pickSnapPair()
+			elif sourceMesh.group.grounded:
+				print 'That object is grounded. Returning!'
 			else:
-				print 'Did not meet snap criteria!'
-				self._snapAttempts += 1
-				self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = sourceMesh.name)
-		if len(self._meshes) == len(sourceMesh.group.members):
-			print "Assembly completed!"
-			end()
-			menu.ingame.endButton()
+				for bone in [b for b in searchMeshes if b not in sourceMesh.group.members]:
+					targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
+					targetPosition = bone.getPosition(viz.ABS_GLOBAL)
+					targetQuat = bone.getQuat(viz.ABS_GLOBAL)
+					
+					currentPosition = sourceMesh.getPosition(viz.ABS_GLOBAL)
+					currentQuat = sourceMesh.getQuat(viz.ABS_GLOBAL)		
+					
+					snapDistance = vizmat.Distance(targetSnap, currentPosition)
+					proximityDistance = vizmat.Distance(targetPosition, currentPosition)
+					angleDifference = vizmat.QuatDiff(bone.getQuat(), sourceMesh.getQuat())
+					
+					if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
+							and (angleDifference < ANGLE_THRESHOLD):
+						print 'Snap! ', sourceMesh, ' to ', bone
+						self.score.event(event = 'snap', description = 'Successful snap', source = sourceMesh.name, destination = bone.name)
+						viz.playSound(".\\dataset\\snap.wav")
+						self.snap(sourceMesh, bone, children = True)
+						if self.modeName == 'testplay':
+							self.pickSnapPair()
+						break
+				else:
+					print 'Did not meet snap criteria!'
+					self._snapAttempts += 1
+					self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = sourceMesh.name)
+			if len(self._meshes) == len(sourceMesh.group.members):
+				print "Assembly completed!"
+				end()
+				menu.ingame.endButton()
+		
+		elif type(self.getSnapSource()) == self._typeBounding:
+			#If lastGrabbed is a bounding box carry out this snap check procedure...
+			sourceBB = self.getSnapSource()
+			
+			#Closest bounding box (BB)
+			targetBB = sourceBB.findClosestBB(self._boundingBoxes.values())
+			
+			#Calculate target distance and euler for source BB in relation to target BB
+			tPos, tEuler = sourceBB.getTargetsForSnap(targetBB)
+			
+			#Check to See if tPos and tEuler are within defined threshold
+			eulerDiff = vizmat.QuatDiff(sourceBB.getQuat(), targetBB.getQuat())
+			posDiff = vizmat.Distance(sourceBB.getPosition(), tPos)
+			
+			if abs(eulerDiff) <= ANGLE_THRESHOLD and abs(posDiff) <= SNAP_THRESHOLD:
+				sourceBB.snapToBB(targetBB)
+			else:
+				self.printNoticeable('snapping criteria for bounding box were not met')
+			
 
 	def snap(self, sourceMesh, targetMesh, children = False):
 		self.moveCheckers(sourceMesh)
@@ -892,7 +914,7 @@ class BoundingBox(viz.VizNode):
 		"""
 		self.regionGroup.setParent(self)
 	
-	def targetsForSnap(self, BB):
+	def getTargetsForSnap(self, BB):
 		"""Find the position that 'self' bounding box should move to in relation to BB"""
 		BBVec = BB.getPosition(viz.ABS_GLOBAL)
 		vecDiff = list(numpy.subtract(self.cornerPointScaled, BB.cornerPointScaled))
@@ -901,10 +923,21 @@ class BoundingBox(viz.VizNode):
 		
 		return targetPos, targetEuler
 	
+	def findClosestBB(self, BBs):
+		"""Find and return the bounding box closest to self"""
+		lastDistance = None
+		closestBB = None
+		for bb in [bb for bb in BBs if bb is not self]:
+			distanceBtwn = vizmat.Distance(bb.getPosition(), self.getPosition())
+			if distanceBtwn <= lastDistance or not lastDistance:
+				closestBB = bb
+				
+		return closestBB
+		
 	def snapToBB(self, BB):
 		"""Snaps Bounding Box to Another Bounding Box, BB"""
 		
-		targetPos, targetEuler = self.targetsForSnap(BB)
+		targetPos, targetEuler = self.getTargetsForSnap(BB)
 		
 		#Move self to target position and euler
 		self.moveTo(targetPos, targetEuler)
