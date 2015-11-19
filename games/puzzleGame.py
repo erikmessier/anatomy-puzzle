@@ -93,7 +93,7 @@ class PuzzleController(object):
 		yield self.setKeystone(1)
 		
 	def loadControl(self, meshes = [], animate = False):
-		"""control loading of meshes --- used to control multithreading"""
+		"""Control loading of meshes --- used to control multithreading"""
 		while True:
 			yield self.loadMeshes(meshes)
 			#Check to make sure that all requested meshes were loaded if they aren't then load the missing meshes
@@ -145,15 +145,16 @@ class PuzzleController(object):
 		model.threads -= 1 #Subtract 1 for each thread that has finished rendering
 		
 	def threadThrottle(self, maxThreads, threadFlag = True):
-		"""If the number of current threads (curThreads) is greater than the decided maximum, then 
-		returns false --- and vice-versa"""
+		"""
+		If the number of current threads (curThreads) is greater than the decided maximum, then 
+		returns false --- and vice-versa
+		"""
 		while threadFlag:
 			if model.threads <= maxThreads:
 				threadFlag = False
 			else:
 				threadFlag = True
 		return True
-	
 
 	def setKeystone(self, number):
 		"""Set Keystones"""
@@ -250,11 +251,12 @@ class PuzzleController(object):
 		print text.upper()
 		print '-'*len(text)
 		
-	def unloadBones(self):
+	def unloadMeshes(self):
 		"""Unload all of the bone objects to reset the puzzle game"""
 		for m in self._meshes:
-			print 'removing ', m.name
 			m.remove(children = True)
+		for b in self._boundingBoxes.values():
+			b.remove(children = True)
 		
 	def transparency(self, source, level, includeSource = False):
 		"""Set the transparency of all the bones"""
@@ -412,25 +414,25 @@ class PuzzleController(object):
 		
 		if type(target) is bp3d.Mesh:
 			if target.group.grounded:
-				target.color([0,1,0.5])
+				target.color([0.0,1.0,0.5])
 				target.tooltip.visible(viz.ON)
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
 				self.transparency(target, 0.7)
-				target.color([0,1,0.5])
+				target.color([0.0,1.0,0.5])
 				target.tooltip.visible(viz.ON)
-				
-			if target != self._lastGrabbed and type(self._lastGrabbed) is bp3d.Mesh:
-				self._lastGrabbed.color(reset = True)
-				self._lastGrabbed.tooltip.visible(viz.OFF)
-				for m in self._proximityList: 
-					if m == self._lastGrabbed:
-						self._lastGrabbed.color([1.0,1.0,0.5])
-		else:
-			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
+		elif type(target) is BoundingBox:
 			target.grab()
+			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
+			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
+			target.highlight(True)
+			
+		if self._lastGrabbed and target is not self._lastGrabbed:
+			self._lastGrabbed.highlight(False)
+			if self._lastGrabbed in self._proximityList:
+				self._lastGrabbed.highlight(True)
 			
 		self._lastGrabbed = target
 		self._grabFlag = True
@@ -481,8 +483,7 @@ class PuzzleController(object):
 		"""Callback for a proximity entry event between the pointer and a mesh"""
 		source = e.sensor.getSourceObject()
 		model.pointer.color([4.0,1.5,1.5])
-		if source != self._lastGrabbed:
-			source.enterProximity()
+		source.highlight(True)
 		self._proximityList.append(source)
 	
 	def ExitProximity(self, e):
@@ -491,7 +492,7 @@ class PuzzleController(object):
 		if len(self._proximityList) and not self._gloveLink:
 			model.pointer.color(1,1,1)
 		if source != self._lastGrabbed:
-			source.exitProximity()
+			source.highlight(False)
 		self._proximityList.remove(source)
 	
 	def implode(self):
@@ -538,11 +539,12 @@ class PuzzleController(object):
 		model.proxManager.clearSensors()
 		model.proxManager.clearTargets()
 		model.proxManager.remove()
-		self.unloadBones()
+		self.unloadMeshes()
 		for bind in self._keyBindings:
 			bind.remove()
 
 	def bindKeys(self):
+		"""Define all key bindings and store them in a list"""
 		self._keyBindings.append(vizact.onkeydown('o', model.proxManager.setDebug, viz.TOGGLE)) #debug shapes
 		self._keyBindings.append(vizact.onkeydown(' ', self.grab)) #space select
 		self._keyBindings.append(vizact.onkeydown('65421', self.grab)) #numpad enter select
@@ -615,8 +617,8 @@ class FreePlay(PuzzleController):
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
 		yield self.addToBoundingBox(self._meshes)
-		yield self.setKeystone(1)
-#		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
+		yield self.setKeystone(3)
+		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
 		yield self.disperseRandom(self._boundingBoxes.values())
 #		yield self.enableSlice()
 
@@ -760,9 +762,6 @@ class PinDrop(PuzzleController):
 		unlabeled = [m for m in self._meshes if not m.labeled]
 		self._dropTarget = random.sample(unlabeled, 1)[0]
 	
-	def highlightMesh(self, mesh):
-		pass
-		
 	def pinCheck(self):
 		if self._dropAttempts >= 3:
 			pass
@@ -787,6 +786,8 @@ class BoundingBox(viz.VizNode):
 		of subassemblies of the entire model. Currently partitioned by region.
 		"""
 		
+		self.name		= ''		
+		self._alpha		= 0.3
 		self._members	= []
 		self._keystones = []
 		self.wireFrame	= None
@@ -798,11 +799,10 @@ class BoundingBox(viz.VizNode):
 		
 		self.cube.disable(viz.RENDERING)
 		self.axis.setParent(self)
-		self.axis.setScale([0.3, 0.3, 0.3])
+		self.axis.setScale([0.2, 0.2, 0.2])
 		
 		self.addSensor()
 		self.addMembers(meshes)
-		self.alpha(0.5)
 		
 		self.regionGroup = RegionGroup([self])
 #		self.moveToCenter()
@@ -811,9 +811,12 @@ class BoundingBox(viz.VizNode):
 		self.checker = vizshape.addCube(0.001)
 		self.checker.setParent(self)
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
+
+		self.highlight(False)
 	
 	def alpha(self, val):
 		"""Set the alpha of both the axis and wireframe"""
+		self._alpha = val
 		self.axis.alpha(val)
 		self.wireFrame.alpha(val)
 		
@@ -842,6 +845,7 @@ class BoundingBox(viz.VizNode):
 			self.wireFrame.remove()
 		self.wireFrame = puzzleView.WireFrameCube(self.computeBounds(), corner = True)
 		self.wireFrame.setParent(self)
+		self.wireFrame.alpha(self._alpha)
 			
 	def computeBounds(self):
 		"""Compute bounding box given current members"""
@@ -856,12 +860,12 @@ class BoundingBox(viz.VizNode):
 		
 		min = rightToLeft(min) # WHY VIZARD WHY
 		max = rightToLeft(max) # WHY WHYYYY
-		self.bounds			= [(v[0]-v[1]) for v in zip(max,min)]
-		self.boundsScaled	= [v/500.0 for v in self.bounds]
-		self.cornerPoint	= min
-		self.cornerPointScaled = [v/500.0 for v in min]
-		self.centerPoint	= [(v[0]/2.0 + v[1]) for v in zip(self.bounds,min)]
-		self.centerPointScaled = [v/500.0 for v in self.centerPoint]
+		self.bounds				= [(v[0]-v[1]) for v in zip(max,min)]
+		self.boundsScaled		= [v/500.0 for v in self.bounds]
+		self.cornerPoint		= min
+		self.cornerPointScaled	= [v/500.0 for v in min]
+		self.centerPoint		= [(v[0]/2.0 + v[1]) for v in zip(self.bounds,min)]
+		self.centerPointScaled	= [v/500.0 for v in self.centerPoint]
 		
 		return self.boundsScaled
 	
@@ -879,17 +883,18 @@ class BoundingBox(viz.VizNode):
 		return self._savedMat
 		
 	def grab(self):
+		"""Run on grab"""
 		for m in self._members:
 			changeParent(m, self.axis)
-			
 		self.setRegionGroupParent()
 
-	def enterProximity(self):
-		self.alpha(1.0)
-		
-	def exitProximity(self):
-		self.alpha(0.5)
-		
+	def highlight(self, flag):
+		"""Make visible out of the noise"""
+		if flag:
+			self.alpha(1.0)
+		else:
+			self.alpha(0.3)
+			
 	def disperseMembers(self):
 		majorLength = max(self.computeBounds())
 		
