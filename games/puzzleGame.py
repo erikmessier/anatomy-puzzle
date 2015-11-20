@@ -199,7 +199,7 @@ class PuzzleController(object):
 			angle	= random.random() * 2 * math.pi
 			radius	= random.random() + 1.5
 			
-			targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
+			targetPosition	= [math.sin(angle) * radius, math.cos(angle) * radius, -1.0]
 			targetEuler		= m.getEuler()
 #			targetEuler		= [0.0,90.0,180.0]
 			#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
@@ -213,8 +213,8 @@ class PuzzleController(object):
 				m.setPosition(targetPosition)
 				m.setEuler(targetEuler)
 				
-#			if type(m) is BoundingBox:
-#				m.disperseMembers()
+			if type(m) is BoundingBox:
+				m.disperseMembers()
 
 	def preSnap(self, percentCut = 0.1, distance = 0.1):
 		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
@@ -308,8 +308,8 @@ class PuzzleController(object):
 		
 		if type(self.getSnapSource()) == self._typeMesh:
 			sourceMesh		= self.getSnapSource()
-			targetMesh		= self.getSnapTarget()
-			searchMeshes	= self.getSnapSearch()
+			searchMeshes	= self.getSnapSearch(source = sourceMesh)
+			targetMesh		= self.getSnapTarget(search = searchMeshes)
 			
 			self.moveCheckers(sourceMesh)
 				
@@ -387,13 +387,17 @@ class PuzzleController(object):
 		"""Define source object for snapcheck"""
 		return self._lastGrabbed
 	
-	def getSnapTarget(self):
+	def getSnapTarget(self, search = None):
 		"""Define target object for snapcheck"""
-		return self.getAdjacent(self._lastGrabbed, self.getEnabled())[0]
+		if search:
+			return self.getAdjacent(self._lastGrabbed, search)[0]
+		else:
+			return self.getAdjacent(self._lastGrabbed, self.getEnabled())[0]
 		
-	def getSnapSearch(self):
+	def getSnapSearch(self, source = None):
 		"""Define list of objects to search for snapcheck"""
-		return self.getEnabled()
+#		return self.getEnabled()
+		return self._boundingBoxes[source.region]._members
 	
 	def snapGroup(self, boneNames):
 		"""Specify a list of bones that should be snapped together"""
@@ -428,6 +432,9 @@ class PuzzleController(object):
 			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
 			target.highlight(True)
+			
+			target.showMembers(True)
+			[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
 			
 		if self._lastGrabbed and target is not self._lastGrabbed:
 			self._lastGrabbed.highlight(False)
@@ -617,9 +624,9 @@ class FreePlay(PuzzleController):
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
 		yield self.addToBoundingBox(self._meshes)
+		yield self.disperseRandom(self._boundingBoxes.values())
 		yield self.setKeystone(3)
 		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
-		yield self.disperseRandom(self._boundingBoxes.values())
 #		yield self.enableSlice()
 
 class TestPlay(PuzzleController):
@@ -885,7 +892,7 @@ class BoundingBox(viz.VizNode):
 	def grab(self):
 		"""Run on grab"""
 		for m in self._members:
-			changeParent(m, self.axis)
+			changeParent(m, self)
 		self.setRegionGroupParent()
 
 	def highlight(self, flag):
@@ -895,6 +902,15 @@ class BoundingBox(viz.VizNode):
 		else:
 			self.alpha(0.3)
 			
+	def showMembers(self, flag):
+		if flag:
+			val = 1.0
+		else:
+			val = 0.2
+		
+		for m in self._members:
+			m.setAlpha(val)
+		
 	def disperseMembers(self):
 		majorLength = max(self.computeBounds())
 		
@@ -902,13 +918,16 @@ class BoundingBox(viz.VizNode):
 			angle	= random.random() * 2 * math.pi
 			radius	= random.random() * majorLength/2 + majorLength
 			
-			targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
+			targetPosition	= [math.sin(angle) * radius, 0, math.cos(angle) * radius]
 			targetEuler		= m.getEuler()
 #			targetEuler		= [0.0,90.0,180.0]
 			#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
 			
-			m.setPosition(targetPosition)
-			m.setEuler(targetEuler)
+			centervect		= list(numpy.subtract(self.centerPointScaled, self.cornerPointScaled))
+			targetPosition	= list(numpy.add(targetPosition, centervect)) # Donut around center instead
+			
+			m.setPosition(targetPosition, viz.ABS_PARENT)
+			m.setEuler(targetEuler, viz.ABS_PARENT)
 			
 	def setGroup(self, group):
 		"""Set bone group"""
@@ -986,8 +1005,9 @@ class BoundingBox(viz.VizNode):
 		
 	def setKeystones(self, count):
 		for k in random.sample(self._members, count):
+			changeParent(k, self)
 			diff = list(numpy.subtract(k.centerPointScaled, self.cornerPointScaled))
-			k.setPosition(diff, viz.REL_PARENT)
+			k.setPosition(diff, viz.ABS_PARENT)
 			self._keystones.append(k)
 			k.group.grounded = True
 	

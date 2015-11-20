@@ -55,7 +55,7 @@ class TestSnapPanel(vizdlg.Panel):
 		
 		# On esc toggle menu (doesn't interfere with in-game menu)
 #		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
-		self.canvas.setPosition(0,2,5)
+		self.canvas.setPosition(0.0,2.0,4.0)
 		self.canvas.resolution(self.canvas.getResolution())
 #		self.canvas.billboard(viz.BILLBOARD_VIEW_POS)
 #		self.canvas.setBackdrop(viz.ALIGN_LEFT_TOP)
