@@ -45,7 +45,6 @@ def start():
 	sky.setPosition([0, 0, -5])
 	sky.collideMesh()
 	sky.disable(viz.DYNAMICS)
-	init.loadTemple()
 
 	# Lighting
 	lights = []

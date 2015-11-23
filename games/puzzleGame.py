@@ -35,11 +35,9 @@ class PuzzleController(object):
 		self._curThreads = 0
 		
 		self._meshes		= []
-		self._typeMesh 		= None
 		self._keystones		= []
 		self._proximityList	= []
 		self._boundingBoxes	= {}
-		self._typeBounding	= None
 		self._keyBindings	= []
 		self._inRange		= []
 		
@@ -180,9 +178,6 @@ class PuzzleController(object):
 				self._boundingBoxes[m.region] = BoundingBox([m])
 			else:
 				self._boundingBoxes[m.region].addMembers([m])
-		
-		#Declare Bounding Box Type
-		self._typeBounding = type(self._boundingBoxes.values()[0])
 	
 	def prepareMeshes(self):
 		"""Places meshes in circle around keystone(s)"""
@@ -190,9 +185,6 @@ class PuzzleController(object):
 			m.addSensor()
 			m.addToolTip()
 		self.preSnap()
-		
-		#Declare Mesh Type
-		self._typeMesh = type(self._meshes[0])
 		
 	def disperseRandom(self, nodes, animate = False):
 		for m in nodes:
@@ -213,7 +205,7 @@ class PuzzleController(object):
 				m.setPosition(targetPosition)
 				m.setEuler(targetEuler)
 				
-			if type(m) is BoundingBox:
+			if isinstance(m, BoundingBox):
 				m.disperseMembers()
 
 	def preSnap(self, percentCut = 0.1, distance = 0.1):
@@ -243,7 +235,6 @@ class PuzzleController(object):
 #				meshDist = vizmat.Distance(m1Pos, m2Pos)
 #				if meshDist <= distance:
 #					self.snap(m2, m1)
-			
 
 	def printNoticeable(self, text):
 		"""Highly visible printouts"""
@@ -302,11 +293,11 @@ class PuzzleController(object):
 			print 'nothing to snap'
 			return
 
-		SNAP_THRESHOLD	= 0.5; #how far apart the mesh you are snapping is from where it should be
-		DISTANCE_THRESHOLD = 1.5; #distance source mesh is from other meshes
-		ANGLE_THRESHOLD	= 45; #min euler difference source mesh can be from target mesh
+		SNAP_THRESHOLD		= 0.5; #how far apart the mesh you are snapping is from where it should be
+		DISTANCE_THRESHOLD	= 1.5; #distance source mesh is from other meshes
+		ANGLE_THRESHOLD		= 45.0; #min euler difference source mesh can be from target mesh
 		
-		if type(self.getSnapSource()) == self._typeMesh:
+		if isinstance(self.getSnapSource(), bp3d.Mesh):
 			sourceMesh		= self.getSnapSource()
 			searchMeshes	= self.getSnapSearch(source = sourceMesh)
 			targetMesh		= self.getSnapTarget(search = searchMeshes)
@@ -358,7 +349,7 @@ class PuzzleController(object):
 				end()
 				menu.ingame.endButton()
 		
-		elif type(self.getSnapSource()) == self._typeBounding:
+		elif isinstance(self.getSnapSource(), BoundingBox):
 			#If lastGrabbed is a bounding box carry out this snap check procedure...
 			sourceBB = self.getSnapSource()
 			
@@ -415,7 +406,7 @@ class PuzzleController(object):
 
 		target = self.getClosestObject(model.pointer,grabList)
 		
-		if type(target) is bp3d.Mesh:
+		if isinstance(target, bp3d.Mesh):
 			if target.group.grounded:
 				target.color([0.0,1.0,0.5])
 				target.tooltip.visible(viz.ON)
@@ -426,7 +417,7 @@ class PuzzleController(object):
 				self.transparency(target, 0.7)
 				target.color([0.0,1.0,0.5])
 				target.tooltip.visible(viz.ON)
-		elif type(target) is BoundingBox:
+		elif isinstance(target, BoundingBox):
 			target.grab()
 			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
@@ -516,8 +507,9 @@ class PuzzleController(object):
 						bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
 					m.storeMat()
 					m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
-				self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
-				self._keyBindings[4].setEnabled(viz.OFF)  #disable snap key down event
+					
+			self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
+			self._keyBindings[4].setEnabled(viz.OFF)  #disable snap key down event
 			self._imploded = True
 
 	def explode(self):
@@ -531,8 +523,9 @@ class PuzzleController(object):
 					if m.getAction():
 						return
 					m.moveTo(m.loadMat(), time = 0.6)
-				self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
-				self._keyBindings[4].setEnabled(viz.ON) #enable snap key down event
+			
+			self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
+			self._keyBindings[4].setEnabled(viz.ON) #enable snap key down event
 			self._imploded = False
 
 	def solve(self):
@@ -650,6 +643,13 @@ class TestPlay(PuzzleController):
 		self._quizSource = None
 		self._quizTarget = None
 	
+	
+	def getKeystones(self):
+		keystones = []
+		for b in self._boundingBoxes.values():
+			keystones.extend(b._keystones)
+		return keystones
+
 	def implode(self):
 		"""Override to disable"""
 		pass
@@ -686,25 +686,32 @@ class TestPlay(PuzzleController):
 		#load and prep meshes
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
+		yield self.addToBoundingBox(self._meshes)
 		yield self.setKeystone(3)
 		yield self.hideMeshes()
 		yield self.testPrep()
+		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
 		
 		# Setup Key Bindings
 		self.bindKeys()
 		
+	def addToBoundingBox(self, meshes):
+		"""
+		Populate environment with bounding boxes allowing easy manipulation
+		of subassemblies of the entire model. Currently partitioned by region.
+		"""
+		self._boundingBoxes['full'] = BoundingBox(meshes)
 		
 	def testPrep(self):
-		self.score = PuzzleScore(self.modeName)
-		keystone = random.sample(self._keystones, 1)[0]
+		self.score	= PuzzleScore(self.modeName)
+		keystone	= random.sample(self.getKeystones(), 1)[0]
 		self._keystoneAdjacent.update({keystone:[]})
-		keystone = random.sample(self._keystones, 1)[0]
-		self._keystoneAdjacent.update({keystone:[]})
+		
 		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
 			print m
 			m.enable(animate = False)
 		self.pickSnapPair()
-		
+			
 	def hideMeshes(self):
 		keystones = set(self._keystones)
 		adjacents = set(self._keystoneAdjacent)
@@ -1176,47 +1183,6 @@ def csvToList(location):
 	except IOError:
 		print "ERROR: Unable to open CSV file at", location
 	return raw
-
-
-def soundTask(pointer):
-	"""
-	Function to be placed in Vizard's task scheduler
-		looks through proximity list and searches for the closest bone to the glove and puts it at
-		the beginning of the list, allows the bone name and bone description to be played
-	"""
-#	while True:
-#		yield viztask.waitTime(0.25)
-#		if(len(proximityList) >0):
-#			bonePos = proximityList[0].getPosition(viz.ABS_GLOBAL)
-#			pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
-#			shortestDist = vizmat.Distance(bonePos, pointerPos)
-#			
-#			for i,x in enumerate(proximityList):
-#				proximityList[i].incProxCounter()  #increase count for how long glove is near bone
-#				bonePos = proximityList[i].getPosition(viz.ABS_GLOBAL)
-#				pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
-#				tempDist = vizmat.Distance(bonePos,pointerPos)
-#				#displayBoneInfo(proximityList[0])
-#
-#				if(tempDist < shortestDist):
-##					removeBoneInfo(proximityList[0])
-#					shortestDist = tempDist
-#					tempBone = proximityList[i]
-#					proximityList[i] = proximityList[0]
-#					proximityList[0] = tempBone
-#			#tempBone = proximityList[0]
-#			displayBoneInfo(proximityList[0])
-#			
-#			if proximityList[0].proxCounter > 2 and proximityList[0].getNameAudioFlag() == 1:
-#				#yield viztask.waitTime(3.0)
-#				vizact.ontimer2(0,0,playName,proximityList[0])
-#				proximityList[0].clearProxCounter()
-#				proximityList[0].setNameAudioFlag(0)
-#			if tempBone.proxCounter > 2 and tempBone.getDescAudioFlag() == 1:
-#				yield viztask.waitTime(1.5)
-#				#playBoneDesc(proximityList[0])
-#				vizact.ontimer2(0,0, playBoneDesc,tempBone)
-#				tempBone.setDescAudioFlag(0)	
 
 def playName(boneObj):
 	"""Play audio with the same name as the bone"""
