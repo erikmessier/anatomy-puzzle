@@ -372,7 +372,6 @@ class PuzzleController(object):
 			eulerDiff = vizmat.QuatDiff(targetBB.checker.getQuat(viz.ABS_GLOBAL), sourceBB.getQuat(viz.ABS_GLOBAL))
 			if distance <= SNAP_THRESHOLD and abs(eulerDiff) <= ANGLE_THRESHOLD:
 				sourceBB.snapToBB(targetBB)
-				sourceBB.formatAxisAfterSnap()
 
 	def snap(self, sourceMesh, targetMesh, children = False):
 		self.moveCheckers(sourceMesh)
@@ -990,6 +989,7 @@ class BoundingBox(viz.VizNode):
 		bottom = 0
 		a = set(self.regionGroup.members) - set([self])
 		for bb in a:
+			pos = bb.getPosition()
 			pos = bb.getPosition()
 			print bb
 			print pos
