@@ -308,7 +308,7 @@ class PuzzleController(object):
 		DISTANCE_THRESHOLD = 1.5; #distance source mesh is from other meshes
 		ANGLE_THRESHOLD	= 45; #min euler difference source mesh can be from target mesh
 		
-		if type(self.getSnapSource()) == self._typeMesh:
+		if isinstance(self.getSnapSource(), bp3d.Mesh):
 			sourceMesh		= self.getSnapSource()
 			searchMeshes	= self.getSnapSearch(source = sourceMesh)
 			targetMesh		= self.getSnapTarget(search = searchMeshes)
@@ -360,7 +360,7 @@ class PuzzleController(object):
 				end()
 				menu.ingame.endButton()
 		
-		elif type(self.getSnapSource()) == self._typeBounding:
+		elif isinstance(self.getSnapSource(), BoundingBox):
 			#If lastGrabbed is a bounding box carry out this snap check procedure...
 			sourceBB = self.getSnapSource()
 			
@@ -440,8 +440,9 @@ class PuzzleController(object):
 			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
 			target.highlight(True)
 			
-			target.showMembers(True)
-			[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
+			if not self._imploded:
+				target.showMembers(True)
+				[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
 			
 			if self._lastBoxGrabbed and self._lastBoxGrabbed is not target:
 				if self._lastBoxGrabbed in grabList:
@@ -523,6 +524,9 @@ class PuzzleController(object):
 			if self._boundingBoxes:
 				for box in self._boundingBoxes.values():
 					box.implode()
+					if not box._showGroupFlag:
+						box.showMembers(True)
+						box._showGroupFlag = False
 			else:
 				target = self._keystones[0] # Move to the current keystone(s)
 				for m in self._meshes[1:]:
@@ -542,6 +546,8 @@ class PuzzleController(object):
 			if self._boundingBoxes:
 				for box in self._boundingBoxes.values():
 					box.explode()
+					if not box._showGroupFlag:
+						box.showMembers(False)
 			else:
 				for m in self._meshes[1:]:
 					if m.getAction():
@@ -815,11 +821,12 @@ class BoundingBox(viz.VizNode):
 		of subassemblies of the entire model. Currently partitioned by region.
 		"""
 		
-		self.name		= ''		
-		self._alpha		= 0.3
-		self._members	= []
-		self._keystones = []
-		self.wireFrame	= None
+		self.name			= ''		
+		self._alpha			= 0.3
+		self._members		= []
+		self._keystones 	= []
+		self.wireFrame		= None
+		self._showGroupFlag = True
 		
 		self.axis = vizshape.addAxes()
 		self.cube = vizshape.addCube()
@@ -929,11 +936,26 @@ class BoundingBox(viz.VizNode):
 	def showMembers(self, flag):
 		if flag:
 			val = 1.0
+			self.showRing(True)
+			self._showGroupFlag = True
 		else:
 			val = 0.2
+			self.showRing(False)
+			self._showGroupFlag = False
 		
-		for m in self._members:
+		for m in self._keystones:
 			m.setAlpha(val)
+	
+	def showRing(self, flag):
+		keystones = set(self._keystones)
+		meshes = set(self._members)
+		ring = list(meshes - keystones)
+		if not flag:
+			for m in ring:
+				m.disable()
+		else:
+			for m in ring:
+				m.enable()
 		
 	def disperseMembers(self):
 		majorLength = max(self.computeBounds())
@@ -1050,6 +1072,7 @@ class BoundingBox(viz.VizNode):
 					bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
 				m.storeMat(relation = viz.ABS_PARENT)
 				m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+				
 			self._imploded = True
 #		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
 
