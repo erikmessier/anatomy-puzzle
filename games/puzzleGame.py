@@ -503,37 +503,44 @@ class PuzzleController(object):
 	
 	def implode(self):
 		"""Move bones to solved positions"""
-		if self._boundingBoxes:
-			for box in self._boundingBoxes.values():
-				box.implode()
-		else:
-			target = self._keystones[0] # Move to the current keystone(s)
-			for m in self._meshes[1:]:
-				if m.getAction():
-					return
-				for bone in [b for b in self._meshes if b != m]:
-					bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
-				m.storeMat()
-				m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
-			self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
-		self._imploded = True
+		if not self._imploded:
+			if self._boundingBoxes:
+				for box in self._boundingBoxes.values():
+					box.implode()
+			else:
+				target = self._keystones[0] # Move to the current keystone(s)
+				for m in self._meshes[1:]:
+					if m.getAction():
+						return
+					for bone in [b for b in self._meshes if b != m]:
+						bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
+					m.storeMat()
+					m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+				self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
+				self._keyBindings[4].setEnabled(viz.OFF)  #disable snap key down event
+			self._imploded = True
 
 	def explode(self):
 		"""Move bones to position before implode was called"""
-		if self._boundingBoxes:
-			for box in self._boundingBoxes.values():
-				box.explode()
-		else:
-			for m in self._meshes[1:]:
-				if m.getAction():
-					return
-				m.moveTo(m.loadMat(), time = 0.6)
-			self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
-		self._imploded = False
+		if self._imploded:
+			if self._boundingBoxes:
+				for box in self._boundingBoxes.values():
+					box.explode()
+			else:
+				for m in self._meshes[1:]:
+					if m.getAction():
+						return
+					m.moveTo(m.loadMat(), time = 0.6)
+				self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
+				self._keyBindings[4].setEnabled(viz.ON) #enable snap key down event
+			self._imploded = False
 
 	def solve(self):
 		"""Operator used to toggle between implode and explode"""
-		if self._imploded == False:
+		for m in self._meshes:
+			if m.getAction():
+				return
+		if not self._imploded:
 			self.implode()
 		else:
 			self.explode()
@@ -819,6 +826,8 @@ class BoundingBox(viz.VizNode):
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
 
 		self.highlight(False)
+		
+		self._imploded = False
 	
 	def alpha(self, val):
 		"""Set the alpha of both the axis and wireframe"""
@@ -1005,34 +1014,38 @@ class BoundingBox(viz.VizNode):
 		
 	def setKeystones(self, count):
 		for k in random.sample(self._members, count):
+			k.setGroupParent()
 			changeParent(k, self)
 			diff = list(numpy.subtract(k.centerPointScaled, self.cornerPointScaled))
 			k.setPosition(diff, viz.ABS_PARENT)
-			self._keystones.append(k)
-			k.group.grounded = True
+			for m in k.group.members:
+				self._keystones.append(m)
+			m.group.grounded = True
 	
 	def implode(self):
 		"""Move bones to solved positions"""
-		target = self._keystones[0] # Move to the current keystone(s)
-		for m in [m for m in self._members if not m.group.grounded]:
-			changeParent(m, self.axis)
-			if m.getAction():
-				return
-			for bone in [b for b in self._members if b != m]:
-				bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
-			m.storeMat(relation = viz.ABS_PARENT)
-			m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
-		self._imploded = True
+		if not self._imploded:
+			target = self._keystones[0] # Move to the current keystone(s)
+			for m in [m for m in self._members if not m.group.grounded]:
+				if m.getAction():
+					return
+				changeParent(m, self.axis)
+				for bone in [b for b in self._members if b != m]:
+					bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
+				m.storeMat(relation = viz.ABS_PARENT)
+				m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+			self._imploded = True
 #		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
 
 	def explode(self):
 		"""Move bones to position before implode was called"""
-		for m in [m for m in self._members if not m.group.grounded]:
-			changeParent(m, self.axis)
-			if m.getAction():
-				return
-			m.moveTo(m.loadMat(), time = 0.6, relation = viz.ABS_PARENT)
-		self._imploded = False
+		if self._imploded:
+			for m in [m for m in self._members if not m.group.grounded]:
+				if m.getAction():
+					return
+				changeParent(m, self.axis)
+				m.moveTo(m.loadMat(), time = 0.6, relation = viz.ABS_PARENT)
+			self._imploded = False
 #		self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
 		
 class RegionGroup ():
