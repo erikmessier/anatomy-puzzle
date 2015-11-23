@@ -1,4 +1,5 @@
 ﻿
+
 """
 STEREOSCOPIC ANATOMY GAME
 
@@ -36,6 +37,8 @@ def main():
 			anatomyTrainer.start()
 	except:
 		raise
+		
+		
 
 if __name__ == '__main__':
 	main()

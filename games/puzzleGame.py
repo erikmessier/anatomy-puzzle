@@ -43,12 +43,14 @@ class PuzzleController(object):
 		
 		self._meshesById	= {}
 		
-		self._boneInfo		= None
-		self._closestBoneIdx = None
-		self._prevBoneIdx	= None
-		self._lastGrabbed	= None
-		self._highlighted	= None
-		self._gloveLink		= None
+		self._boneInfo			= None
+		self._closestBoneIdx 	= None
+		self._prevBoneIdx		= None
+		self._lastGrabbed 		= None
+		self._lastMeshGrabbed	= None
+		self._lastBoxGrabbed	= None
+		self._highlighted		= None
+		self._gloveLink			= None
 
 		self._grabFlag		= False
 		self._snapAttempts	= 0
@@ -408,28 +410,38 @@ class PuzzleController(object):
 		
 		if isinstance(target, bp3d.Mesh):
 			if target.group.grounded:
-				target.color([0.0,1.0,0.5])
-				target.tooltip.visible(viz.ON)
+				target.highlight(grabbed = True)
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
 				self.transparency(target, 0.7)
-				target.color([0.0,1.0,0.5])
-				target.tooltip.visible(viz.ON)
+				target.highlight(grabbed = True)
+			if self._lastMeshGrabbed and self._lastMeshGrabbed is not target:
+				if self._lastMeshGrabbed in grabList:
+					self._lastMeshGrabbed.highlight(prox = True)
+				else:
+					self._lastMeshGrabbed.highlight(prox = False)
+					
+			self._lastMeshGrabbed = target
+			
 		elif isinstance(target, BoundingBox):
 			target.grab()
 			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
 			target.highlight(True)
 			
-			target.showMembers(True)
-			[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
+			if not self._imploded:
+				target.showMembers(True)
+				[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
 			
-		if self._lastGrabbed and target is not self._lastGrabbed:
-			self._lastGrabbed.highlight(False)
-			if self._lastGrabbed in self._proximityList:
-				self._lastGrabbed.highlight(True)
+			if self._lastBoxGrabbed and self._lastBoxGrabbed is not target:
+				if self._lastBoxGrabbed in grabList:
+					self._lastBoxGrabbed.highlight(True)
+				else:
+					self._lastBoxGrabbed.highlight(False)
+					
+			self._lastBoxGrabbed = target
 			
 		self._lastGrabbed = target
 		self._grabFlag = True
@@ -437,10 +449,15 @@ class PuzzleController(object):
 	def release(self):
 		"""Release grabbed object from pointer"""
 		if self._gloveLink:
-			self.transparency(self._lastGrabbed, 1.0)
-			self._gloveLink.remove()
-			self._gloveLink = None
-			self.score.event(event = 'release')
+			if type(self._lastGrabbed) == self._typeMesh:
+				self.transparency(self._lastGrabbed, 1.0)
+				self._gloveLink.remove()
+				self._gloveLink = None
+				self.score.event(event = 'release mesh')
+			elif type(self._lastGrabbed) == self._typeBounding:
+				self._gloveLink.remove()
+				self._gloveLink = None
+				self.score.event(event = 'release bounding box')
 		self._grabFlag = False
 	
 	def getDisabled(self):
@@ -498,6 +515,9 @@ class PuzzleController(object):
 			if self._boundingBoxes:
 				for box in self._boundingBoxes.values():
 					box.implode()
+					if not box._showGroupFlag:
+						box.showMembers(True)
+						box._showGroupFlag = False
 			else:
 				target = self._keystones[0] # Move to the current keystone(s)
 				for m in self._meshes[1:]:
@@ -518,6 +538,8 @@ class PuzzleController(object):
 			if self._boundingBoxes:
 				for box in self._boundingBoxes.values():
 					box.explode()
+					if not box._showGroupFlag:
+						box.showMembers(False)
 			else:
 				for m in self._meshes[1:]:
 					if m.getAction():
@@ -806,11 +828,12 @@ class BoundingBox(viz.VizNode):
 		of subassemblies of the entire model. Currently partitioned by region.
 		"""
 		
-		self.name		= ''		
-		self._alpha		= 0.3
-		self._members	= []
-		self._keystones = []
-		self.wireFrame	= None
+		self.name			= ''		
+		self._alpha			= 0.3
+		self._members		= []
+		self._keystones 	= []
+		self.wireFrame		= None
+		self._showGroupFlag = True
 		
 		self.axis = vizshape.addAxes()
 		self.cube = vizshape.addCube()
@@ -920,11 +943,26 @@ class BoundingBox(viz.VizNode):
 	def showMembers(self, flag):
 		if flag:
 			val = 1.0
+			self.showRing(True)
+			self._showGroupFlag = True
 		else:
 			val = 0.2
+			self.showRing(False)
+			self._showGroupFlag = False
 		
-		for m in self._members:
+		for m in self._keystones:
 			m.setAlpha(val)
+	
+	def showRing(self, flag):
+		keystones = set(self._keystones)
+		meshes = set(self._members)
+		ring = list(meshes - keystones)
+		if not flag:
+			for m in ring:
+				m.disable()
+		else:
+			for m in ring:
+				m.enable()
 		
 	def disperseMembers(self):
 		majorLength = max(self.computeBounds())
@@ -1041,6 +1079,7 @@ class BoundingBox(viz.VizNode):
 					bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
 				m.storeMat(relation = viz.ABS_PARENT)
 				m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+				
 			self._imploded = True
 #		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
 
