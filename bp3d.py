@@ -151,12 +151,17 @@ class Mesh(viz.VizNode):
 #		self.tooltip.visible(viz.OFF)
 		model.proxManager.removeSensor(self._sensor)
 	
-	def highlight(self, state):
-		if state:
-			self.color([1.0,1.0,0.5])
+	def highlight(self, prox = False, grabbed = False):
+		if grabbed:
+			self.color([0.0,1.0,0.5])
+			self.tooltip.visible(viz.ON)
 		else:
-			self.color(reset = True)
-			self.tooltip.visible(viz.OFF)
+			if prox:
+				self.color([1.0,1.0,0.5])
+				self.tooltip.visible(viz.OFF)
+			elif not prox:
+				self.color(reset = True)
+				self.tooltip.visible(viz.OFF)
 	
 	def grab(self):
 		pass

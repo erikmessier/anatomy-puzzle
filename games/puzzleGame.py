@@ -45,12 +45,14 @@ class PuzzleController(object):
 		
 		self._meshesById	= {}
 		
-		self._boneInfo		= None
-		self._closestBoneIdx = None
-		self._prevBoneIdx	= None
-		self._lastGrabbed	= None
-		self._highlighted	= None
-		self._gloveLink		= None
+		self._boneInfo			= None
+		self._closestBoneIdx 	= None
+		self._prevBoneIdx		= None
+		self._lastGrabbed 		= None
+		self._lastMeshGrabbed	= None
+		self._lastBoxGrabbed	= None
+		self._highlighted		= None
+		self._gloveLink			= None
 
 		self._grabFlag		= False
 		self._snapAttempts	= 0
@@ -415,18 +417,24 @@ class PuzzleController(object):
 
 		target = self.getClosestObject(model.pointer,grabList)
 		
-		if type(target) is bp3d.Mesh:
+		if isinstance(target, bp3d.Mesh):
 			if target.group.grounded:
-				target.color([0.0,1.0,0.5])
-				target.tooltip.visible(viz.ON)
+				target.highlight(grabbed = True)
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
 				self.transparency(target, 0.7)
-				target.color([0.0,1.0,0.5])
-				target.tooltip.visible(viz.ON)
-		elif type(target) is BoundingBox:
+				target.highlight(grabbed = True)
+			if self._lastMeshGrabbed and self._lastMeshGrabbed is not target:
+				if self._lastMeshGrabbed in grabList:
+					self._lastMeshGrabbed.highlight(prox = True)
+				else:
+					self._lastMeshGrabbed.highlight(prox = False)
+					
+			self._lastMeshGrabbed = target
+					
+		elif isinstance(target, BoundingBox):
 			target.grab()
 			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
@@ -435,10 +443,13 @@ class PuzzleController(object):
 			target.showMembers(True)
 			[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
 			
-		if self._lastGrabbed and target is not self._lastGrabbed:
-			self._lastGrabbed.highlight(False)
-			if self._lastGrabbed in self._proximityList:
-				self._lastGrabbed.highlight(True)
+			if self._lastBoxGrabbed and self._lastBoxGrabbed is not target:
+				if self._lastBoxGrabbed in grabList:
+					self._lastBoxGrabbed.highlight(True)
+				else:
+					self._lastBoxGrabbed.highlight(False)
+					
+			self._lastBoxGrabbed = target
 			
 		self._lastGrabbed = target
 		self._grabFlag = True
@@ -446,10 +457,15 @@ class PuzzleController(object):
 	def release(self):
 		"""Release grabbed object from pointer"""
 		if self._gloveLink:
-			self.transparency(self._lastGrabbed, 1.0)
-			self._gloveLink.remove()
-			self._gloveLink = None
-			self.score.event(event = 'release')
+			if type(self._lastGrabbed) == self._typeMesh:
+				self.transparency(self._lastGrabbed, 1.0)
+				self._gloveLink.remove()
+				self._gloveLink = None
+				self.score.event(event = 'release mesh')
+			elif type(self._lastGrabbed) == self._typeBounding:
+				self._gloveLink.remove()
+				self._gloveLink = None
+				self.score.event(event = 'release bounding box')
 		self._grabFlag = False
 	
 	def getDisabled(self):
