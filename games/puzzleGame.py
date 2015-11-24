@@ -740,10 +740,8 @@ class FreePlay(PuzzleController):
 		yield self.addToBoundingBox(self._meshes)
 		yield self.disperseRandom(self._boundingBoxes.values())
 		yield self.preSnap()
-		for m in self._meshes:
-			changeParent(m, self._boundingBoxes[m.region])
 		yield self.setKeystone(3)
-		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
+		yield rotateAbout(self._boundingBoxes.values() + self._meshes, [0,0,0], [0,90,0])
 #		yield self.enableSlice()
 
 		viztask.schedule(self.updateClosestBone())
@@ -1363,7 +1361,7 @@ def rotateAbout(meshes, point, euler):
 	pointCube.setPosition(point, viz.ABS_GLOBAL)
 	
 	for m in meshes:
-		m.setParent(pointCube)
+		changeParent(m, pointCube)
 		
 	pointCube.setEuler(euler)
 	

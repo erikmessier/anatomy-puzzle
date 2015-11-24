@@ -289,8 +289,8 @@ class DisplayInstance():
 			vizact.whilekeydown(viz.KEY_LEFT,self.camcenter.setEuler,[vizact.elapsed(-90),0,0],viz.REL_GLOBAL)
 			vizact.whilekeydown(viz.KEY_UP,self.camcenter.setEuler,[0,vizact.elapsed(-90),0],viz.REL_LOCAL)
 			vizact.whilekeydown(viz.KEY_DOWN,self.camcenter.setEuler,[0,vizact.elapsed(90),0],viz.REL_LOCAL)
-#			vizact.whilekeydown( 't' , self.camcenter.setPosition,[0,0,vizact.elapsed(4)],viz.REL_LOCAL)
-#			vizact.whilekeydown( 'g' ,  self.camcenter.setPosition,[0,0,vizact.elapsed(-4)],viz.REL_LOCAL)
+			vizact.whilekeydown( 't' , self.camcenter.setPosition,[0,0,vizact.elapsed(4)],viz.REL_LOCAL)
+			vizact.whilekeydown( 'g' ,  self.camcenter.setPosition,[0,0,vizact.elapsed(-4)],viz.REL_LOCAL)
 		
 		
 			default = self.camcenter.getPosition()
