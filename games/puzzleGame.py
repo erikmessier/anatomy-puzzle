@@ -237,7 +237,7 @@ class PuzzleController(object):
 		#snap together items that are stated in config
 		if self._meshesToPreSnap:
 			for snapList in self._meshesToPreSnap:
-				if set.intersection(set(snapList), set(self._boundingBoxes[snapList[0].region]._members)):
+				if set.intersection(set(snapList), set(self._meshes)):
 					for m in snapList[1:]:
 						print (set.intersection(set(snapList), set(self._meshesToLoad)))
 						try:
@@ -260,8 +260,8 @@ class PuzzleController(object):
 		for m1 in self._smallMeshes:
 			snapToM1 = self.getAdjacent(m1, self._smallMeshes, maxDist = distance)
 			for m2 in snapToM1:
-				self.printNoticeable(str(m2[0]) +' was snapped to ' + str(m1))
-				self.snap(m1, m2[0], children = True, animate = False)
+				self.printNoticeable(str(m2) +' was snapped to ' + str(m1))
+				self.snap(m1, m2, children = True, animate = False)
 				
 
 	def printNoticeable(self, text):
@@ -329,11 +329,11 @@ class PuzzleController(object):
 			neighbors.append([m,dist])
 		
 		neighbors = sorted(neighbors, key = lambda a: a[1])
-		
+
 		if maxDist:
 			neighbors = [m for m in neighbors if m[1] < maxDist]
 		
-		return neighbors
+		return [l[0] for l in neighbors]
 		
 	def snapCheck(self):
 		"""
@@ -442,8 +442,8 @@ class PuzzleController(object):
 	def getSnapSearch(self, source = None):
 		"""Define list of objects to search for snapcheck"""
 #		return self.getEnabled()
-		return self._boundingBoxes[source.region]._members
-#		meshesAndDist = self.getAdjacent(source, self._boundingBoxes[source.region]._members)
+#		return self._boundingBoxes[source.region]._members
+		return self.getAdjacent(source, self._boundingBoxes[source.region]._members)
 #		meshes = []
 #		for i in meshesAndDist:
 #			meshes.append(i[0])
