@@ -282,9 +282,9 @@ class PuzzleController(object):
 			dist = vizmat.Distance(centerPos, checkerPos)	
 			neighbors.append([m,dist])
 		
-		sorted(neighbors, key = lambda a: a[1])
+		neighbors = sorted(neighbors, key = lambda a: a[1])
 		
-		return [l[0] for l in neighbors]
+		return neighbors
 		
 	def snapCheck(self):
 		"""
@@ -302,7 +302,7 @@ class PuzzleController(object):
 		if isinstance(self.getSnapSource(), bp3d.Mesh):
 			sourceMesh		= self.getSnapSource()
 			searchMeshes	= self.getSnapSearch(source = sourceMesh)
-			targetMesh		= self.getSnapTarget(search = searchMeshes)
+			targetMesh		= self.getSnapTarget(sourceMesh, searchMeshes)
 			
 			self.moveCheckers(sourceMesh)
 				
@@ -379,7 +379,7 @@ class PuzzleController(object):
 		"""Define source object for snapcheck"""
 		return self._lastGrabbed
 	
-	def getSnapTarget(self, search = None):
+	def getSnapTarget(self, source, search = None):
 		"""Define target object for snapcheck"""
 		if search:
 			return self.getAdjacent(self._lastGrabbed, search)[0]
@@ -389,7 +389,12 @@ class PuzzleController(object):
 	def getSnapSearch(self, source = None):
 		"""Define list of objects to search for snapcheck"""
 #		return self.getEnabled()
-		return self._boundingBoxes[source.region]._members
+		meshesAndDist = self.getAdjacent(source, self._boundingBoxes[source.region]._members)
+		meshes = []
+		for i in meshesAndDist:
+			meshes.append(i[0])
+			
+		return meshes 
 	
 	def snapGroup(self, boneNames):
 		"""Specify a list of bones that should be snapped together"""
@@ -499,6 +504,8 @@ class PuzzleController(object):
 		model.pointer.color([4.0,1.5,1.5])
 		source.highlight(True)
 		self._proximityList.append(source)
+		if self._lastMeshGrabbed:
+			self._lastMeshGrabbed.highlight(grabbed = True)
 	
 	def ExitProximity(self, e):
 		"""Callback for a proximity exit event between the pointer and a mesh"""
@@ -508,6 +515,8 @@ class PuzzleController(object):
 		if source != self._lastGrabbed:
 			source.highlight(False)
 		self._proximityList.remove(source)
+		if self._lastMeshGrabbed:
+			self._lastMeshGrabbed.highlight(grabbed = True)
 	
 	def implode(self):
 		"""Move bones to solved positions"""
@@ -649,6 +658,17 @@ class FreePlay(PuzzleController):
 		yield self.setKeystone(3)
 		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
 #		yield self.enableSlice()
+
+	def getSnapTarget(self, source, search):
+		if search:
+			target = list(set.intersection(set(self._keystones), set(search)))
+			if target: 
+				return target[0]
+			else:
+				target = self._boundingBoxes[source.region]._keystones[0]
+				return target
+		else:
+			return self.getAdjacent(self._lastGrabbed, self.getEnabled())[0]
 
 class TestPlay(PuzzleController):
 	"""
