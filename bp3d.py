@@ -348,7 +348,7 @@ class DatasetInterface():
 			try:
 				removeFromModelSet.extend(self.ontologyByName[ignoreSet]['filenames'])
 			except KeyError:
-				print 'Unknown name for ignore set: ', str(ignoreSet)
+#				print 'Unknown name for ignore set: ', str(ignoreSet)
 				continue
 		removeFromModelSet = set(removeFromModelSet)
 		

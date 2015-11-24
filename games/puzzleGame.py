@@ -31,7 +31,7 @@ class PuzzleController(object):
 	def __init__(self, dataset):
 		self.modeName = ''
 		
-		self._maxThreads = 5
+		self._maxThreads =1.9
 		self._curThreads = 0
 		
 
@@ -138,7 +138,7 @@ class PuzzleController(object):
 				
 			#Wait to add thread if threadThrottle conditions are not met
 			model.threads += 1 #Add 1 for each new thread added --- new render started
-			yield viz.director(self.threadThrottle, self._maxThreads)
+			yield viztask.waitTrue(self.threadThrottle, self._maxThreads)
 			viz.director(self.renderMeshes, fileName)
 			model.menu.updateLoad(len(self._meshes), len(self._meshesToLoad))
 			
@@ -239,7 +239,6 @@ class PuzzleController(object):
 			for snapList in self._meshesToPreSnap:
 				if set.intersection(set(snapList), set(self._meshes)):
 					for m in snapList[1:]:
-						print (set.intersection(set(snapList), set(self._meshesToLoad)))
 						try:
 							self.snap(snapList[0], m, children = True, animate = False)
 						except KeyError:
@@ -255,12 +254,10 @@ class PuzzleController(object):
 		
 #		keystoneMeshes = set(self._keystones)
 #		self._smallMeshes = list(meshesToPreSnap - keystoneMeshes)
-				
-			
+
 		for m1 in self._smallMeshes:
 			snapToM1 = self.getAdjacent(m1, self._smallMeshes, maxDist = distance)
 			for m2 in snapToM1:
-				self.printNoticeable(str(m2) +' was snapped to ' + str(m1))
 				self.snap(m1, m2, children = True, animate = False)
 				
 
@@ -278,7 +275,6 @@ class PuzzleController(object):
 			try:
 				listOfMeshes.append(self._meshesByFilename[fileName])
 			except KeyError:
-				print 'File not Found in convertListOfFiles'
 				continue
 			
 		return listOfMeshes
@@ -468,14 +464,19 @@ class PuzzleController(object):
 		target = self.getClosestObject(model.pointer,grabList)
 		
 		if isinstance(target, bp3d.Mesh):
-			self.keyTarget = self._boundingBoxes[target.region]._keystones[0]
+			if self._boundingBoxes.has_key(target.region):
+				self.keyTarget = self._boundingBoxes[target.region]._keystones[0]
+			else:
+				# band-aid for test mode
+				self.keyTarget = self._boundingBoxes['full']._keystones[0]
+				
 			if target.group.grounded:
 				target.highlight(grabbed = True)
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
-				self.transparency(target, 0.7)
+#				self.transparency(target, 0.7)
 				target.highlight(grabbed = True)
 			if self._lastMeshGrabbed and self._lastMeshGrabbed is not target:
 				if self._lastMeshGrabbed in grabList:
@@ -818,6 +819,7 @@ class TestPlay(PuzzleController):
 		yield self.prepareMeshes()
 		yield self.preSnap()
 		yield self.addToBoundingBox(self._meshes)
+		yield self.disperseRandom(self._boundingBoxes.values())
 		yield self.setKeystone(3)
 		yield self.hideMeshes()
 		yield self.testPrep()
@@ -839,7 +841,6 @@ class TestPlay(PuzzleController):
 		self._keystoneAdjacent.update({keystone:[]})
 		
 		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
-			print m
 			for mGroup in m.group.members:
 				mGroup.enable(animate = False)
 		self.pickSnapPair()
@@ -853,7 +854,7 @@ class TestPlay(PuzzleController):
 			m.disable()
 			
 	def pickSnapPair(self):
-		self._quizTarget = random.sample(self._keystones, 1)[0]
+		self._quizTarget = random.sample(self.getKeystones(), 1)[0]
 		enabled = self.getEnabled(includeGrounded = False)
 		if len(enabled) == 0:
 			return
@@ -899,7 +900,7 @@ class TestPlay(PuzzleController):
 		"""Define target object for snapcheck"""
 		return self._quizTarget
 		
-	def getSnapSearch(self):
+	def getSnapSearch(self, source = None):
 		"""Define list of objects to search for snapcheck"""
 		return [self._quizTarget]
 		
@@ -1163,8 +1164,6 @@ class BoundingBox(viz.VizNode):
 		for bb in a:
 			pos = bb.getPosition()
 			pos = bb.getPosition()
-			print bb
-			print pos
 #			if pos > bottom:
 #				lowestRegion = bb
 #				bottom = pos

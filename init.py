@@ -185,10 +185,10 @@ class CameraKeyboardControl(viz.EventClass):
 class DisplayInstance():
 	"""?"""
 	def __init__(self, displayMode, camMode, device, pointer):
-		self.displayMode = displayMode
-		self.camMode = camMode
-		self.device = device
-		self.pointer = pointer
+		self.displayMode	= displayMode
+		self.camMode		= camMode
+		self.device			= device
+		self.pointer		= pointer
 		self.display()
 		self.cameraInput()
 	
@@ -330,8 +330,8 @@ def loadColiseum():
 	colosseum.setPosition([-37.5*sf, 0.0, 0.0]) #center colisseum
 
 	pedistal = viz.addChild('.\\dataset\\environment\\capital.OSGB')
-	pedistal.setScale([100,100,100])
-	pedistal.setPosition([0,-7.26,0]) #Found by testing
+	pedistal.setScale([100, 100, 100])
+	pedistal.setPosition([0.0, -7.26, 0.0]) #Found by testing
 
 def loadTemple(bounding = True):
 	"""loads temple enviornment"""
@@ -340,11 +340,11 @@ def loadTemple(bounding = True):
 	temple = viz.addChild('.\\dataset\\environment\\temple.OSGB')
 	temple.setEuler([0,90,0])
 	temple.setScale([sf,sf,sf])
-	temple.setPosition([0,-1.569, 0]) #Found by measuring
+	temple.setPosition([0.0, -1.569, 0.0]) #Found by measuring
 
 	pedistal = viz.addChild('.\\dataset\\environment\\Column.OSGB')
-	pedistal.setScale([3.0,3.0,3.0])
-	pedistal.setPosition([0,-1.5,0]) #Found by testing
+	pedistal.setScale([3.0, 3.0, 3.0])
+	pedistal.setPosition([0.0, -1.5, 0.0]) #Found by testing
 	if bounding == True:
 		dimensions = [2,4,1]
 		boundingBox = games.puzzleView.WireFrameCube(dimensions)
@@ -364,7 +364,7 @@ def pointerInput(mode, pointer, arena):
 	proxy = vizproximity.Manager()
 	proxy.setDebug(viz.TOGGLE)
 	
-	theSensor = vizproximity.addBoundingBoxSensor(arena, scale=[0.95, 0.95, 0.95])
+	theSensor = vizproximity.addBoundingBoxSensor(arena, scale = [0.95, 0.95, 0.95])
 	theTarget = vizproximity.Target(pointer)
 	
 	proxy.addSensor(theSensor)
@@ -458,12 +458,12 @@ def ExitProximity(e):
 	#print('Hit the wall')
 	x,y,z = pointer.getPosition()
 	
-	if(y < .4):
-		y = .5
-	elif(y > 4.5 ):
+	if(y < 0.4):
+		y = 0.5
+	elif(y > 4.5):
 		y = 4.4
 	if(abs(x) > abs(z) and abs(x) > 5):
-		if(x<0):
+		if(x < 0):
 			x = -4.9
 		else:
 			x = 4.9
