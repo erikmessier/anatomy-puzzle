@@ -295,27 +295,27 @@ class PuzzleController(object):
 			print 'nothing to snap'
 			return
 
-		SNAP_THRESHOLD		= 0.5; #how far apart the mesh you are snapping is from where it should be
-		DISTANCE_THRESHOLD	= 1.5; #distance source mesh is from other meshes
+		SNAP_THRESHOLD		= 0.2; #how far apart the mesh you are snapping is from where it should be
+		DISTANCE_THRESHOLD	= 0.45; #distance source mesh is from other meshes
 		ANGLE_THRESHOLD		= 45.0; #min euler difference source mesh can be from target mesh
 		
 		if isinstance(self.getSnapSource(), bp3d.Mesh):
 			sourceMesh		= self.getSnapSource()
 			searchMeshes	= self.getSnapSearch(source = sourceMesh)
-			targetMesh		= self.getSnapTarget(sourceMesh, searchMeshes)
+			targetMesh		= self.keyTarget
 			
 			self.moveCheckers(sourceMesh)
 				
 			# Search through all of the checkers, and snap to the first one meeting our snap
 			# criteria
 			
-			if self._snapAttempts >= 3 and not sourceMesh.group.grounded:
-				self.snap(sourceMesh, targetMesh, children = True)
+			if sourceMesh.snapAttempts >= 3 and not sourceMesh.group.grounded:
+				self.snap(sourceMesh, self.keyTarget, children = True)
 				viz.playSound(".\\dataset\\snap.wav")
 				print 'Three unsuccessful snap attempts, snapping now!'
 				self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
 					source = sourceMesh.name, destination = targetMesh.name)
-				self._snapAttempts = 0
+#				self._snapAttempts = 0
 				if self.modeName == 'testplay':
 					self.pickSnapPair()
 			elif sourceMesh.group.grounded:
@@ -331,10 +331,10 @@ class PuzzleController(object):
 					
 					snapDistance = vizmat.Distance(targetSnap, currentPosition)
 					proximityDistance = vizmat.Distance(targetPosition, currentPosition)
-					angleDifference = vizmat.QuatDiff(bone.getQuat(), sourceMesh.getQuat())
+					angleDifference = vizmat.QuatDiff(bone.getQuat(viz.ABS_GLOBAL), sourceMesh.getQuat(viz.ABS_GLOBAL))
 					
 					if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
-							and (angleDifference < ANGLE_THRESHOLD):
+							and (abs(angleDifference) < ANGLE_THRESHOLD):
 						print 'Snap! ', sourceMesh, ' to ', bone
 						self.score.event(event = 'snap', description = 'Successful snap', source = sourceMesh.name, destination = bone.name)
 						viz.playSound(".\\dataset\\snap.wav")
@@ -344,7 +344,7 @@ class PuzzleController(object):
 						break
 				else:
 					print 'Did not meet snap criteria!'
-					self._snapAttempts += 1
+					sourceMesh.snapAttempts += 1
 					self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = sourceMesh.name)
 			if len(self._meshes) == len(sourceMesh.group.members):
 				print "Assembly completed!"
@@ -389,12 +389,13 @@ class PuzzleController(object):
 	def getSnapSearch(self, source = None):
 		"""Define list of objects to search for snapcheck"""
 #		return self.getEnabled()
-		meshesAndDist = self.getAdjacent(source, self._boundingBoxes[source.region]._members)
-		meshes = []
-		for i in meshesAndDist:
-			meshes.append(i[0])
-			
-		return meshes 
+		return self._boundingBoxes[source.region]._members
+#		meshesAndDist = self.getAdjacent(source, self._boundingBoxes[source.region]._members)
+#		meshes = []
+#		for i in meshesAndDist:
+#			meshes.append(i[0])
+#			
+#		return meshes 
 	
 	def snapGroup(self, boneNames):
 		"""Specify a list of bones that should be snapped together"""
@@ -414,6 +415,7 @@ class PuzzleController(object):
 		target = self.getClosestObject(model.pointer,grabList)
 		
 		if isinstance(target, bp3d.Mesh):
+			self.keyTarget = self._boundingBoxes[target.region]._keystones[0]
 			if target.group.grounded:
 				target.highlight(grabbed = True)
 			else:
@@ -454,12 +456,12 @@ class PuzzleController(object):
 	def release(self):
 		"""Release grabbed object from pointer"""
 		if self._gloveLink:
-			if type(self._lastGrabbed) == self._typeMesh:
+			if isinstance(self._lastGrabbed, bp3d.Mesh):
 				self.transparency(self._lastGrabbed, 1.0)
 				self._gloveLink.remove()
 				self._gloveLink = None
 				self.score.event(event = 'release mesh')
-			elif type(self._lastGrabbed) == self._typeBounding:
+			elif isinstance(self._lastGrabbed, BoundingBox):
 				self._gloveLink.remove()
 				self._gloveLink = None
 				self.score.event(event = 'release bounding box')

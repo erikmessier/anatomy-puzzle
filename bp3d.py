@@ -62,6 +62,7 @@ class Mesh(viz.VizNode):
 	"""
 	def __init__(self, fileName, SF = 1.0/500):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
+		self.snapAttempts = 0
 		self.metaData = model.ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
 		self.centerPointScaled = [a*SF for a in self.centerPoint]
