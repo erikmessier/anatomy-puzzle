@@ -16,7 +16,7 @@ import model
 # Bone groups
 groups = []
 
-class MeshGroup():
+class MeshGroup(object):
 	"""
 	MeshGroup object manages a group of bones that need to stay
 	fused to each other. Besides keeping a list of bones, it also
@@ -62,12 +62,20 @@ class Mesh(viz.VizNode):
 	"""
 	def __init__(self, fileName, SF = 1.0/500):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
+		self.snapAttempts = 0
 		self.metaData = model.ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
 		self.centerPointScaled = [a*SF for a in self.centerPoint]
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
 		
 		self.name = self.metaData['name']
+		for region, names in config.OntologicalGroups.regions.iteritems():
+			files = model.ds.getOntologySet([(set.union, names)])
+			if self.metaData['filename'] in files:
+				self.region = region
+				break
+		else:
+			self.region = None
 
 		self.nameFormatted = ''
 		for i, w in enumerate(self.name.split()):
@@ -112,9 +120,8 @@ class Mesh(viz.VizNode):
 		
 		self.scale		= SF
 		self._enabled	= True
+		self.grounded	= False
 
-		self.nameAudioFlag	= 1    #defualt: 1, 1 allows name to be played, 0 does not allow name playback
-		self.descAudioFlag	= 1		#default: 1, 1 allows description to be played, 0 does not allow dec playback
 		self.grabbedFlag	= 0
 		self.proxCounter	= 0
 		
@@ -145,12 +152,29 @@ class Mesh(viz.VizNode):
 #		self.tooltip.visible(viz.OFF)
 		model.proxManager.removeSensor(self._sensor)
 	
+	def highlight(self, prox = False, grabbed = False, closest = False):
+		if closest:
+			self.color([4,0.5,0.5])
+		elif grabbed:
+			self.color([0.0,1.0,0.5])
+			self.tooltip.visible(viz.ON)
+		else:
+			if prox:
+				self.color([1.0,1.0,0.5])
+				self.tooltip.visible(viz.OFF)
+			elif not prox:
+				self.color(reset = True)
+				self.tooltip.visible(viz.OFF)
+	
+	def grab(self):
+		pass
+		
 	def getEnabled(self):
 		return self._enabled
 		
-	def storeMat(self):
+	def storeMat(self, relation = viz.ABS_GLOBAL):
 		"""Store current transformation matrix"""
-		self._savedMat = self.getMatrix(viz.ABS_GLOBAL)
+		self._savedMat = self.getMatrix(relation)
 		
 	def loadMat(self):
 		"""Recall stored transformation matrix"""
@@ -165,7 +189,7 @@ class Mesh(viz.VizNode):
 	
 	def clearProxCounter(self):
 		"""Resets the counter for how long glove is close to bone"""
-		self.proxCounter  = 0
+		self.proxCounter = 0
 		
 	def addToolTip(self):
 		self.tooltip = viz.addText(self.nameFormatted)
@@ -208,19 +232,19 @@ class Mesh(viz.VizNode):
 		else:
 			self.mesh.color(value)
 
-	def moveTo(self, matrix, animate = True, time = 0.3):
+	def moveTo(self, matrix, animate = True, time = 0.3, relation = viz.ABS_GLOBAL):
 		"""
 		Invoked by the puzzle.snap method to handle local business
 		"""
 		# WARNING the full setMatrix cannot be assigned because scale is different!
 		if (animate):
-			move = vizact.moveTo(matrix.getPosition(), time = time, mode = viz.ABS_GLOBAL)
-			spin = vizact.spinTo(euler = matrix.getEuler(), time = time, mode = viz.ABS_GLOBAL)
+			move = vizact.moveTo(matrix.getPosition(), time = time, mode = relation)
+			spin = vizact.spinTo(euler = matrix.getEuler(), time = time, mode = relation)
 			transition = vizact.parallel(spin, move)
 			self.addAction(transition)
 		else:
-			self.setPosition(targetPosition, viz.ABS_GLOBAL)
-			self.setEuler(targetEuler,viz.ABS_GLOBAL)
+			self.setPosition(targetPosition, relation)
+			self.setEuler(targetEuler, relation)
 
 	def setNameAudioFlag(self, flag):
 		"""True to allow bone name playback"""

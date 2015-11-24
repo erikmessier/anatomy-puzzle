@@ -65,14 +65,14 @@ class MenuController(object):
 		# Startup the game if there have been selections on layer menu
 		if model.selected.mode != 'Movement Tutorial' and model.selected.load:
 			yield self.changeMenu(self.layerMenu, self.loadingScreen)
-			anatomyTrainer.startGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
+			anatomyTrainer.startGame(config.MenuConfig.Modes[model.selected.mode], model.selected.load)
 		elif model.selected.mode == 'Movement Tutorial':
 			yield self.changeMenu(self.layerMenu, self.inGameMenu)
-			anatomyTrainer.startGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
+			anatomyTrainer.startGame(config.MenuConfig.Modes[model.selected.mode], model.selected.load)
 		
 	def restart(self):
 		"""Restart the game"""
-		anatomyTrainer.restartGame(config.menuLayerSelection.Modes[model.selected.mode], model.selected.load)
+		anatomyTrainer.restartGame(config.MenuConfig.Modes[model.selected.mode], model.selected.load)
 		if model.selected.mode != 'Movement Tutorial':
 			self.backMenu()
 		
@@ -97,13 +97,13 @@ class MenuController(object):
 	def disableChecks(self, layer, checkBoxes):
 		"""Disable checkboxes of specific layer on layerMenu"""
 		for region in checkBoxes:
-			if not filter(lambda x: x == layer, config.menuLayerSelection.RemoveCheckFromTab[region]):
+			if not filter(lambda x: x == layer, config.MenuConfig.RemoveCheckFromTab[region]):
 				checkBoxes[region][layer].disable()
 		
 	def enableChecks(self, layer, checkBoxes):
 		"""Enable checkboxes of a specific layer on layerMenu"""
 		for region in checkBoxes:
-			if not filter(lambda x: x == layer, config.menuLayerSelection.RemoveCheckFromTab[region]):
+			if not filter(lambda x: x == layer, config.MenuConfig.RemoveCheckFromTab[region]):
 				checkBoxes[region][layer].enable()
 				
 	##########################			
@@ -261,7 +261,7 @@ class ModeMenu(MenuBase):
 		self.controller = controller
 		
 		#Store modes from config to populate modemenu with
-		self.modes = config.menuLayerSelection.Modes
+		self.modes = config.MenuConfig.Modes
 		self.getPanel().fontSize(50)
 		
 		##########################
@@ -321,9 +321,9 @@ class LayerMenu(MenuBase):
 		self.controller = controller
 		
 		#Store region, layer, and mode data from config to populate menu
-		self.regions = config.menuLayerSelection.Regions #collections.OrderedDict type
-		self.layers = config.menuLayerSelection.Layers #collections.OrderedDict type
-		self.modes = config.menuLayerSelection.Modes
+		self.regions = config.OntologicalGroups.regions #collections.OrderedDict type
+		self.layers = config.OntologicalGroups.layers #collections.OrderedDict type
+		self.modes = config.MenuConfig.Modes
 		self.getPanel().fontSize(50)
 		
 		#####################
@@ -348,8 +348,8 @@ class LayerMenu(MenuBase):
 				self.checkBox[key][cb] = viz.addCheckbox(parent = canvas)
 				
 		#remove checkboxes from non-functioning region-layer selections
-		for key in config.menuLayerSelection.RemoveCheckFromTab.iterkeys():
-			for cb in config.menuLayerSelection.RemoveCheckFromTab[key]:
+		for key in config.MenuConfig.RemoveCheckFromTab.iterkeys():
+			for cb in config.MenuConfig.RemoveCheckFromTab[key]:
 				self.checkBox[key][cb].disable()
 		
 		#populate panels with layers and checkboxes
@@ -461,7 +461,8 @@ class Selection():
 	def __init__(self):
 		self.load		= []
 		self.mode		= []
-		self.unionFlag	= False
+		self.regions	= []
+		self.layers		= []
 		
 	def modeSelected(self, modeRadiosDict):
 		"""Determines the selected game mode from the GUI"""
@@ -471,20 +472,17 @@ class Selection():
 				break
 	
 	def objectsSelected(self, inputMenu):
-		"""
-		Determines which selections were made on the tabs, and entire layer selections made
-		"""
+		"""Determines which selections were made on the tabs, and entire layer selections made"""
 		for i in inputMenu.regions.iterkeys():
 			for j in inputMenu.layers.iterkeys():
-				if inputMenu.checkBox[i][j].get() == 1:
-					layer_region = (set.intersection, inputMenu.layers[j], inputMenu.regions[i])
-					self.load.append(layer_region)
+				if inputMenu.checkBox[i][j].get() == 1:		
+					ontologySearch = (set.intersection, inputMenu.layers[j], inputMenu.regions[i])
+					self.load.append(ontologySearch)
 					
 		for i in inputMenu.selectAllOf.keys():
 			if inputMenu.selectAllOf[i].get() == 1:
 				layer_region = (set.union, inputMenu.layers[i])
 				self.load.append(layer_region)
-				self.unionFlag = True
 
 class modalityGUI():
 	def __init__(self):

@@ -44,8 +44,7 @@ def start():
 	sky = viz.addChild('gallery.osgb')
 	sky.setPosition([0, 0, -5])
 	sky.collideMesh()
-	sky.disable([viz.DYNAMICS])
-	init.loadTemple()
+	sky.disable(viz.DYNAMICS)
 
 	# Lighting
 	lights = []

@@ -19,7 +19,7 @@ class TestSnapPanel(vizdlg.Panel):
 		viz.mouse.setVisible(False)
 		self.name = 'test'
 		
-		self._theme = viz.Theme()
+		self._theme					= viz.Theme()
 		self._theme.borderColor		= (0.1,0.1,0.1,1)
 		self._theme.backColor		= (0.4,0.4,0.4,1)
 		self._theme.lightBackColor	= (0.6,0.6,0.6,1)
@@ -55,7 +55,7 @@ class TestSnapPanel(vizdlg.Panel):
 		
 		# On esc toggle menu (doesn't interfere with in-game menu)
 #		vizact.onkeydown(viz.KEY_ESCAPE, self.toggle)
-		self.canvas.setPosition(0,2,5)
+		self.canvas.setPosition(0.0,2.0,4.0)
 		self.canvas.resolution(self.canvas.getResolution())
 #		self.canvas.billboard(viz.BILLBOARD_VIEW_POS)
 #		self.canvas.setBackdrop(viz.ALIGN_LEFT_TOP)
@@ -83,21 +83,27 @@ class TestGrabPanel(vizdlg.Panel):
 	def __init__(self):
 		pass
 
-def wireframeCube(dimensions):
+class WireFrameCube(viz.VizNode):
 	"""Draw a wireframe rectangle. Currently comes in green only."""
-	edges = [[x,y,z] for x in [-1,0,1] for y in [-1,0,1] for z in [-1,0,1] if abs(x)+abs(y)+abs(z) == 2]
-	for edge in edges:
-		viz.startLayer(viz.LINES)
-		viz.vertexColor(0,1,0)
-		i = edge.index(0)
-		edge[i] = 1
-		viz.vertex(map(lambda a,b:a*b,edge,dimensions))
-		edge[i] = -1
-		viz.vertex(map(lambda a,b:a*b,edge,dimensions))
-	cube = viz.endLayer()
-	return cube
-
-
+	def __init__(self, dimensions, center = [0,0,0], corner = False):
+		edges = [[x,y,z] for x in [-1,0,1] for y in [-1,0,1] for z in [-1,0,1] if abs(x)+abs(y)+abs(z) == 2]
+		for edge in edges:
+			viz.startLayer(viz.LINES)
+			viz.vertexColor(0,1,0)
+			i = edge.index(0)
+			edge[i] = 1
+			viz.vertex(map(lambda a,b:a*b/2, edge, dimensions))
+			edge[i] = -1
+			viz.vertex(map(lambda a,b:a*b/2, edge, dimensions))
+		self.cube = viz.endLayer()
+		if corner:
+			corner = [float(p[0])/2 + p[1] for p in zip(dimensions,center)]
+			self.cube.setPosition(corner, viz.ABS_GLOBAL)
+		else:
+			self.cube.setPosition(center, viz.ABS_GLOBAL)
+			
+		super(WireFrameCube, self).__init__(self.cube.id)
+			
 class viewCube():
 	"""
 	the viewCube is an object that sits above the location
@@ -160,7 +166,7 @@ class viewCube():
 		
 		#add cube
 		RADIUS = .5 *SF
-		self.cube = wireframeCube([RADIUS,RADIUS,RADIUS])
+		self.cube = WireFrameCube([RADIUS*2, RADIUS*2, RADIUS*2])
 		self.cube.setPosition([0,RADIUS, 0] , viz.ABS_PARENT)
 		
 		#turn off visability

@@ -10,12 +10,10 @@ import vizshape
 
 # Python built-in modules
 import random
-import math
-import numpy
+import math, numpy
 import json, csv
 import time, datetime
 import threading
-import time
 
 # Custom modules
 import init
@@ -36,27 +34,32 @@ class PuzzleController(object):
 		self._maxThreads = 5
 		self._curThreads = 0
 		
+
 		self._meshes			= []
 		self._meshesByFilename	= {}
-		self._meshesById		= {}
 		self._keystones			= []
 		self._proximityList		= []
+		self._boundingBoxes		= {}
 		self._keyBindings		= []
 		self._inRange			= []
 		
-		self._boneInfo		= None
-		self._closestBoneIdx = None
-		self._prevBoneIdx	= None
-		self._lastGrabbed	= None
-		self._highlighted	= None
-		self._gloveLink		= None
+		self._meshesById	= {}
+		
+		self._boneInfo			= None
+		self._closestBoneIdx 	= None
+		self._prevBoneIdx		= None
+		self._lastGrabbed 		= None
+		self._lastMeshGrabbed	= None
+		self._lastBoxGrabbed	= None
+		self._highlighted		= None
+		self._gloveLink			= None
 
 		self._grabFlag		= False
 		self._snapAttempts	= 0
 		self._imploded		= False
 		
-		self._pointerTexture = model.pointer.getTexture()
-		self._pointerOrigColor = model.pointer.getColor()
+		self._pointerTexture	= model.pointer.getTexture()
+		self._pointerOrigColor	= model.pointer.getColor()
 
 		self.viewcube = puzzleView.viewCube()
 		
@@ -83,7 +86,6 @@ class PuzzleController(object):
 
 		#Setup Key Bindings
 		self.bindKeys()
-		
 
 		self.score = PuzzleScore(self.modeName)
 		
@@ -100,10 +102,10 @@ class PuzzleController(object):
 		viztask.schedule(self.updateClosestBone())
 		
 	def loadControl(self, meshes = [], animate = False):
-		"""control loading of meshes --- used to control multithreading"""
+		"""Control loading of meshes --- used to control multithreading"""
 		while True:
 			yield self.loadMeshes(meshes)
-	#		Check to make sure that all requested meshes were loaded if they aren't then load the missing meshes
+			#Check to make sure that all requested meshes were loaded if they aren't then load the missing meshes
 			lingeringThreads = 0
 			while True:
 				if lingeringThreads >= 20:
@@ -133,11 +135,13 @@ class PuzzleController(object):
 				print "WARNING, UNKNOWN FILE ", fileName
 				self.unknownFiles += 1
 				continue
+				
 			#Wait to add thread if threadThrottle conditions are not met
 			model.threads += 1 #Add 1 for each new thread added --- new render started
 			yield viz.director(self.threadThrottle, self._maxThreads)
 			viz.director(self.renderMeshes, fileName)
 			model.menu.updateLoad(len(self._meshes), len(self._meshesToLoad))
+			
 		self.printNoticeable('end of rendering process')
 	
 	def renderMeshes(self, fileName):
@@ -150,44 +154,56 @@ class PuzzleController(object):
 		model.threads -= 1 #Subtract 1 for each thread that has finished rendering
 		
 	def threadThrottle(self, maxThreads, threadFlag = True):
-		"""If the number of current threads (curThreads) is greater than the decided maximum, then 
-		returns false --- and vice-versa"""
+		"""
+		If the number of current threads (curThreads) is greater than the decided maximum, then 
+		returns false --- and vice-versa
+		"""
 		while threadFlag:
 			if model.threads <= maxThreads:
 				threadFlag = False
 				return True
 			else:
 				threadFlag = True
-	
-
+				
 	def setKeystone(self, number):
 		"""Set Keystones"""
-		for m in [self._meshes[i] for i in range(number)]:
-			if len(m.group.members) > 1:
-				m.setGroupParent()
-			cp = m.centerPointScaled
-			cp = [cp[0], -cp[2] + 0.150, cp[1]]
-			m.setPosition(cp, viz.ABS_GLOBAL)
-			m.setEuler([0, 90, 0], viz.ABS_GLOBAL)
-			m.group.grounded = True
-			for keystone in m.group.members:
-				self._keystones.append(keystone)
-#		rotateAbout(self._meshes, [0,0,0], [0,90,0])
-			
-		for m in self._keystones[1:]:
-			self._keystones[0].group.merge(m)
-			
-		#snapGroup(smallBoneGroups)
-		
+		for m in self._boundingBoxes.values():
+			m.setKeystones(number)
+#		for m in [self._meshes[i] for i in range(number)]:
+#			cp = m.centerPointScaled
+#			m.setPosition(cp, viz.ABS_GLOBAL)
+##			m.setEuler([0, 0, 0], viz.ABS_GLOBAL)
+#			m.group.grounded = True
+#			self._keystones.append(m)
+#			
+#		for m in self._keystones[1:]:
+#			self._keystones[0].group.merge(m)
 	
-	def prepareMeshes(self, animate = False):
+	def addToBoundingBox(self, meshes):
+		"""
+		Populate environment with bounding boxes allowing easy manipulation
+		of subassemblies of the entire model. Currently partitioned by region.
+		"""
+		for m in meshes:
+			if m.region not in self._boundingBoxes.keys():
+				self._boundingBoxes[m.region] = BoundingBox([m])
+			else:
+				self._boundingBoxes[m.region].addMembers([m])
+	
+	def prepareMeshes(self):
 		"""Places meshes in circle around keystone(s)"""
 		for m in self._meshes:
+			m.addSensor()
+			m.addToolTip()
+		
+	def disperseRandom(self, nodes, animate = False):
+		for m in nodes:
 			angle	= random.random() * 2 * math.pi
 			radius	= random.random() + 1.5
 			
-			targetPosition	= [math.sin(angle) * radius, 1.0, math.cos(angle) * radius]
-			targetEuler		= [0.0,90.0,180.0]
+			targetPosition	= [math.sin(angle) * radius, math.cos(angle) * radius, -1.0]
+			targetEuler		= m.getEuler()
+#			targetEuler		= [0.0,90.0,180.0]
 			#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
 			
 			if (animate):
@@ -198,13 +214,13 @@ class PuzzleController(object):
 			else:					
 				m.setPosition(targetPosition)
 				m.setEuler(targetEuler)
-					
-			m.addSensor()
-			m.addToolTip()
-			
-	def preSnap(self, percentCut = 0.075 , distance = 0.05):
-		"""Snaps meshes that are a certain degree smaller than the average volume and meshes that are determined to be snapped together in config"""
-		
+				
+			if isinstance(m, BoundingBox):
+				m.disperseMembers()
+
+	def preSnap(self, percentCut = 0.1, distance = 0.1):
+		"""Snaps meshes that are pre-determined in config or are a certain degree smaller than the average volume"""
+
 		self._smallMeshes = []
 		self._meshesToPreSnap = []
 		average = 27
@@ -215,25 +231,28 @@ class PuzzleController(object):
 		#Convert self._meshesToPreSnap from filenames to meshes
 		for fileList in self._filesToPreSnap:
 			meshList = self.convertListOfFiles(fileList)
-			self._meshesToPreSnap.append(meshList)
+			if meshList:
+				self._meshesToPreSnap.append(meshList)
 		
 		#snap together items that are stated in config
-		for snapList in self._meshesToPreSnap:
-			if set.intersection(set(snapList), set(self._meshes)):
-				for m in snapList[1:]:
-					print (set.intersection(set(snapList), set(self._meshesToLoad)))
-					try:
-						self.snap(snapList[0], m, children = True, animate = False)
-					except KeyError:
-						continue
+		if self._meshesToPreSnap:
+			for snapList in self._meshesToPreSnap:
+				if set.intersection(set(snapList), set(self._boundingBoxes[snapList[0].region]._members)):
+					for m in snapList[1:]:
+						print (set.intersection(set(snapList), set(self._meshesToLoad)))
+						try:
+							self.snap(snapList[0], m, children = True, animate = False)
+						except KeyError:
+							continue
 		
 		for m in self._meshes:
 			if m.metaData['volume'] < average * percentCut:
 				self._smallMeshes.append(m)
 		
-		for meshList in self._meshesToPreSnap:
+		if self._meshesToPreSnap:
+			for meshList in self._meshesToPreSnap:
 				self._smallMeshes = list(set(self._smallMeshes) - set(meshList))
-				
+		
 #		keystoneMeshes = set(self._keystones)
 #		self._smallMeshes = list(meshesToPreSnap - keystoneMeshes)
 				
@@ -241,10 +260,9 @@ class PuzzleController(object):
 		for m1 in self._smallMeshes:
 			snapToM1 = self.getAdjacent(m1, self._smallMeshes, maxDist = distance)
 			for m2 in snapToM1:
-				self.printNoticeable(str(m2) +' was snapped to' + str(m1))
-				self.snap(m1, m2, children = True, animate = False)
+				self.printNoticeable(str(m2[0]) +' was snapped to ' + str(m1))
+				self.snap(m1, m2[0], children = True, animate = False)
 				
-			
 
 	def printNoticeable(self, text):
 		"""Highly visible printouts"""
@@ -272,11 +290,12 @@ class PuzzleController(object):
 			meshesByFilename[m.metaData['filename']] = m
 		return meshesByFilename
 		
-	def unloadBones(self):
+	def unloadMeshes(self):
 		"""Unload all of the bone objects to reset the puzzle game"""
 		for m in self._meshes:
-			print 'removing ', m.name
 			m.remove(children = True)
+		for b in self._boundingBoxes.values():
+			b.remove(children = True)
 		
 	def transparency(self, source, level, includeSource = False):
 		"""Set the transparency of all the bones"""
@@ -314,7 +333,7 @@ class PuzzleController(object):
 		if maxDist:
 			neighbors = [m for m in neighbors if m[1] < maxDist]
 		
-		return [l[0] for l in neighbors]
+		return neighbors
 		
 	def snapCheck(self):
 		"""
@@ -325,59 +344,76 @@ class PuzzleController(object):
 			print 'nothing to snap'
 			return
 
-		SNAP_THRESHOLD	= 0.5;
-		DISTANCE_THRESHOLD = 1.5;
-		ANGLE_THRESHOLD	= 45;
-		sourceMesh		= self.getSnapSource()
-		targetMesh		= self.getSnapTarget()
-		searchMeshes	= self.getSnapSearch()
+		SNAP_THRESHOLD		= 0.2; #how far apart the mesh you are snapping is from where it should be
+		DISTANCE_THRESHOLD	= 0.45; #distance source mesh is from other meshes
+		ANGLE_THRESHOLD		= 45.0; #min euler difference source mesh can be from target mesh
 		
-		self.moveCheckers(sourceMesh)
+		if isinstance(self.getSnapSource(), bp3d.Mesh):
+			sourceMesh		= self.getSnapSource()
+			searchMeshes	= self.getSnapSearch(source = sourceMesh)
+			targetMesh		= self.keyTarget
 			
-		# Search through all of the checkers, and snap to the first one meeting our snap
-		# criteria
-		
-		if self._snapAttempts >= 3 and not sourceMesh.group.grounded:
-			self.snap(sourceMesh, targetMesh, children = True)
-			viz.playSound(".\\dataset\\snap.wav")
-			print 'Three unsuccessful snap attempts, snapping now!'
-			self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
-				source = sourceMesh.name, destination = targetMesh.name)
-			self._snapAttempts = 0
-			if self.modeName == 'testplay':
-				self.pickSnapPair()
-		elif sourceMesh.group.grounded:
-			print 'That object is grounded. Returning!'
-		else:
-			for bone in [b for b in searchMeshes if b not in sourceMesh.group.members]:
-				targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
-				targetPosition = bone.getPosition(viz.ABS_GLOBAL)
-				targetQuat = bone.getQuat(viz.ABS_GLOBAL)
+			self.moveCheckers(sourceMesh)
 				
-				currentPosition = sourceMesh.getPosition(viz.ABS_GLOBAL)
-				currentQuat = sourceMesh.getQuat(viz.ABS_GLOBAL)		
-				
-				snapDistance = vizmat.Distance(targetSnap, currentPosition)
-				proximityDistance = vizmat.Distance(targetPosition, currentPosition)
-				angleDifference = vizmat.QuatDiff(bone.getQuat(), sourceMesh.getQuat())
-				
-				if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
-						and (angleDifference < ANGLE_THRESHOLD):
-					print 'Snap! ', sourceMesh, ' to ', bone
-					self.score.event(event = 'snap', description = 'Successful snap', source = sourceMesh.name, destination = bone.name)
-					viz.playSound(".\\dataset\\snap.wav")
-					self.snap(sourceMesh, bone, children = True)
-					if self.modeName == 'testplay':
-						self.pickSnapPair()
-					break
+			# Search through all of the checkers, and snap to the first one meeting our snap
+			# criteria
+			
+			if sourceMesh.snapAttempts >= 3 and not sourceMesh.group.grounded:
+				self.snap(sourceMesh, self.keyTarget, children = True)
+				viz.playSound(".\\dataset\\snap.wav")
+				print 'Three unsuccessful snap attempts, snapping now!'
+				self.score.event(event = 'autosnap', description = 'Three unsuccessful snap attempts, snapping now!', \
+					source = sourceMesh.name, destination = targetMesh.name)
+#				self._snapAttempts = 0
+				if self.modeName == 'testplay':
+					self.pickSnapPair()
+			elif sourceMesh.group.grounded:
+				print 'That object is grounded. Returning!'
 			else:
-				print 'Did not meet snap criteria!'
-				self._snapAttempts += 1
-				self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = sourceMesh.name)
-		if len(self._meshes) == len(sourceMesh.group.members):
-			print "Assembly completed!"
-			end()
-			menu.ingame.endButton()
+				for bone in [b for b in searchMeshes if b not in sourceMesh.group.members]:
+					targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
+					targetPosition = bone.getPosition(viz.ABS_GLOBAL)
+					targetQuat = bone.getQuat(viz.ABS_GLOBAL)
+					
+					currentPosition = sourceMesh.getPosition(viz.ABS_GLOBAL)
+					currentQuat = sourceMesh.getQuat(viz.ABS_GLOBAL)		
+					
+					snapDistance = vizmat.Distance(targetSnap, currentPosition)
+					proximityDistance = vizmat.Distance(targetPosition, currentPosition)
+					angleDifference = vizmat.QuatDiff(bone.getQuat(viz.ABS_GLOBAL), sourceMesh.getQuat(viz.ABS_GLOBAL))
+					
+					if (snapDistance <= SNAP_THRESHOLD) and (proximityDistance <= DISTANCE_THRESHOLD) \
+							and (abs(angleDifference) < ANGLE_THRESHOLD):
+						print 'Snap! ', sourceMesh, ' to ', bone
+						self.score.event(event = 'snap', description = 'Successful snap', source = sourceMesh.name, destination = bone.name)
+						viz.playSound(".\\dataset\\snap.wav")
+						self.snap(sourceMesh, bone, children = True)
+						if self.modeName == 'testplay':
+							self.pickSnapPair()
+						break
+				else:
+					print 'Did not meet snap criteria!'
+					sourceMesh.snapAttempts += 1
+					self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = sourceMesh.name)
+			if len(self._meshes) == len(sourceMesh.group.members):
+				print "Assembly completed!"
+				end()
+				menu.ingame.endButton()
+		
+		elif isinstance(self.getSnapSource(), BoundingBox):
+			#If lastGrabbed is a bounding box carry out this snap check procedure...
+			sourceBB = self.getSnapSource()
+			
+			# Find closest bounding box
+			targetBB, distance = sourceBB.findClosestBB(self._boundingBoxes.values())
+			
+			# Find Target Position and Euler for the Source BB
+			tPos, tEuler = sourceBB.moveChecker(targetBB)
+			
+			# If the Source is close enough to the target position and euler then snap
+			eulerDiff = vizmat.QuatDiff(targetBB.checker.getQuat(viz.ABS_GLOBAL), sourceBB.getQuat(viz.ABS_GLOBAL))
+			if distance <= SNAP_THRESHOLD and abs(eulerDiff) <= ANGLE_THRESHOLD:
+				sourceBB.snapToBB(targetBB)
 
 	def snap(self, sourceMesh, targetMesh, children = False, animate = True):
 		self.moveCheckers(sourceMesh)
@@ -396,13 +432,23 @@ class PuzzleController(object):
 		"""Define source object for snapcheck"""
 		return self._lastGrabbed
 	
-	def getSnapTarget(self):
+	def getSnapTarget(self, source, search = None):
 		"""Define target object for snapcheck"""
-		return self.getAdjacent(self._lastGrabbed, self.getEnabled())[0]
+		if search:
+			return self.getAdjacent(self._lastGrabbed, search)[0]
+		else:
+			return self.getAdjacent(self._lastGrabbed, self.getEnabled())[0]
 		
-	def getSnapSearch(self):
+	def getSnapSearch(self, source = None):
 		"""Define list of objects to search for snapcheck"""
-		return self.getEnabled()
+#		return self.getEnabled()
+		return self._boundingBoxes[source.region]._members
+#		meshesAndDist = self.getAdjacent(source, self._boundingBoxes[source.region]._members)
+#		meshes = []
+#		for i in meshesAndDist:
+#			meshes.append(i[0])
+#			
+#		return meshes 
 	
 	def snapGroup(self, boneNames):
 		"""Specify a list of bones that should be snapped together"""
@@ -416,36 +462,62 @@ class PuzzleController(object):
 		"""Grab in-range objects with the pointer"""
 		grabList = self._proximityList # Needed for disabling grab of grounded bones
 		
-		if len(grabList) > 0 and not self._grabFlag:
-			target = self.getClosestBone(model.pointer,grabList)
-			
+		if len(grabList) == 0 or self._grabFlag:
+			return
+
+		target = self.getClosestObject(model.pointer,grabList)
+		
+		if isinstance(target, bp3d.Mesh):
+			self.keyTarget = self._boundingBoxes[target.region]._keystones[0]
 			if target.group.grounded:
-				target.color([0,1,0.5])
-				target.tooltip.visible(viz.ON)
+				target.highlight(grabbed = True)
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
 				self.score.event(event = 'grab', description = 'Grabbed bone', source = target.name)
 				self.transparency(target, 0.7)
-				target.color([0,1,0.5])
-				target.tooltip.visible(viz.ON)
-				
-			if target != self._lastGrabbed and self._lastGrabbed:
-				self._lastGrabbed.color(reset = True)
-				self._lastGrabbed.tooltip.visible(viz.OFF)
-				for m in self._proximityList: 
-					if m == self._lastGrabbed:
-						self._lastGrabbed.color([1.0,1.0,0.5])
-			self._lastGrabbed = target
+				target.highlight(grabbed = True)
+			if self._lastMeshGrabbed and self._lastMeshGrabbed is not target:
+				if self._lastMeshGrabbed in grabList:
+					self._lastMeshGrabbed.highlight(prox = True)
+				else:
+					self._lastMeshGrabbed.highlight(prox = False)
+					
+			self._lastMeshGrabbed = target
+			
+		elif isinstance(target, BoundingBox):
+			target.grab()
+			self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
+			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
+			target.highlight(True)
+			
+			if not self._imploded:
+				target.showMembers(True)
+				[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
+			
+			if self._lastBoxGrabbed and self._lastBoxGrabbed is not target:
+				if self._lastBoxGrabbed in grabList:
+					self._lastBoxGrabbed.highlight(True)
+				else:
+					self._lastBoxGrabbed.highlight(False)
+					
+			self._lastBoxGrabbed = target
+			
+		self._lastGrabbed = target
 		self._grabFlag = True
 
 	def release(self):
 		"""Release grabbed object from pointer"""
 		if self._gloveLink:
-			self.transparency(self._lastGrabbed, 1.0)
-			self._gloveLink.remove()
-			self._gloveLink = None
-			self.score.event(event = 'release')
+			if isinstance(self._lastGrabbed, bp3d.Mesh):
+				self.transparency(self._lastGrabbed, 1.0)
+				self._gloveLink.remove()
+				self._gloveLink = None
+				self.score.event(event = 'release mesh')
+			elif isinstance(self._lastGrabbed, BoundingBox):
+				self._gloveLink.remove()
+				self._gloveLink = None
+				self.score.event(event = 'release bounding box')
 		self._grabFlag = False
 	
 	def getDisabled(self):
@@ -459,7 +531,7 @@ class PuzzleController(object):
 		else:
 			return [m for m in self._meshes if m.getEnabled() if not m.group.grounded]		
 
-	def getClosestBone(self, pointer, proxList):
+	def getClosestObject(self, pointer, proxList):
 		"""
 		Looks through proximity list and searches for the closest bone to the glove and puts it at
 		the beginning of the list
@@ -485,18 +557,22 @@ class PuzzleController(object):
 		self._lastMesh = []
 		while True:
 			yield viztask.waitFrame(1)
+			prox = list(set(self._proximityList) - set(self._boundingBoxes.values()))
 			
-			if self._proximityList and not self._gloveLink:
-				self._closestMesh = self.getClosestBone(model.pointer, self._proximityList)
+			if prox and not self._gloveLink:
+				self._closestMesh = self.getClosestObject(model.pointer, prox)
 				
 				
-				if self._lastMesh and self._lastMesh != self._closestMesh:
-					if set.intersection(set(self._proximityList), set(self._lastMesh)):
-						self._lastMesh[0].color([1.0,1.0,0.5])
+				if self._lastMesh and self._lastMesh is not self._closestMesh:
+					if self._lastMeshGrabbed is self._lastMesh[0]:
+						self._lastMesh[0].highlight(grabbed = True)
 					else:
-						self._lastMesh[0].color(reset = True)
+						if self._lastMesh[0] in prox:
+							self._lastMesh[0].highlight(prox = True)
+						else:
+							self._lastMesh[0].highlight(prox = False)
 						
-				self._closestMesh.color([4,0.5,0.5])
+				self._closestMesh.highlight(closest = True)
 					
 				self._lastMesh = [self._closestMesh]
 			else:
@@ -510,11 +586,10 @@ class PuzzleController(object):
 		"""Callback for a proximity entry event between the pointer and a mesh"""
 		source = e.sensor.getSourceObject()
 		model.pointer.color([4.0,0.5,0.5])
-		obj = self._meshesById[source.id]
-		if source != self._lastGrabbed:
-			obj.mesh.color([1.0,1.0,0.5])
-			obj.setNameAudioFlag(1)
+		source.highlight(True)
 		self._proximityList.append(source)
+		if self._lastMeshGrabbed:
+			self._lastMeshGrabbed.highlight(grabbed = True)
 	
 	def ExitProximity(self, e):
 		"""Callback for a proximity exit event between the pointer and a mesh"""
@@ -522,44 +597,56 @@ class PuzzleController(object):
 		if len(self._proximityList) and not self._gloveLink:
 			model.pointer.color(1,1,1)
 		if source != self._lastGrabbed:
-			self._meshesById[source.id].color(reset = True)
-			self._meshesById[source.id].setNameAudioFlag(0)
+			source.highlight(False)
 		self._proximityList.remove(source)
-			
 	
 	def implode(self):
 		"""Move bones to solved positions"""
-		target = self._keystones[0] # Move to the current keystone(s)
-		for m in self._meshes[1:]:
-			if not m.group.grounded:
-				if m.getAction():
-					return
-				curMat = m.getMatrix(viz.ABS_GLOBAL)
-				m.setParent(viz.WORLD)
-				m.setMatrix(curMat, viz.ABS_GLOBAL)
-				for bone in [b for b in self._meshes if b != m]:
-					bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
-				m.storeMat()
-				m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
-		self._imploded = True
-		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
+		if not self._imploded:
+			if self._boundingBoxes:
+				for box in self._boundingBoxes.values():
+					box.implode()
+					if not box._showGroupFlag:
+						box.showMembers(True)
+						box._showGroupFlag = False
+			else:
+				target = self._keystones[0] # Move to the current keystone(s)
+				for m in self._meshes[1:]:
+					if m.getAction():
+						return
+					for bone in [b for b in self._meshes if b != m]:
+						bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
+					m.storeMat()
+					m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+					
+			self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
+			self._keyBindings[4].setEnabled(viz.OFF)  #disable snap key down event
+			self._imploded = True
 
 	def explode(self):
 		"""Move bones to position before implode was called"""
-		for m in self._meshes[1:]:
-			if not m.group.grounded:
-				if m.getAction():
-					return
-				curMat = m.getMatrix(viz.ABS_GLOBAL)
-				m.setParent(viz.WORLD)
-				m.setMatrix(curMat, viz.ABS_GLOBAL)
-				m.moveTo(m.loadMat(), time = 0.6)
-		self._imploded = False
-		self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
+		if self._imploded:
+			if self._boundingBoxes:
+				for box in self._boundingBoxes.values():
+					box.explode()
+					if not box._showGroupFlag:
+						box.showMembers(False)
+			else:
+				for m in self._meshes[1:]:
+					if m.getAction():
+						return
+					m.moveTo(m.loadMat(), time = 0.6)
+			
+			self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
+			self._keyBindings[4].setEnabled(viz.ON) #enable snap key down event
+			self._imploded = False
 
 	def solve(self):
 		"""Operator used to toggle between implode and explode"""
-		if self._imploded == False:
+		for m in self._meshes:
+			if m.getAction():
+				return
+		if not self._imploded:
 			self.implode()
 		else:
 			self.explode()
@@ -571,11 +658,12 @@ class PuzzleController(object):
 		model.proxManager.clearSensors()
 		model.proxManager.clearTargets()
 		model.proxManager.remove()
-		self.unloadBones()
+		self.unloadMeshes()
 		for bind in self._keyBindings:
 			bind.remove()
 
 	def bindKeys(self):
+		"""Define all key bindings and store them in a list"""
 		self._keyBindings.append(vizact.onkeydown('o', model.proxManager.setDebug, viz.TOGGLE)) #debug shapes
 		self._keyBindings.append(vizact.onkeydown(' ', self.grab)) #space select
 		self._keyBindings.append(vizact.onkeydown('65421', self.grab)) #numpad enter select
@@ -618,8 +706,58 @@ class FreePlay(PuzzleController):
 	def __init__(self, dataset):
 		super(FreePlay, self).__init__(dataset)
 		self.modeName = 'freeplay'
+	
+	def load(self, dataset):
+		"""
+		Load datasets and initialize everything necessary to commence
+		the puzzle game.
+		"""
 		
-#		self.enableSlice()
+		# Dataset
+		model.ds = bp3d.DatasetInterface()
+
+		# Proximity management
+		model.proxManager = vizproximity.Manager()
+		target = vizproximity.Target(model.pointer)
+		model.proxManager.addTarget(target)
+
+		model.proxManager.onEnter(None, self.EnterProximity)
+		model.proxManager.onExit(None, self.ExitProximity)
+
+		#Setup Key Bindings
+		self.bindKeys()
+		
+
+		self.score = PuzzleScore(self.modeName)
+		
+#		viztask.schedule(soundTask(glove))
+
+		self._meshesToLoad = model.ds.getOntologySet(dataset)
+		self._filesToPreSnap = model.ds.getPreSnapSet()
+		
+		yield self.loadControl(self._meshesToLoad)
+		yield self.prepareMeshes()
+		yield self.addToBoundingBox(self._meshes)
+		yield self.disperseRandom(self._boundingBoxes.values())
+		yield self.preSnap()
+		for m in self._meshes:
+			changeParent(m, self._boundingBoxes[m.region])
+		yield self.setKeystone(3)
+		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
+#		yield self.enableSlice()
+
+		viztask.schedule(self.updateClosestBone())
+
+	def getSnapTarget(self, source, search):
+		if search:
+			target = list(set.intersection(set(self._keystones), set(search)))
+			if target: 
+				return target[0]
+			else:
+				target = self._boundingBoxes[source.region]._keystones[0]
+				return target
+		else:
+			return self.getAdjacent(self._lastGrabbed, self.getEnabled())[0]
 
 class TestPlay(PuzzleController):
 	"""
@@ -636,6 +774,13 @@ class TestPlay(PuzzleController):
 		self._quizSource = None
 		self._quizTarget = None
 	
+	
+	def getKeystones(self):
+		keystones = []
+		for b in self._boundingBoxes.values():
+			keystones.extend(b._keystones)
+		return keystones
+
 	def implode(self):
 		"""Override to disable"""
 		pass
@@ -674,26 +819,33 @@ class TestPlay(PuzzleController):
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
 		yield self.preSnap()
+		yield self.addToBoundingBox(self._meshes)
 		yield self.setKeystone(3)
 		yield self.hideMeshes()
 		yield self.testPrep()
+		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
 		
 		# Setup Key Bindings
 		self.bindKeys()
 		
+	def addToBoundingBox(self, meshes):
+		"""
+		Populate environment with bounding boxes allowing easy manipulation
+		of subassemblies of the entire model. Currently partitioned by region.
+		"""
+		self._boundingBoxes['full'] = BoundingBox(meshes)
 		
 	def testPrep(self):
-		self.score = PuzzleScore(self.modeName)
-		keystone = random.sample(self._keystones, 1)[0]
+		self.score	= PuzzleScore(self.modeName)
+		keystone	= random.sample(self.getKeystones(), 1)[0]
 		self._keystoneAdjacent.update({keystone:[]})
-		keystone = random.sample(self._keystones, 1)[0]
-		self._keystoneAdjacent.update({keystone:[]})
+		
 		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
 			print m
 			for mGroup in m.group.members:
 				mGroup.enable(animate = False)
 		self.pickSnapPair()
-		
+			
 	def hideMeshes(self):
 		keystones = set(self._keystones)
 		adjacents = set(self._keystoneAdjacent)
@@ -769,9 +921,6 @@ class PinDrop(PuzzleController):
 		unlabeled = [m for m in self._meshes if not m.labeled]
 		self._dropTarget = random.sample(unlabeled, 1)[0]
 	
-	def highlightMesh(self, mesh):
-		pass
-		
 	def pinCheck(self):
 		if self._dropAttempts >= 3:
 			pass
@@ -789,6 +938,315 @@ class PinDrop(PuzzleController):
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_L, self.pinCheck))
 		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
 	
+class BoundingBox(viz.VizNode):
+	def __init__(self, meshes):
+		"""
+		Populate environment with bounding boxes allowing easy manipulation
+		of subassemblies of the entire model. Currently partitioned by region.
+		"""
+		
+		self.name			= ''		
+		self._alpha			= 0.3
+		self._members		= []
+		self._keystones 	= []
+		self.wireFrame		= None
+		self._showGroupFlag = True
+		
+		self.axis = vizshape.addAxes()
+		self.cube = vizshape.addCube()
+		
+		super(BoundingBox, self).__init__(self.cube.id)
+		
+		self.cube.disable(viz.RENDERING)
+		self.axis.setParent(self)
+		self.axis.setScale([0.2, 0.2, 0.2])
+		
+		self.addSensor()
+		self.addMembers(meshes)
+		
+		self.regionGroup = RegionGroup([self])
+#		self.moveToCenter()
+
+		# Add Bounding Box checker
+		self.checker = vizshape.addCube(0.001)
+		self.checker.setParent(self)
+		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
+
+		self.highlight(False)
+		
+		self._imploded = False
+	
+	def alpha(self, val):
+		"""Set the alpha of both the axis and wireframe"""
+		self._alpha = val
+		self.axis.alpha(val)
+		self.wireFrame.alpha(val)
+		
+	def addMembers(self, meshes):
+		"""Add members, updating bounds of cube"""
+		for m in meshes:
+			self._members.append(m)
+			changeParent(m, self)
+		self.updateWireframe()
+	
+	def removeMembers(self, meshes):
+		"""Remove members, updating bounds of cube"""
+		for m in meshes:
+			if m in self._members:
+				changeParent(m)
+				self._members.remove(m)
+				
+	def moveToCenter(self, meshes):
+		"""Move any stray meshes to within bounds of cube"""
+		for m in meshes:
+			pass
+		
+	def updateWireframe(self):
+		"""Compute size of wireframe and update given current members"""
+		if self.wireFrame:
+			self.wireFrame.remove()
+		self.wireFrame = puzzleView.WireFrameCube(self.computeBounds(), corner = True)
+		self.wireFrame.setParent(self)
+		self.wireFrame.alpha(self._alpha)
+			
+	def computeBounds(self):
+		"""Compute bounding box given current members"""
+		min, max = self._members[0].metaData['bounds']		
+		for m in self._members[1:]:
+			for i, v in enumerate(m.metaData['bounds'][0]):
+				if v < min[i]:
+					min[i] = v
+			for i, v in enumerate(m.metaData['bounds'][1]):
+				if v > max[i]:
+					max[i] = v
+		
+		min = rightToLeft(min) # WHY VIZARD WHY
+		max = rightToLeft(max) # WHY WHYYYY
+		self.bounds				= [(v[0]-v[1]) for v in zip(max,min)]
+		self.boundsScaled		= [v/500.0 for v in self.bounds]
+		self.cornerPoint		= min
+		self.cornerPointScaled	= [v/500.0 for v in min]
+		self.centerPoint		= [(v[0]/2.0 + v[1]) for v in zip(self.bounds,min)]
+		self.centerPointScaled	= [v/500.0 for v in self.centerPoint]
+		
+		return self.boundsScaled
+	
+	def addSensor(self):
+		"""Add a sensor around the axis to a proximity manager"""
+		self._sensor = vizproximity.Sensor(vizproximity.Sphere(0.4),self)
+		model.proxManager.addSensor(self._sensor)
+	
+	def storeMat(self):
+		"""Store current transformation matrix"""
+		self._savedMat = self.getMatrix(viz.ABS_GLOBAL)
+		
+	def loadMat(self):
+		"""Recall stored transformation matrix"""
+		return self._savedMat
+		
+	def grab(self):
+		"""Run on grab"""
+		for m in self._members:
+			changeParent(m, self)
+		self.setRegionGroupParent()
+
+	def highlight(self, flag):
+		"""Make visible out of the noise"""
+		if flag:
+			self.alpha(1.0)
+		else:
+			self.alpha(0.3)
+			
+	def showMembers(self, flag):
+		if flag:
+			val = 1.0
+			self.showRing(True)
+			self._showGroupFlag = True
+		else:
+			val = 0.2
+			self.showRing(False)
+			self._showGroupFlag = False
+		
+		for m in self._keystones:
+			m.setAlpha(val)
+	
+	def showRing(self, flag):
+		keystones = set(self._keystones)
+		meshes = set(self._members)
+		ring = list(meshes - keystones)
+		if not flag:
+			for m in ring:
+				m.disable()
+		else:
+			for m in ring:
+				m.enable()
+		
+	def disperseMembers(self):
+		
+		majorLength = max(self.computeBounds())
+		
+		for m in self._members:
+			m.setGroupParent()
+			changeParent(m, self)
+			angle	= random.random() * 2 * math.pi
+			radius	= random.random() * majorLength/2 + majorLength
+			
+			targetPosition	= [math.sin(angle) * radius, 0, math.cos(angle) * radius]
+			targetEuler		= m.getEuler()
+#			targetEuler		= [0.0,90.0,180.0]
+			#targetEuler	= [(random.random()-0.5)*40,(random.random()-0.5)*40 + 90.0, (random.random()-0.5)*40 + 180.0]
+			
+			centervect		= list(numpy.subtract(self.centerPointScaled, self.cornerPointScaled))
+			targetPosition	= list(numpy.add(targetPosition, centervect)) # Donut around center instead
+			
+			m.setPosition(targetPosition, viz.ABS_PARENT)
+			m.setEuler(targetEuler, viz.ABS_PARENT)
+			
+	def setGroup(self, group):
+		"""Set bone group"""
+		self.regionGroup = group
+		
+	def setRegionGroupParent(self):
+		"""
+		When manipulating a group of bones, the grabbed bone must move all
+		of the other group members
+		"""
+		self.regionGroup.setParent(self)
+	
+	def moveChecker(self, BB):
+		"""Find the position that 'self' bounding box should move to in relation to BB"""
+		BBVec = BB.getPosition(viz.ABS_GLOBAL)
+		vecDiff = list(numpy.subtract(self.cornerPointScaled, BB.cornerPointScaled))
+		BB.checker.setPosition(vecDiff, mode = viz.ABS_PARENT)
+		
+		targetEuler = BB.checker.getEuler(viz.ABS_GLOBAL)
+		targetPos = BB.checker.getPosition(viz.ABS_GLOBAL)
+		
+		return targetPos, targetEuler
+	
+	def findClosestBB(self, boundingBoxes):
+		"""Find and return the bounding box closest to self"""
+		leastDistance = None
+		closestBB = None
+		distanceBtwn = None
+		BBs = set(boundingBoxes) - set(self.regionGroup.members)
+		for bb in BBs:
+			tPos, tEuler = self.moveChecker(bb)
+			distanceBtwn = vizmat.Distance(self.getPosition(viz.ABS_GLOBAL), tPos)
+			if distanceBtwn <= leastDistance or leastDistance is None:
+				closestBB = bb
+				leastDistance = distanceBtwn
+		return closestBB, leastDistance
+		
+	def snapToBB(self, BB):
+		"""Snaps Bounding Box to Another Bounding Box, BB"""
+		self.moveTo(BB)
+		self.regionGroup.merge(BB)
+			
+	def moveTo(self, BB, animate = True, time = 0.3):
+		"""
+		move bounding box to new targetPos and targetEuler
+		"""
+		targetPos = BB.checker.getPosition(viz.ABS_GLOBAL)
+		targetEuler = BB.checker.getEuler(viz.ABS_GLOBAL)
+		if (animate):
+			move = vizact.moveTo(pos = targetPos, time = time, mode = viz.ABS_GLOBAL)
+			spin = vizact.spinTo(euler = targetEuler, time = time, mode = viz.ABS_GLOBAL)
+			transition = vizact.parallel(spin, move)
+			self.addAction(transition)
+		else:
+			self.setPosition(targetPosition, viz.ABS_GLOBAL)
+			self.setEuler(targetEuler,viz.ABS_GLOBAL)
+			
+	def formatAxisAfterSnap(self):
+		lowestRegion = self
+		bottom = 0
+		a = set(self.regionGroup.members) - set([self])
+		for bb in a:
+			pos = bb.getPosition()
+			pos = bb.getPosition()
+			print bb
+			print pos
+#			if pos > bottom:
+#				lowestRegion = bb
+#				bottom = pos
+#				
+#		for bb in list(set(self.regionGroup.members) - set([lowestRegion])):
+#			bb.axis.disable(viz.RENDERING)
+			
+	def hideAxis(self):
+		self.axis.disable(viz.RENDERING)
+		
+	def setKeystones(self, count):
+		for k in random.sample(self._members, count):
+			k.setGroupParent()
+			changeParent(k, self)
+			diff = list(numpy.subtract(k.centerPointScaled, self.cornerPointScaled))
+			k.setPosition(diff, viz.ABS_PARENT)
+			for m in k.group.members:
+				self._keystones.append(m)
+			m.group.grounded = True
+	
+	def implode(self):
+		"""Move bones to solved positions"""
+		if not self._imploded:
+			target = self._keystones[0] # Move to the current keystone(s)
+			for m in [m for m in self._members if not m.group.grounded]:
+				if m.getAction():
+					return
+				changeParent(m, self.axis)
+				for bone in [b for b in self._members if b != m]:
+					bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
+				m.storeMat(relation = viz.ABS_PARENT)
+				m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
+				
+			self._imploded = True
+#		self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
+
+	def explode(self):
+		"""Move bones to position before implode was called"""
+		if self._imploded:
+			for m in [m for m in self._members if not m.group.grounded]:
+				if m.getAction():
+					return
+				changeParent(m, self.axis)
+				m.moveTo(m.loadMat(), time = 0.6, relation = viz.ABS_PARENT)
+			self._imploded = False
+#		self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
+		
+class RegionGroup ():
+		def __init__(self, members):
+			self.members = []
+			self.parent = members[0]
+			self.addMembers(members)
+			
+		def setParent(self, parent):
+			"""Set region bounding box to parent of all other bouding boxes in the group"""
+			self.parent = parent
+			curMat = parent.getMatrix(viz.ABS_GLOBAL)
+			parent.setParent(viz.WORLD)
+			parent.setMatrix(curMat, viz.ABS_GLOBAL)
+			
+			for r in [r for r in self.members if r != parent]:
+				curMat = r.getMatrix(viz.ABS_GLOBAL)
+				r.setParent(parent)
+				r.setMatrix(curMat, viz.ABS_GLOBAL)
+		
+		def addMembers(self, members):
+			"""Add a list of regions to members list"""
+			self.members += members 
+			for r in members:
+				r.regionGroup = self
+				
+		def merge(self, source):
+			"""Merge group members into source group"""
+			self.members += source.regionGroup.members
+			self.members = list(set(self.members))
+			#delet source.group
+			for r in source.regionGroup.members:
+				r.setGroup(self)
+	
+
 class PuzzleScore():
 	"""Handles scoring for the puzzle game"""
 	def __init__(self, modeName):
@@ -885,47 +1343,6 @@ def csvToList(location):
 		print "ERROR: Unable to open CSV file at", location
 	return raw
 
-
-def soundTask(pointer):
-	"""
-	Function to be placed in Vizard's task scheduler
-		looks through proximity list and searches for the closest bone to the glove and puts it at
-		the beginning of the list, allows the bone name and bone description to be played
-	"""
-#	while True:
-#		yield viztask.waitTime(0.25)
-#		if(len(proximityList) >0):
-#			bonePos = proximityList[0].getPosition(viz.ABS_GLOBAL)
-#			pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
-#			shortestDist = vizmat.Distance(bonePos, pointerPos)
-#			
-#			for i,x in enumerate(proximityList):
-#				proximityList[i].incProxCounter()  #increase count for how long glove is near bone
-#				bonePos = proximityList[i].getPosition(viz.ABS_GLOBAL)
-#				pointerPos = pointer.getPosition(viz.ABS_GLOBAL)
-#				tempDist = vizmat.Distance(bonePos,pointerPos)
-#				#displayBoneInfo(proximityList[0])
-#
-#				if(tempDist < shortestDist):
-##					removeBoneInfo(proximityList[0])
-#					shortestDist = tempDist
-#					tempBone = proximityList[i]
-#					proximityList[i] = proximityList[0]
-#					proximityList[0] = tempBone
-#			#tempBone = proximityList[0]
-#			displayBoneInfo(proximityList[0])
-#			
-#			if proximityList[0].proxCounter > 2 and proximityList[0].getNameAudioFlag() == 1:
-#				#yield viztask.waitTime(3.0)
-#				vizact.ontimer2(0,0,playName,proximityList[0])
-#				proximityList[0].clearProxCounter()
-#				proximityList[0].setNameAudioFlag(0)
-#			if tempBone.proxCounter > 2 and tempBone.getDescAudioFlag() == 1:
-#				yield viztask.waitTime(1.5)
-#				#playBoneDesc(proximityList[0])
-#				vizact.ontimer2(0,0, playBoneDesc,tempBone)
-#				tempBone.setDescAudioFlag(0)	
-
 def playName(boneObj):
 	"""Play audio with the same name as the bone"""
 	try:
@@ -956,3 +1373,15 @@ def rotateAbout(meshes, point, euler):
 		m.setMatrix(m.loadMat())
 		
 	pointCube.remove()
+
+def changeParent(mesh, newParent = viz.WORLD):
+	"""Set a new parent while maintaining position"""
+	curMat = mesh.getMatrix(viz.ABS_GLOBAL)
+	mesh.setParent(newParent)
+	mesh.setMatrix(curMat, viz.ABS_GLOBAL)
+
+def rightToLeft(center):
+	"""
+	Convert from right handed coordinate system to left handed
+	"""
+	return [center[0], center[1], center[2]*-1]

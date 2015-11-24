@@ -1,4 +1,5 @@
 ﻿
+
 """
 STEREOSCOPIC ANATOMY GAME
 
@@ -17,7 +18,7 @@ import json
 import config
 import anatomyTrainer
 import menu
-
+                 
 def main():
 	try:
 		#Prompt for init config parameters
@@ -37,13 +38,8 @@ def main():
 			anatomyTrainer.start()
 	except:
 		raise
+		
 
 if __name__ == '__main__':
 	main()
-	
-	
-	
-	
-	
-	
 	
