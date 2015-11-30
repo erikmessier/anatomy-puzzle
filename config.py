@@ -21,24 +21,24 @@ class DisplayMode:
 	#  1 - 3D TV
 	#  2 - Oculus rift
 	MODES = {\
-		'Monitor': 0, \
-		'TV': 1, \
-		'Oculus': 2, \
-		'Fullscreen': 3, \
-	}
+		'Monitor':		0, \
+		'TV':			1, \
+		'Oculus':		2, \
+		'Fullscreen':	3}
+	
 	monitor		= 0
 	tv			= 1
 	oculus		= 2
 	fullscreen	= 3
-	label = {'monitor': 0, 'tv': 1, 'oculus': 2, 'fullscreen': 3}
+	label		= {'monitor': 0, 'tv': 1, 'oculus': 2, 'fullscreen': 3}
 
 dispMode = DisplayMode.monitor
 
 menuScaleConfig = { \
-	0:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2, 'loading':1}, \
-	1:{'main':.5, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 1, 'loading':1}, \
-	2:{'main':1, 'mode': 1, 'layer':.3, 'ingame': 1, 'test': 2, 'loading':1}, \
-	3:{'main':1.2, 'mode': 1, 'layer':.75, 'ingame': 1, 'test':2, 'loading':1}}
+	0:{'main': 1.2, 'mode': 1.0, 'layer': 0.75, 'ingame': 1.0, 'test': 2.0, 'loading': 1.0}, \
+	1:{'main': 0.5, 'mode': 1.0, 'layer': 0.30, 'ingame': 1.0, 'test': 1.0, 'loading': 1.0}, \
+	2:{'main': 1.0, 'mode': 1.0, 'layer': 0.30, 'ingame': 1.0, 'test': 2.0, 'loading': 1.0}, \
+	3:{'main': 1.2, 'mode': 1.0, 'layer': 0.75, 'ingame': 1.0, 'test': 2.0, 'loading': 1.0}}
 	
 menuScale = menuScaleConfig[dispMode]
 
@@ -50,14 +50,14 @@ class CameraMode:
 	#  1 - SpaceMouse control
 	#  2 -  Wiimote control
 	MODES = {\
-		'Keyboard': 0, \
-		'SpaceMouse': 1, \
-		'wiiMote': 2\
-	}
+		'Keyboard':		0, \
+		'SpaceMouse':	1, \
+		'wiiMote':		2}
+		
 	keyboard	= 0
 	spaceMouse	= 1
 	wiiMote		= 2
-	label = {'Keyboard Control': 0, 'SpaceMouse Control': 1, 'Wiimote Control': 2}
+	label		= {'Keyboard Control': 0, 'SpaceMouse Control': 1, 'Wiimote Control': 2}
 
 camMode = CameraMode.keyboard
 
@@ -148,29 +148,55 @@ SMPositionScale	= [0.0001, 0.0001, 0.0001]
 SMEulerScale	= [0.0010, 0.0010, 0.0010]
 
 # Ignore filenames with these concept names when calculating union/intersection for loading final dataset
-ignoreSets = (\
-				'portal vein', 'systemic vein', 'pulmonary vein', 'systemic artery', 'pulmonary artery', \
-				'segment of bronchial tree', 'right hepatic biliary tree', 'left hepatic biliary tree', \
-				'mitral valve', 'aortic valve', 'pulmonary valve', 'left hepatic duct', 'right hepatic duct', \
-				'common hepatic duct', 'pancreatic duct tree', 'cystic duct', 'trunk of right portal vein', \
-				'trunk of left portal vein', 'hepatic artery proper', 'pancreatic duct', 'coronary artery' \
-				'leaf of cardiac valve', 'trunk of coronary artery', 'region of papillary muscle', \
-				'leaflet of tricuspid valve', 'branch of left coronary artery', 'branch of right coronary artery', \
-				'coronary sinus', 'region of papillary muscle', 'trunk of anterior interventricular branch of left coronary artery', \
-				'trunk of right apical segmental vein', 'subdivision of left hepatic artery', 'subdivision of right hepatic artery', \
-				'anterolateral head of lateral papillary muscle of left ventricle', 'anterolateral head of lateral papillary muscle of right ventricle', 'sesamoid bone')
+ignoreSets = ( \
+	'portal vein', \
+	'systemic vein', \
+	'pulmonary vein', \
+	'systemic artery', \
+	'pulmonary artery', \
+	'segment of bronchial tree', \
+	'right hepatic biliary tree', \
+	'left hepatic biliary tree', \
+	'mitral valve', \
+	'aortic valve', \
+	'pulmonary valve', \
+	'left hepatic duct', \
+	'right hepatic duct', \
+	'common hepatic duct', \
+	'pancreatic duct tree', \
+	'cystic duct', \
+	'trunk of right portal vein', \
+	'trunk of left portal vein', \
+	'hepatic artery proper', \
+	'pancreatic duct', \
+	'coronary artery' \
+	'leaf of cardiac valve', \
+	'trunk of coronary artery', \
+	'region of papillary muscle', \
+	'leaflet of tricuspid valve', \
+	'branch of left coronary artery', \
+	'branch of right coronary artery', \
+	'coronary sinus', \
+	'region of papillary muscle', \
+	'trunk of anterior interventricular branch of left coronary artery', \
+	'trunk of right apical segmental vein', \
+	'subdivision of left hepatic artery', \
+	'subdivision of right hepatic artery', \
+	'anterolateral head of lateral papillary muscle of left ventricle', \
+	'anterolateral head of lateral papillary muscle of right ventricle', \
+	'sesamoid bone')
 
 
 # Colors of the various tissue layes
 colors = { \
-	'muscle organ':	(1.0, 0.5, 0.5), \
-	'bone organ':	(1.0, 1.0, 0.8), \
-	'brain':		(0.45, 0.7, 0.7), \
-	'left lung':	(1.0, 0.70, 0.85), \
-	'right lung':	(1.0, 0.70, 0.85), \
-	'gastrointestinal tract':	(1.0, 0.85, 0.6), \
-	'heart':		(1.0, 0.45, 0.4), \
-	'urinary system':		(1.0, 1.0, 0.4)}
+	'muscle organ':		(1.0, 0.5, 0.5), \
+	'bone organ':		(1.0, 1.0, 0.8), \
+	'brain':			(0.45, 0.7, 0.7), \
+	'left lung':		(1.0, 0.70, 0.85), \
+	'right lung':		(1.0, 0.70, 0.85), \
+	'gastrointestinal tract': (1.0, 0.85, 0.6), \
+	'heart':			(1.0, 0.45, 0.4), \
+	'urinary system':	(1.0, 1.0, 0.4)}
 
 #PreSnap Meshes (region: feature)
 preSnapMeshes = {\

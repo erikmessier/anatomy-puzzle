@@ -18,8 +18,8 @@ gameController = None
 display = None
 
 # Pointer instance
-pointer = None
-planeVert = None
+pointer		= None
+planeVert	= None
 
 # Menu
 menu = None
