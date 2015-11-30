@@ -341,7 +341,7 @@ class DatasetInterface():
 				filenames[-1] = set(filenames[-1])
 			modelSet.extend(list(setOperation(*filenames)))
 		
-		#remove all files form modelSet that are also found in ignoreSets
+		#remove all files from modelSet that are also found in ignoreSets
 		ignoreSets = config.ignoreSets
 		removeFromModelSet = []
 		for ignoreSet in ignoreSets:
