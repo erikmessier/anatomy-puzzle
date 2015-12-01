@@ -333,6 +333,13 @@ class PuzzleController(object):
 		Snap checks for any nearby bones, and mates a src bone to a dst bone
 		if they are in fact correctly placed.
 		"""
+		for bb in self._boundingBoxes.values():
+			if bb.getAction():
+				return
+			for m in bb._members:
+				if m.getAction():
+					return
+		
 		snapped = False
 		
 		if not self.getSnapSource():
@@ -400,9 +407,16 @@ class PuzzleController(object):
 				self.end()
 				model.menu.ingame.endButton()
 			if len(self._boundingBoxes[sourceMesh.region]._keystones) == len(self._boundingBoxes[sourceMesh.region]._members):
+				self.score.event(event = 'Finished Region', description = self._lastMeshGrabbed.region + ' was finished')
 				self.printNoticeable('Finished Region!!')
 				self._boundingBoxes[sourceMesh.region].finishedRegion = True
-		
+				
+				# If all regions in a region group are finished than show all members
+				self._lastBoxGrabbed.regionGroup.getFinished()
+				if self._lastBoxGrabbed.regionGroup.allRegionsFinished:
+					for bb in self._lastBoxGrabbed.regionGroup.members:
+						bb.showMembers(True)
+					
 		elif isinstance(self.getSnapSource(), BoundingBox):
 			SNAP_THRESHOLD		= 1.5; #how far apart the mesh you are snapping is from where it should be
 			ANGLE_THRESHOLD		= 45.0; #min euler difference source mesh can be from target mesh
@@ -420,6 +434,11 @@ class PuzzleController(object):
 			eulerDiff = vizmat.QuatDiff(targetBB.checker.getQuat(viz.ABS_GLOBAL), sourceBB.getQuat(viz.ABS_GLOBAL))
 			if distance <= SNAP_THRESHOLD and abs(eulerDiff) <= ANGLE_THRESHOLD:
 				sourceBB.snapToBB(targetBB)
+			
+			self._lastBoxGrabbed.regionGroup.getFinished()
+			if self._lastBoxGrabbed.regionGroup.allRegionsFinished:
+				for bb in self._lastBoxGrabbed.regionGroup.members:
+						bb.showMembers(True)
 
 	def snap(self, sourceMesh, targetMesh, children = False, animate = True):
 		self.moveCheckers(sourceMesh)
@@ -431,6 +450,10 @@ class PuzzleController(object):
 			sourceMesh.setPosition(targetMesh.checker.getPosition(viz.ABS_GLOBAL))
 			sourceMesh.setEuler(targetMesh.checker.getEuler(viz.ABS_GLOBAL))
 		targetMesh.group.merge(sourceMesh)
+		if targetMesh.group.grounded:
+			for m in sourceMesh.group.members:
+				self._boundingBoxes[sourceMesh.region]._keystones.append(m)
+			self._boundingBoxes[sourceMesh.region]._keystones = list(set(self._boundingBoxes[sourceMesh.region]._keystones))
 	
 	def getSnapSource(self):
 		"""Define source object for snapcheck"""
@@ -464,7 +487,14 @@ class PuzzleController(object):
 
 	def grab(self):
 		"""Grab in-range objects with the pointer"""
-		grabList = self._proximityList # Needed for disabling grab of grounded bones
+		if not self._lastBoxGrabbed:
+			grabList = self._proximityList # Needed for disabling grab of grounded bones
+		else:
+			# if there is an active region, you cannot grab meshes on inactive regions
+			meshGrabList = set.intersection(set(self._proximityList), set(self._lastBoxGrabbed._members))
+			boxGrabList = set.intersection(set(self._proximityList), set(self._boundingBoxes.values()))
+			grabList = list(set.union(meshGrabList, boxGrabList))
+			self.printNoticeable(str(grabList))
 		
 		if len(grabList) == 0 or self._grabFlag:
 			return
@@ -500,8 +530,13 @@ class PuzzleController(object):
 			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
 			target.highlight(True)
 			
-			target.showMembers(True)
-			[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target and not b.finishedRegion]
+			if not target.regionGroup.allRegionsFinished:
+				target.showMembers(True)
+				[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
+			if target.regionGroup.allRegionsFinished:
+				for bb in target.regionGroup.members:
+					bb.showMembers(True)
+				[b.showMembers(False) for b in self._boundingBoxes.values() if b not in target.regionGroup.members]
 			
 			if self._lastBoxGrabbed and self._lastBoxGrabbed is not target:
 				if self._lastBoxGrabbed in grabList:
@@ -518,7 +553,7 @@ class PuzzleController(object):
 		"""Release grabbed object from pointer"""
 		if self._gloveLink:
 			if isinstance(self._lastGrabbed, bp3d.Mesh):
-				self.transparency(self._lastGrabbed, 1.0)
+#				self.transparency(self._lastGrabbed, 1.0)
 				self._gloveLink.remove()
 				self._gloveLink = None
 				self.score.event(event = 'release mesh')
@@ -565,7 +600,12 @@ class PuzzleController(object):
 		self._lastMesh = []
 		while True:
 			yield viztask.waitFrame(1)
-			prox = list(set(self._proximityList) - set(self._boundingBoxes.values()))
+
+			if self._lastBoxGrabbed:
+				#only highlights bones for picking up in your active region
+				prox = list(set.intersection(set(self._lastBoxGrabbed._members), set(self._proximityList)))
+			else:
+				prox = list(set(self._proximityList) - set(self._boundingBoxes.values()))
 			
 			if prox and not self._gloveLink:
 				self._closestMesh = self.getClosestObject(model.pointer, prox)
@@ -1065,27 +1105,42 @@ class BoundingBox(viz.VizNode):
 	def showMembers(self, flag):
 		if flag:
 			val = 1.0
-			self.showRing(True)
+			if not self.finishedRegion:
+				self.showRing(True)
+			elif self.finishedRegion:
+				self.showRing(True, val)
 			self._showGroupFlag = True
 		else:
 			val = 0.2
-			self.showRing(False)
+			if not self.finishedRegion:
+				self.showRing(False)
+			elif self.finishedRegion:
+				self.showRing(False, val)
 			self._showGroupFlag = False
 		
+		self.showKeystones(val)
+			
+	def showKeystones(self, val = None):
 		for m in self._keystones:
 			m.setAlpha(val)
 	
-	def showRing(self, flag):
+	def showRing(self, flag, val = None):
 		if not flag:
 			keystones = set(self._keystones)		
 			meshes = set(self._members)
 			ring = list(meshes - keystones)
 			
 			for m in [m for m in ring if m.getEnabled()]:
-				m.disable()
+				if not val:
+					m.disable()
+				else:
+					m.setAlpha(val)
 		else:
 			for m in self._members:
-				m.enable()
+				if not val:
+					m.enable()
+				else:
+					m.setAlpha(val)
 		
 	def disperseMembers(self):
 		
@@ -1148,6 +1203,11 @@ class BoundingBox(viz.VizNode):
 		"""Snaps Bounding Box to Another Bounding Box, BB"""
 		self.moveTo(BB)
 		self.regionGroup.merge(BB)
+		self.regionGroup.getFinished()
+		if self.regionGroup.allRegionsFinished:
+			for bb in self.regionGroup.members:
+				bb.showMembers(True)
+		
 			
 	def moveTo(self, BB, animate = True, time = 0.3):
 		"""
@@ -1226,6 +1286,7 @@ class RegionGroup ():
 			self.members = []
 			self.parent = members[0]
 			self.addMembers(members)
+			self.allRegionsFinished = False
 			
 		def setParent(self, parent):
 			"""Set region bounding box to parent of all other bouding boxes in the group"""
@@ -1252,7 +1313,19 @@ class RegionGroup ():
 			#delet source.group
 			for r in source.regionGroup.members:
 				r.setGroup(self)
-	
+				
+		def getFinished(self):
+			"""Determines if all bounding boxes in the RegionGroup have been finished"""
+			numMembers = len(self.members)
+			membersFin = 0
+			for bb in self.members:
+				print bb.finishedRegion
+				if bb.finishedRegion:
+					membersFin += 1
+			if numMembers == membersFin:
+				self.allRegionsFinished = True
+			else:
+				self.allRegionsFinished = False
 
 class PuzzleScore():
 	"""Handles scoring for the puzzle game"""
