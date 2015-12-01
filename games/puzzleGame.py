@@ -31,7 +31,7 @@ class PuzzleController(object):
 	def __init__(self, dataset):
 		self.modeName = ''
 		
-		self._maxThreads =1.9
+		self._maxThreads = 8
 		self._curThreads = 0
 		
 
@@ -138,7 +138,7 @@ class PuzzleController(object):
 				
 			#Wait to add thread if threadThrottle conditions are not met
 			model.threads += 1 #Add 1 for each new thread added --- new render started
-			yield viz.director(self.threadThrottle, self._maxThreads)
+			yield viztask.waitTrue(self.threadThrottle, self._maxThreads)
 			yield viz.director(self.renderMeshes, fileName)
 			model.menu.updateLoad(len(self._meshes), len(self._meshesToLoad))
 			
@@ -158,12 +158,9 @@ class PuzzleController(object):
 		If the number of current threads (curThreads) is greater than the decided maximum, then 
 		returns false --- and vice-versa
 		"""
-		while threadFlag:
+		while True:
 			if model.threads <= maxThreads:
-				threadFlag = False
 				return True
-			else:
-				threadFlag = True
 				
 	def setKeystone(self, number):
 		"""Set Keystones"""
@@ -336,15 +333,17 @@ class PuzzleController(object):
 		Snap checks for any nearby bones, and mates a src bone to a dst bone
 		if they are in fact correctly placed.
 		"""
+		snapped = False
+		
 		if not self.getSnapSource():
 			print 'nothing to snap'
 			return
 
-		SNAP_THRESHOLD		= 0.2; #how far apart the mesh you are snapping is from where it should be
-		DISTANCE_THRESHOLD	= 0.45; #distance source mesh is from other meshes
-		ANGLE_THRESHOLD		= 45.0; #min euler difference source mesh can be from target mesh
 		
 		if isinstance(self.getSnapSource(), bp3d.Mesh):
+			SNAP_THRESHOLD		= 0.2; #how far apart the mesh you are snapping is from where it should be
+			DISTANCE_THRESHOLD	= 0.75; #distance source mesh is from other meshes
+			ANGLE_THRESHOLD		= 45.0; #min euler difference source mesh can be from target mesh
 			sourceMesh		= self.getSnapSource()
 			searchMeshes	= self.getSnapSearch(source = sourceMesh)
 			targetMesh		= self.keyTarget
@@ -363,8 +362,10 @@ class PuzzleController(object):
 #				self._snapAttempts = 0
 				if self.modeName == 'testplay':
 					self.pickSnapPair()
+					
 			elif sourceMesh.group.grounded:
 				print 'That object is grounded. Returning!'
+				
 			else:
 				for bone in [b for b in searchMeshes if b not in sourceMesh.group.members]:
 					targetSnap = bone.checker.getPosition(viz.ABS_GLOBAL)
@@ -384,19 +385,28 @@ class PuzzleController(object):
 						self.score.event(event = 'snap', description = 'Successful snap', source = sourceMesh.name, destination = bone.name)
 						viz.playSound(".\\dataset\\snap.wav")
 						self.snap(sourceMesh, bone, children = True)
+						snapped = True
 						if self.modeName == 'testplay':
 							self.pickSnapPair()
 						break
-				else:
+				if not snapped:
 					print 'Did not meet snap criteria!'
 					sourceMesh.snapAttempts += 1
 					self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = sourceMesh.name)
+				self.printNoticeable('snap attempts: ' + str(sourceMesh.snapAttempts))
+						
 			if len(self._meshes) == len(sourceMesh.group.members):
 				print "Assembly completed!"
-				end()
-				menu.ingame.endButton()
+				self.end()
+				model.menu.ingame.endButton()
+			if len(self._boundingBoxes[sourceMesh.region]._keystones) == len(self._boundingBoxes[sourceMesh.region]._members):
+				self.printNoticeable('Finished Region!!')
+				self._boundingBoxes[sourceMesh.region].finishedRegion = True
 		
 		elif isinstance(self.getSnapSource(), BoundingBox):
+			SNAP_THRESHOLD		= 1.5; #how far apart the mesh you are snapping is from where it should be
+			ANGLE_THRESHOLD		= 45.0; #min euler difference source mesh can be from target mesh
+			
 			#If lastGrabbed is a bounding box carry out this snap check procedure...
 			sourceBB = self.getSnapSource()
 			
@@ -421,8 +431,6 @@ class PuzzleController(object):
 			sourceMesh.setPosition(targetMesh.checker.getPosition(viz.ABS_GLOBAL))
 			sourceMesh.setEuler(targetMesh.checker.getEuler(viz.ABS_GLOBAL))
 		targetMesh.group.merge(sourceMesh)
-		if sourceMesh.group.grounded:
-			self._keystones.append(sourceMesh)
 	
 	def getSnapSource(self):
 		"""Define source object for snapcheck"""
@@ -492,9 +500,8 @@ class PuzzleController(object):
 			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
 			target.highlight(True)
 			
-			if not self._imploded:
-				target.showMembers(True)
-				[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
+			target.showMembers(True)
+			[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target and not b.finishedRegion]
 			
 			if self._lastBoxGrabbed and self._lastBoxGrabbed is not target:
 				if self._lastBoxGrabbed in grabList:
@@ -607,9 +614,6 @@ class PuzzleController(object):
 			if self._boundingBoxes:
 				for box in self._boundingBoxes.values():
 					box.implode()
-					if not box._showGroupFlag:
-						box.showMembers(True)
-						box._showGroupFlag = False
 			else:
 				target = self._keystones[0] # Move to the current keystone(s)
 				for m in self._meshes[1:]:
@@ -630,8 +634,8 @@ class PuzzleController(object):
 			if self._boundingBoxes:
 				for box in self._boundingBoxes.values():
 					box.explode()
-					if not box._showGroupFlag:
-						box.showMembers(False)
+#					if not box._showGroupFlag:
+#						box.showMembers(False)
 			else:
 				for m in self._meshes[1:]:
 					if m.getAction():
@@ -944,12 +948,14 @@ class BoundingBox(viz.VizNode):
 		of subassemblies of the entire model. Currently partitioned by region.
 		"""
 		
-		self.name			= ''		
-		self._alpha			= 0.3
-		self._members		= []
-		self._keystones 	= []
-		self.wireFrame		= None
-		self._showGroupFlag = True
+		self.name				= ''		
+		self._alpha				= 0.3
+		self._members			= []
+		self._keystones 		= []
+		self.wireFrame			= None
+		self._showGroupFlag 	= True
+		
+		self.finishedRegion = False
 		
 		self.axis = vizshape.addAxes()
 		self.cube = vizshape.addCube()
@@ -1070,14 +1076,15 @@ class BoundingBox(viz.VizNode):
 			m.setAlpha(val)
 	
 	def showRing(self, flag):
-		keystones = set(self._keystones)
-		meshes = set(self._members)
-		ring = list(meshes - keystones)
 		if not flag:
-			for m in ring:
+			keystones = set(self._keystones)		
+			meshes = set(self._members)
+			ring = list(meshes - keystones)
+			
+			for m in [m for m in ring if m.getEnabled()]:
 				m.disable()
 		else:
-			for m in ring:
+			for m in self._members:
 				m.enable()
 		
 	def disperseMembers(self):
@@ -1183,6 +1190,9 @@ class BoundingBox(viz.VizNode):
 			for m in k.group.members:
 				self._keystones.append(m)
 			m.group.grounded = True
+			
+		[self._keystones[0].group.merge(key) for key in self._keystones[1:]]
+			
 	
 	def implode(self):
 		"""Move bones to solved positions"""
