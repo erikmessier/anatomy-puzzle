@@ -39,6 +39,7 @@ class MeshGroup(object):
 			curMat = m.getMatrix(viz.ABS_GLOBAL)
 			m.setParent(parent)
 			m.setMatrix(curMat, viz.ABS_GLOBAL)
+		self.parent = m
 	
 	def addMembers(self, members):
 		"""Add a list of Bone objects to the members list"""
@@ -152,12 +153,13 @@ class Mesh(viz.VizNode):
 #		self.tooltip.visible(viz.OFF)
 		model.proxManager.removeSensor(self._sensor)
 	
-	def highlight(self, prox = False, grabbed = False, closest = False):
+	def highlight(self, prox = False, grabbed = False, closest = False, showTip = True):
 		if closest:
 			self.color([4,0.5,0.5])
 		elif grabbed:
 			self.color([0.0,1.0,0.5])
-			self.tooltip.visible(viz.ON)
+			if showTip:
+				self.tooltip.visible(viz.ON)
 		else:
 			if prox:
 				self.color([1.0,1.0,0.5])

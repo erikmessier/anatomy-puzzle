@@ -20,9 +20,10 @@ import anatomyTrainer
 import menu
                  
 def main():
+	
 	try:
 		#Prompt for init config parameters
-		configurations = menu.modalityGUI()
+		configurations = menu.modalityGUI()\
 		
 		
 		#Handling configuration selections
@@ -35,7 +36,9 @@ def main():
 		if proceedFromConfigGUI:
 		
 			#Initialize puzzle game
+			
 			anatomyTrainer.start()
+			
 	except:
 		raise
 		

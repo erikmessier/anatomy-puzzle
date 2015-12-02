@@ -97,17 +97,18 @@ class OntologicalGroups:
 	"""Manually defined ontological groups"""
 	#Associates regions of the body with region concept name(s)
 	_key_value_Regions = [\
-		('Head',			['head']), \
-		('Thorax',			['body proper', 'muscle of shoulder', 'sternum', 'muscle of pectoral girdle', 'muscle of vertebral column', 'muscle of neck', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart']), \
+		('Head',			['head', 'tooth']), \
+		('Thorax',			['body proper', 'muscle of shoulder', 'sternum', 'muscle of pectoral girdle', 'muscle of vertebral column', 'muscle of neck', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart', 'costal cartilage', 'cartilage organ component']), \
 		('Upper Appen.',	['right free upper limb', 'left free upper limb', 'muscle of free upper limb']), \
 		('Lower Appen.',	['right free lower limb', 'left free lower limb', 'muscle of lower limb'])]
 	regions = collections.OrderedDict(_key_value_Regions)
 	
 	#Associates tissue layers of the body with the full layer concept name
 	_key_value_Layers = [\
-	('Bone',	['bone organ']), \
-	('Muscle',	['muscle organ']), \
-	('Organs',	['brain', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart'])]
+	('Bone',		['bone organ', 'tooth']), \
+	('Cartilage',	['costal cartilage', 'cartilage organ component', 'nasal cartilage', 'cartilage organ']), \
+	('Muscle',		['costal cartilage']), \
+	('Organs',		['brain', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart'])]
 	layers = collections.OrderedDict(_key_value_Layers)
 
 class MenuConfig:
@@ -118,8 +119,8 @@ class MenuConfig:
 	_key_value_RemoveCheckFromTab = [\
 	('Head',		[]), \
 	('Thorax',		[]), \
-	('Upper Appen.', ['Organs']), \
-	('Lower Appen.', ['Organs'])]
+	('Upper Appen.', ['Organs', 'Cartilage']), \
+	('Lower Appen.', ['Organs', 'Cartilage'])]
 	RemoveCheckFromTab = collections.OrderedDict(_key_value_RemoveCheckFromTab)
 	
 	""" Relates mode to its mode operation"""
@@ -189,14 +190,17 @@ ignoreSets = ( \
 
 # Colors of the various tissue layes
 colors = { \
-	'muscle organ':		(1.0, 0.5, 0.5), \
-	'bone organ':		(1.0, 1.0, 0.8), \
-	'brain':			(0.45, 0.7, 0.7), \
-	'left lung':		(1.0, 0.70, 0.85), \
-	'right lung':		(1.0, 0.70, 0.85), \
-	'gastrointestinal tract': (1.0, 0.85, 0.6), \
-	'heart':			(1.0, 0.45, 0.4), \
-	'urinary system':	(1.0, 1.0, 0.4)}
+	'muscle organ':					(1.0, 0.5, 0.5), \
+	'bone organ':					(1.0, 1.0, 0.8), \
+	'brain':						(0.45, 0.7, 0.7), \
+	'left lung':					(1.0, 0.70, 0.85), \
+	'right lung':					(1.0, 0.70, 0.85), \
+	'gastrointestinal tract': 		(1.0, 0.85, 0.6), \
+	'heart':						(1.0, 0.45, 0.4), \
+	'urinary system':				(1.0, 1.0, 0.4), \
+	'costal cartilage':				(1.0, 0.85, 0.7), \
+	'cartilage organ component':	(1.0, 0.85, 0.7), \
+	'nasal cartilage':				(1.0, 0.85, 0.7)}
 
 #PreSnap Meshes (region: feature)
 preSnapMeshes = {\
@@ -206,7 +210,12 @@ preSnapMeshes = {\
 	'right free lower limb':	['phalanx of toe', 'metatarsal bone', 'tarsal bone'], \
 	'vertebral column':			['cervical vertebral column', 'thoracic vertebral column', 'lumbar vertebral column'], \
 	'zone of jejunum':			['zone of jejunum'], \
-	'zone of ileum':			['zone of ileum']}
+	'zone of ileum':			['zone of ileum'], \
+	'rib':						['true rib', 'typical rib', 'false rib'], \
+	'sternum':					['sternum'], \
+	'costal cartilage':			['costal cartilage'], \
+	'nasal cartilage':			['nasal cartilage'], \
+	'tooth':					['tooth']}
 
 # Scaling Factor for meshes
 SF = 1.0/500

@@ -164,8 +164,8 @@ class PuzzleController(object):
 				
 	def setKeystone(self, number):
 		"""Set Keystones"""
-		for m in self._boundingBoxes.values():
-			m.setKeystones(number)
+		for bb in self._boundingBoxes.values():
+			bb.setKeystones(number)
 #		for m in [self._meshes[i] for i in range(number)]:
 #			cp = m.centerPointScaled
 #			m.setPosition(cp, viz.ABS_GLOBAL)
@@ -406,7 +406,7 @@ class PuzzleController(object):
 				print "Assembly completed!"
 				self.end()
 				model.menu.ingame.endButton()
-			if len(self._boundingBoxes[sourceMesh.region]._keystones) == len(self._boundingBoxes[sourceMesh.region]._members):
+			if len(self._lastBoxGrabbed._keystones) == len(self._lastBoxGrabbed._members):
 				self.score.event(event = 'Finished Region', description = self._lastMeshGrabbed.region + ' was finished')
 				self.printNoticeable('Finished Region!!')
 				self._boundingBoxes[sourceMesh.region].finishedRegion = True
@@ -489,12 +489,12 @@ class PuzzleController(object):
 		"""Grab in-range objects with the pointer"""
 		if not self._lastBoxGrabbed:
 			grabList = self._proximityList # Needed for disabling grab of grounded bones
+			self._lastBoxGrabbed = self._boundingBoxes.values()[0]
 		else:
 			# if there is an active region, you cannot grab meshes on inactive regions
 			meshGrabList = set.intersection(set(self._proximityList), set(self._lastBoxGrabbed._members))
 			boxGrabList = set.intersection(set(self._proximityList), set(self._boundingBoxes.values()))
 			grabList = list(set.union(meshGrabList, boxGrabList))
-			self.printNoticeable(str(grabList))
 		
 		if len(grabList) == 0 or self._grabFlag:
 			return
@@ -530,13 +530,7 @@ class PuzzleController(object):
 			self.score.event(event = 'grab', description = 'Grabbed bounding box', source = target.name)
 			target.highlight(True)
 			
-			if not target.regionGroup.allRegionsFinished:
-				target.showMembers(True)
-				[b.showMembers(False) for b in self._boundingBoxes.values() if b is not target]
-			if target.regionGroup.allRegionsFinished:
-				for bb in target.regionGroup.members:
-					bb.showMembers(True)
-				[b.showMembers(False) for b in self._boundingBoxes.values() if b not in target.regionGroup.members]
+			self.hideNonActive(target)
 			
 			if self._lastBoxGrabbed and self._lastBoxGrabbed is not target:
 				if self._lastBoxGrabbed in grabList:
@@ -562,6 +556,9 @@ class PuzzleController(object):
 				self._gloveLink = None
 				self.score.event(event = 'release bounding box')
 		self._grabFlag = False
+		
+	def hideNonActive(self, activeBox):
+		pass
 	
 	def getDisabled(self):
 		""""""
@@ -801,6 +798,16 @@ class FreePlay(PuzzleController):
 				return target
 		else:
 			return self.getAdjacent(self._lastGrabbed, self.getEnabled())[0]
+			
+	def hideNonActive(self, activeBox):
+		"""Hides non-active bounding boxes and their elements"""
+		if not activeBox.regionGroup.allRegionsFinished:
+				activeBox.showMembers(True)
+				[b.showMembers(False) for b in self._boundingBoxes.values() if b is not activeBox]
+		if activeBox.regionGroup.allRegionsFinished:
+			for bb in activeBox.regionGroup.members:
+				bb.showMembers(True)
+			[b.showMembers(False) for b in self._boundingBoxes.values() if b not in activeBox.regionGroup.members]
 
 class TestPlay(PuzzleController):
 	"""
@@ -813,6 +820,7 @@ class TestPlay(PuzzleController):
 		
 		self._meshesDisabled	= []
 		self._keystoneAdjacent	= {}
+		self._renderMeshes 		= []
 		
 		self._quizSource = None
 		self._quizTarget = None
@@ -865,12 +873,15 @@ class TestPlay(PuzzleController):
 		yield self.addToBoundingBox(self._meshes)
 		yield self.disperseRandom(self._boundingBoxes.values())
 		yield self.setKeystone(3)
-		yield self.hideMeshes()
 		yield self.testPrep()
+		yield self.hideMeshes()
 		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
 		
 		# Setup Key Bindings
 		self.bindKeys()
+		
+		#Schedule closest bone calculation
+		viztask.schedule(self.updateClosestBone)
 		
 	def addToBoundingBox(self, meshes):
 		"""
@@ -879,21 +890,38 @@ class TestPlay(PuzzleController):
 		"""
 		self._boundingBoxes['full'] = BoundingBox(meshes)
 		
+		
+	def startingAdjacents(self, source, pool, number):
+			for m in self.getAdjacent(source, pool)[0:number]:
+				for mGroup in m.group.members:
+					mGroup.enable(animate = False)
+					self._renderMeshes.append(mGroup)
+					pool = list(set(pool) - set([mGroup]))
+					
+		
 	def testPrep(self):
 		self.score	= PuzzleScore(self.modeName)
-		keystone	= random.sample(self.getKeystones(), 1)[0]
-		self._keystoneAdjacent.update({keystone:[]})
+		keystones = self._boundingBoxes.values()[0]._keystones
+		pureKeystones = self._boundingBoxes.values()[0]._pureKeystones
+		meshes = list(set(self._meshes) - set(keystones))
+#		keystone	= random.sample(self.getKeystones(), 1)[0]
+#		self._keystoneAdjacent.update({keystone:[]})
 		
-		for m in self.getAdjacent(keystone, self.getDisabled())[:4]:
-			for mGroup in m.group.members:
-				mGroup.enable(animate = False)
+#		for m in self.getAdjacent(keystone, self._meshes)[:4]:
+#			for mGroup in m.group.members:
+#				self._keystoneAdjacent[keystone].append(mGroup)
+#				mGroup.enable(animate = False)
+#		self.pickSnapPair()
+		for keystone in pureKeystones:
+			self.startingAdjacents(keystone, meshes, 2)
+			meshes = list(set(meshes) - set(self._renderMeshes))
 		self.pickSnapPair()
 			
 	def hideMeshes(self):
-		keystones = set(self._keystones)
-		adjacents = set(self._keystoneAdjacent)
+		keystones = set(self.getKeystones())
 		meshes = set(self._meshes)
-		hideMeshes = meshes - adjacents - keystones
+		renderMeshes = set(self._renderMeshes)
+		hideMeshes = meshes - keystones - renderMeshes
 		for m in hideMeshes:
 			m.disable()
 			
@@ -992,6 +1020,7 @@ class BoundingBox(viz.VizNode):
 		self._alpha				= 0.3
 		self._members			= []
 		self._keystones 		= []
+		self._pureKeystones		= []
 		self.wireFrame			= None
 		self._showGroupFlag 	= True
 		
@@ -1247,6 +1276,7 @@ class BoundingBox(viz.VizNode):
 			changeParent(k, self)
 			diff = list(numpy.subtract(k.centerPointScaled, self.cornerPointScaled))
 			k.setPosition(diff, viz.ABS_PARENT)
+			self._pureKeystones.append(k)
 			for m in k.group.members:
 				self._keystones.append(m)
 			m.group.grounded = True
