@@ -191,7 +191,7 @@ class PuzzleController(object):
 		"""Places meshes in circle around keystone(s)"""
 		for m in self._meshes:
 			m.addSensor()
-			m.addToolTip()
+			m.addToolTip(self._boundingBoxes[m.region])
 		
 	def disperseRandom(self, nodes, animate = False):
 		for m in nodes:
@@ -626,7 +626,6 @@ class PuzzleController(object):
 			if self._lastGrabbed and self._closestMesh != self._lastGrabbed:
 					self._lastGrabbed.color([0,1,0.5])
 			
-
 	def EnterProximity(self, e):
 		"""Callback for a proximity entry event between the pointer and a mesh"""
 		source = e.sensor.getSourceObject()
@@ -695,16 +694,6 @@ class PuzzleController(object):
 		else:
 			self.explode()
 
-	def end(self):
-		"""Do everything that needs to be done to end the puzzle game"""
-		self.printNoticeable("Puzzle instance ending!")
-#		self.score.close()
-		model.proxManager.clearSensors()
-		model.proxManager.clearTargets()
-		model.proxManager.remove()
-		self.unloadMeshes()
-		for bind in self._keyBindings:
-			bind.remove()
 
 	def bindKeys(self):
 		"""Define all key bindings and store them in a list"""
@@ -744,6 +733,26 @@ class PuzzleController(object):
 		"""Turn on slicing computation"""
 		viztask.schedule(self.alphaSliceUpdate())
 			
+	def end(self):
+		"""Do everything that needs to be done to end the puzzle game"""
+		self.printNoticeable("Puzzle instance ending!")
+		if self._lastMeshGrabbed:
+			print self._lastMeshGrabbed
+			self._lastMeshGrabbed.highlight(False)
+#			self_lastMeshGrabbed.nameLine.clearVertices()
+#			self_lastMeshGrabbed._lineUpdateEvent.remove()
+			self._lastMeshGrabbed = None
+		if self._lastBoxGrabbed:
+			self._lastBoxGrabbed = None
+		if self._lastGrabbed:
+			self._lastGrabbed = None
+#		self.score.close()
+		model.proxManager.clearSensors()
+		model.proxManager.clearTargets()
+		model.proxManager.remove()
+		self.unloadMeshes()
+		for bind in self._keyBindings:
+			bind.remove()
 		
 class FreePlay(PuzzleController):
 	"""Free play mode allowing untimed, unguided exploration of the selected dataset(s)"""
@@ -780,8 +789,8 @@ class FreePlay(PuzzleController):
 		self._filesToPreSnap = model.ds.getPreSnapSet()
 		
 		yield self.loadControl(self._meshesToLoad)
-		yield self.prepareMeshes()
 		yield self.addToBoundingBox(self._meshes)
+		yield self.prepareMeshes()
 		yield self.disperseRandom(self._boundingBoxes.values())
 		yield self.preSnap()
 		yield self.setKeystone(3)
@@ -915,7 +924,7 @@ class TestPlay(PuzzleController):
 #				mGroup.enable(animate = False)
 #		self.pickSnapPair()
 		for keystone in pureKeystones:
-			self.startingAdjacents(keystone, meshes, 2)
+			self.startingAdjacents(keystone, meshes, 3)
 			meshes = list(set(meshes) - set(self._renderMeshes))
 		self.pickSnapPair()
 			
@@ -1002,7 +1011,7 @@ class PinDrop(PuzzleController):
 		yield self.loadMeshes(self._meshesToLoad)
 		for m in self._meshes:
 			m.addSensor()
-			m.addToolTip()
+			m.addToolTip(self._boundingBoxes[m.region])
 		self.setKeystone(len(self._meshes))
 		
 	def bindKeys(self):

@@ -3,7 +3,7 @@ Model components of the Puzzle game
 """
 
 # Built-in modules
-import csv, json
+import csv, json, numpy
 
 # Vizard Modules
 import viz
@@ -69,6 +69,8 @@ class Mesh(viz.VizNode):
 		self.centerPointScaled = [a*SF for a in self.centerPoint]
 		self.centerPointScaledFlipped = [a*SF*-1 for a in self.centerPoint]
 		
+		self._lineUpdateEvent = None
+		
 		self.name = self.metaData['name']
 		for region, names in config.OntologicalGroups.regions.iteritems():
 			files = model.ds.getOntologySet([(set.union, names)])
@@ -104,16 +106,6 @@ class Mesh(viz.VizNode):
 		self.mesh.setPosition(self.centerPointScaledFlipped, viz.ABS_PARENT)
 		self.checker.setPosition(self.centerPoint)
 		
-		#Line between tooltip and mesh centerPoint
-#		viz.startLayer(viz.LINES)
-#		viz.vertexColor(viz.BLUE)
-#		viz.lineWidth(5)
-#		viz.vertex(self.getPosition(viz.ABS_GLOBAL))
-#		viz.vertex(self.tooltip.getPosition(viz.ABS_GLOBAL))
-#		self.nameLine = viz.endLayer()
-#		self.nameLine.dynamic()
-#		self.nameLine.visible(viz.OFF)
-		
 		# Turn off visibility of center and checker viznodes
 		self.mesh.color(self.metaData['color'])
 		self.checker.disable([viz.RENDERING,viz.INTERSECTION,viz.PHYSICS])
@@ -146,6 +138,25 @@ class Mesh(viz.VizNode):
 			#self.tooltip.visible(viz.ON)
 		model.proxManager.addSensor(self._sensor)
 		
+	def updateNameLine(self):
+		self.nameLine.clearVertices()
+		toolPos = self.tooltip.getPosition(viz.ABS_GLOBAL)
+		meshPos = self.center.getPosition(viz.ABS_GLOBAL)
+		self.nameLine.addVertex([[x,y-0.1,z] for x,y,z in [toolPos]][0])
+		self.nameLine.addVertex(meshPos)
+		self.nameLine.color([0.0,1.0,0.5])
+		
+	def showToolTip(self, flag):
+		if flag:
+			self.tooltip.visible(viz.ON)
+			self.nameLine.visible(viz.ON)
+			self._lineUpdateEvent = vizact.ontimer(0, self.updateNameLine)
+		if not flag:
+			self.tooltip.visible(viz.OFF)
+			self.nameLine.visible(viz.OFF)
+			if self._lineUpdateEvent:
+				self._lineUpdateEvent.remove()
+		
 	def disable(self):
 		"""Turn off visibility/set enabled flag"""
 		self._enabled = False
@@ -159,14 +170,14 @@ class Mesh(viz.VizNode):
 		elif grabbed:
 			self.color([0.0,1.0,0.5])
 			if showTip:
-				self.tooltip.visible(viz.ON)
+				self.showToolTip(True)
 		else:
 			if prox:
 				self.color([1.0,1.0,0.5])
-				self.tooltip.visible(viz.OFF)
+				self.showToolTip(False)
 			elif not prox:
 				self.color(reset = True)
-				self.tooltip.visible(viz.OFF)
+				self.showToolTip(False)
 	
 	def grab(self):
 		pass
@@ -193,15 +204,25 @@ class Mesh(viz.VizNode):
 		"""Resets the counter for how long glove is close to bone"""
 		self.proxCounter = 0
 		
-	def addToolTip(self):
+	def addToolTip(self, bb):
 		self.tooltip = viz.addText(self.nameFormatted)
 		self.tooltip.visible(viz.OFF)
-		self.tooltip.color(0,5,1)
-		self.tooltip.setParent(self.center)
+		self.tooltip.color([0.0,1.0,0.5])
+		self.tooltip.setParent(bb)
+		position = list(numpy.add(numpy.subtract(bb.centerPointScaled, bb.cornerPointScaled), bb.axis.getPosition(viz.ABS_GLOBAL))) #calculate transformed center of the bounding box
+		position = [[x,y,z-1] for x,y,z in [position]][0]
 		self.tooltip.billboard(viz.BILLBOARD_VIEW)
 		self.tooltip.setScale(0.1,0.1,0.1) #set to prefered scale
-		self.tooltip.setPosition(0,0,-1)
+		self.tooltip.setPosition(position)
 		self.tooltip.alignment(viz.TEXT_CENTER_CENTER)
+		
+		#Line between tooltip and mesh centerPoint
+		viz.startLayer(viz.LINES)
+		viz.vertexColor(viz.BLUE)
+		viz.lineWidth(2)
+		self.nameLine = viz.endLayer()
+		self.nameLine.dynamic()
+		self.nameLine.visible(viz.OFF)
 		
 	def addSensor(self):
 		"""Add a sensor to a proximity manager"""
