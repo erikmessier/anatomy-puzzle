@@ -639,11 +639,13 @@ class PuzzleController(object):
 	def ExitProximity(self, e):
 		"""Callback for a proximity exit event between the pointer and a mesh"""
 		source = e.sensor.getSourceObject()
-		if len(self._proximityList) and not self._gloveLink:
+		self._proximityList.remove(source)
+		if len(self._proximityList):
+			model.pointer.color([4.0,0.5,0.5])
+		else:
 			model.pointer.color(1,1,1)
 		if source != self._lastGrabbed:
 			source.highlight(False)
-		self._proximityList.remove(source)
 	
 	def implode(self):
 		"""Move bones to solved positions"""
