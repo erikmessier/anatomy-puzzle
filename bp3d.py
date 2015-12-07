@@ -63,6 +63,7 @@ class Mesh(viz.VizNode):
 	"""
 	def __init__(self, fileName, SF = 1.0/500):
 		"""Pull the BodyParts3D mesh into an instance and set everything up"""
+		self.tooltip = None
 		self.snapAttempts = 0
 		self.metaData = model.ds.getMetaData(file = fileName)
 		self.centerPoint = self.metaData['centerPoint']
@@ -170,14 +171,17 @@ class Mesh(viz.VizNode):
 		elif grabbed:
 			self.color([0.0,1.0,0.5])
 			if showTip:
-				self.showToolTip(True)
+				if self.tooltip:
+					self.showToolTip(True)
 		else:
 			if prox:
 				self.color([1.0,1.0,0.5])
-				self.showToolTip(False)
+				if self.tooltip:
+					self.showToolTip(False)
 			elif not prox:
 				self.color(reset = True)
-				self.showToolTip(False)
+				if self.tooltip:
+					self.showToolTip(False)
 	
 	def grab(self):
 		pass

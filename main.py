@@ -36,9 +36,7 @@ def main():
 		if proceedFromConfigGUI:
 		
 			#Initialize puzzle game
-			
 			anatomyTrainer.start()
-			
 	except:
 		raise
 		

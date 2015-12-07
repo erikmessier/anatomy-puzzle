@@ -34,7 +34,6 @@ class PuzzleController(object):
 		self._maxThreads = 8
 		self._curThreads = 0
 		
-
 		self._meshes			= []
 		self._meshesByFilename	= {}
 		self._keystones			= []
@@ -402,10 +401,6 @@ class PuzzleController(object):
 					self.score.event(event = 'snapfail', description = 'did not meet snap criteria', source = sourceMesh.name)
 				self.printNoticeable('snap attempts: ' + str(sourceMesh.snapAttempts))
 						
-			if len(self._meshes) == len(sourceMesh.group.members):
-				print "Assembly completed!"
-				self.end()
-				model.menu.ingame.endButton()
 			if len(self._lastBoxGrabbed._keystones) == len(self._lastBoxGrabbed._members):
 				self.score.event(event = 'Finished Region', description = self._lastMeshGrabbed.region + ' was finished')
 				self.printNoticeable('Finished Region!!')
@@ -416,6 +411,11 @@ class PuzzleController(object):
 				if self._lastBoxGrabbed.regionGroup.allRegionsFinished:
 					for bb in self._lastBoxGrabbed.regionGroup.members:
 						bb.showMembers(True)
+			if len(self._meshes) == len(sourceMesh.group.members):
+				print "Assembly completed!"
+				self.end()
+				model.menu.endGame()
+				
 					
 		elif isinstance(self.getSnapSource(), BoundingBox):
 			SNAP_THRESHOLD		= 1.5; #how far apart the mesh you are snapping is from where it should be
@@ -509,7 +509,8 @@ class PuzzleController(object):
 				self.keyTarget = self._boundingBoxes['full']._keystones[0]
 				
 			if target.group.grounded:
-				target.highlight(grabbed = True)
+				self.highlightGrabbedMesh(target, True)
+				
 			else:
 				target.setGroupParent()
 				self._gloveLink = viz.grab(model.pointer, target, viz.ABS_GLOBAL)
@@ -542,6 +543,9 @@ class PuzzleController(object):
 			
 		self._lastGrabbed = target
 		self._grabFlag = True
+		
+	def highlightGrabbedMesh(self, mesh, flag):
+		mesh.highlight(grabbed = flag)
 
 	def release(self):
 		"""Release grabbed object from pointer"""
@@ -661,7 +665,7 @@ class PuzzleController(object):
 						bone.checker.setPosition(m.centerPoint, viz.ABS_PARENT)
 					m.storeMat()
 					m.moveTo(target.checker.getMatrix(viz.ABS_GLOBAL), time = 0.6)
-					
+
 			self._keyBindings[3].setEnabled(viz.OFF)  #disable snap key down event
 			self._keyBindings[4].setEnabled(viz.OFF)  #disable snap key down event
 			self._imploded = True
@@ -679,7 +683,7 @@ class PuzzleController(object):
 					if m.getAction():
 						return
 					m.moveTo(m.loadMat(), time = 0.6)
-			
+					
 			self._keyBindings[3].setEnabled(viz.ON) #enable snap key down event
 			self._keyBindings[4].setEnabled(viz.ON) #enable snap key down event
 			self._imploded = False
@@ -753,6 +757,15 @@ class PuzzleController(object):
 		self.unloadMeshes()
 		for bind in self._keyBindings:
 			bind.remove()
+			
+		if self._quizPanel:
+			self._quizPanel.remove()
+			
+		self.endSpecificObjects()
+			
+	def endSpecificObjects(self):
+		"""Ends objects specific to the game instance created (quiz, freeplay, or pindrop)"""
+		pass
 		
 class FreePlay(PuzzleController):
 	"""Free play mode allowing untimed, unguided exploration of the selected dataset(s)"""
@@ -908,7 +921,11 @@ class TestPlay(PuzzleController):
 					mGroup.enable(animate = False)
 					self._renderMeshes.append(mGroup)
 					pool = list(set(pool) - set([mGroup]))
-					
+			
+	def prepareMeshes(self):
+		"""Places meshes in circle around keystone(s)"""
+		for m in self._meshes:
+			m.addSensor()
 		
 	def testPrep(self):
 		self.score	= PuzzleScore(self.modeName)
@@ -974,6 +991,9 @@ class TestPlay(PuzzleController):
 			m = self.getAdjacent(keystone, disabled)[0]
 		for mGroup in m.group.members:
 			mGroup.enable(animate = True)
+			
+	def highlightGrabbedMesh(self, mesh, flag):
+		mesh.highlight(grabbed = flag, showTip = False)
 	
 	def getSnapSource(self):
 		"""Define source object for snapcheck"""
@@ -986,6 +1006,12 @@ class TestPlay(PuzzleController):
 	def getSnapSearch(self, source = None):
 		"""Define list of objects to search for snapcheck"""
 		return [self._quizTarget]
+		
+	def endSpecificObjects(self):
+		"""Ends objects specific to the game instance created (quiz, freeplay, or pindrop)"""
+		if self._quizPanel:
+			self._quizPanel.remove()
+		
 		
 class PinDrop(PuzzleController):
 	"""
