@@ -649,6 +649,8 @@ class PuzzleController(object):
 			model.pointer.color(1,1,1)
 		if source != self._lastGrabbed:
 			source.highlight(False)
+		if self._lastMeshGrabbed:
+			self._lastMeshGrabbed.highlight(grabbed = True)
 	
 	def implode(self):
 		"""Move bones to solved positions"""

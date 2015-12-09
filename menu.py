@@ -427,7 +427,7 @@ class LoadingScreen(vizinfo.InfoPanel):
 		viz.mouse.setVisible(False)
 		viz.mouse.setTrap(True)
 
-		#individual menu parameters
+		#adding progress bar
 		self.name = name
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 		
