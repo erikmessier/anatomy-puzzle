@@ -60,7 +60,7 @@ class PuzzleController(object):
 		self._pointerTexture	= model.pointer.getTexture()
 		self._pointerOrigColor	= model.pointer.getColor()
 
-		self.viewcube = puzzleView.viewCube()
+#		self.viewcube = puzzleView.viewCube()
 		
 		viztask.schedule(self.load(dataset))
 		
@@ -92,7 +92,7 @@ class PuzzleController(object):
 
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
 		self._filesToPreSnap = model.ds.getPreSnapSet()
-			
+		
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
 		yield self.preSnap()
@@ -573,7 +573,7 @@ class PuzzleController(object):
 		if includeGrounded:
 			return [m for m in self._meshes if m.getEnabled()]
 		else:
-			return [m for m in self._meshes if m.getEnabled() if not m.group.grounded]		
+			return [m for m in self._meshes if m.getEnabled() if not m.group.grounded]
 
 	def getClosestObject(self, pointer, proxList):
 		"""
@@ -706,7 +706,7 @@ class PuzzleController(object):
 		self._keyBindings.append(vizact.onkeydown('65421', self.grab)) #numpad enter select
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, self.snapCheck))
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_L, self.snapCheck))
-		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
+#		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_CONTROL_R, self.solve))
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_CONTROL_L, self.solve))
 		self._keyBindings.append(vizact.onkeyup(' ', self.release))
@@ -758,8 +758,8 @@ class PuzzleController(object):
 		for bind in self._keyBindings:
 			bind.remove()
 			
-		if self._quizPanel:
-			self._quizPanel.remove()
+#		if self._quizPanel:
+#			self._quizPanel.remove()
 			
 		self.endSpecificObjects()
 			
@@ -801,6 +801,7 @@ class FreePlay(PuzzleController):
 		self._meshesToLoad = model.ds.getOntologySet(dataset)
 		self._filesToPreSnap = model.ds.getPreSnapSet()
 		
+		viz.MainWindow.setScene(viz.Scene2) #change to loading screen scene
 		yield self.loadControl(self._meshesToLoad)
 		yield self.addToBoundingBox(self._meshes)
 		yield self.prepareMeshes()
@@ -808,6 +809,7 @@ class FreePlay(PuzzleController):
 		yield self.preSnap()
 		yield self.setKeystone(3)
 		yield rotateAbout(self._boundingBoxes.values() + self._meshes, [0,0,0], [0,90,0])
+		viz.MainWindow.setScene(viz.Scene1) #change back to game scene
 #		yield self.enableSlice()
 
 		viztask.schedule(self.updateClosestBone())
@@ -891,6 +893,7 @@ class TestPlay(PuzzleController):
 		self._quizPanel.toggle()
 		
 		#load and prep meshes
+		viz.MainWindow.setScene(viz.Scene2) #change to loading screen scene
 		yield self.loadControl(self._meshesToLoad)
 		yield self.prepareMeshes()
 		yield self.preSnap()
@@ -900,6 +903,7 @@ class TestPlay(PuzzleController):
 		yield self.testPrep()
 		yield self.hideMeshes()
 		yield rotateAbout(self._boundingBoxes.values(), [0,0,0], [0,90,0])
+		viz.MainWindow.setScene(viz.Scene1) #change back to game scene
 		
 		# Setup Key Bindings
 		self.bindKeys()
@@ -1044,7 +1048,7 @@ class PinDrop(PuzzleController):
 		self._keyBindings.append(vizact.onkeydown('o', model.proxManager.setDebug, viz.TOGGLE)) #debug shapes
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_R, self.pinCheck))
 		self._keyBindings.append(vizact.onkeydown(viz.KEY_ALT_L, self.pinCheck))
-		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
+#		self._keyBindings.append(vizact.onkeydown('65460', self.viewcube.toggleModes)) # Numpad '4' key
 	
 class BoundingBox(viz.VizNode):
 	def __init__(self, meshes):

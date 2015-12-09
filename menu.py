@@ -24,7 +24,8 @@ import anatomyTrainer
 
 class MenuController(object):
 	def __init__(self):
-		self.canvas = viz.addGUICanvas()
+
+		self.canvas = viz.addGUICanvas(scene = viz.Scene2)
 		canvas = self.canvas
 		
 		
@@ -41,11 +42,11 @@ class MenuController(object):
 		self.mainMenu		= MainMenu(canvas, self)
 		self.modeMenu		= ModeMenu(canvas, self)
 		self.layerMenu		= LayerMenu(canvas, self)
-		self.loadingScreen 	= LoadingScreen(canvas)
+		self.loadingScreen 	= LoadingScreen()
 		self.inGameMenu		= InGameMenu(canvas, self)
 		
 		#stating menu display path
-		self.menuOrder = [self.mainMenu, self.modeMenu, self.layerMenu, self.loadingScreen, self.inGameMenu]
+		self.menuOrder = [self.mainMenu, self.modeMenu, self.layerMenu, self.inGameMenu]
 		
 		self.activeMenu = self.mainMenu
 	
@@ -64,7 +65,7 @@ class MenuController(object):
 		
 		# Startup the game if there have been selections on layer menu
 		if model.selected.mode != 'Movement Tutorial' and model.selected.load:
-			yield self.changeMenu(self.layerMenu, self.loadingScreen)
+			yield self.changeMenu(self.layerMenu, self.inGameMenu)
 			anatomyTrainer.startGame(config.MenuConfig.Modes[model.selected.mode], model.selected.load)
 		elif model.selected.mode == 'Movement Tutorial':
 			yield self.changeMenu(self.layerMenu, self.inGameMenu)
@@ -73,8 +74,7 @@ class MenuController(object):
 	def restart(self):
 		"""Restart the game"""
 		anatomyTrainer.restartGame(config.MenuConfig.Modes[model.selected.mode], model.selected.load)
-		if model.selected.mode != 'Movement Tutorial':
-			self.backMenu()
+		self.activeMenu.toggle()
 		
 	def endGame(self):
 		"""End the game"""
@@ -168,18 +168,14 @@ class MenuController(object):
 	################################
 	
 	def calcPercentLoaded(self, meshesToLoad, meshesLoaded):
-		self.loadingScreen.percentLoaded = (float(meshesLoaded)/float(meshesToLoad))*100.00
-		
-	def updatePercentMsg(self):
-		self.loadingScreen.percentMsg.message('%.2f' % self.loadingScreen.percentLoaded + '%')
+		self.loadingScreen.percentLoaded = (float(meshesLoaded)/float(meshesToLoad))
 		
 	def finishedLoading(self):
-		self.changeMenu(self.loadingScreen, self.inGameMenu)
 		self.loadingScreen.percentLoaded = 0
 		
 	def updateLoad(self, meshesLoaded, meshesToLoad):
 		self.calcPercentLoaded(meshesToLoad, meshesLoaded)
-		self.updatePercentMsg()
+		self.loadingScreen.progress.set(self.loadingScreen.percentLoaded)
 			
 class MenuBase(vizinfo.InfoPanel):
 	"""Base Menu Class"""
@@ -187,11 +183,12 @@ class MenuBase(vizinfo.InfoPanel):
 		"""initialize the menu"""
 		vizinfo.InfoPanel.__init__(self, '', title = title, fontSize = fontSize, parent = canvas, align = viz.ALIGN_CENTER_CENTER, icon = False)
 		
+		self.canvas = canvas
+		
 		#hide system mouse
 		viz.mouse.setVisible(False)
 		viz.mouse.setTrap(True)
 		
-		self.canvas = canvas
 		
 		#menu is visible
 		if startVisible:
@@ -241,9 +238,9 @@ class MainMenu(MenuBase):
 		self.Exit = self.addItem(viz.addButtonLabel('Exit'), fontSize = 50)
 		vizact.onbuttondown(self.Exit, self.controller.exitGame)
 		
-		#rendering
-		bb = self.getBoundingBox()
-		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 3)
+#		#rendering
+#		bb = self.getBoundingBox()
+#		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 3)
 		
 		#change scale depending on display mode
 		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
@@ -411,32 +408,34 @@ class LayerMenu(MenuBase):
 		#rendering
 		bb = self.getBoundingBox()
 		self.canvas.setRenderWorldOverlay([bb.width*1.8, bb.height*1.8], fov = bb.height*.1, distance = 1)
-		
+
 		#############################
 		"""BUTTON CALLBACK"""
 		#############################
 		
 		viz.callback(viz.BUTTON_EVENT, controller.onAllSelection)
 		
-class LoadingScreen(MenuBase):
+class LoadingScreen(vizinfo.InfoPanel):
 	"""Loading Screen"""
-	def __init__(self, canvas):
-		super(LoadingScreen, self).__init__(canvas, 'loading', 'Loading...', fontSize = 200)
+	def __init__(self, name = 'loading', title = '', fontSize = 175):
+		"""initialize the menu"""
+		self.canvas = viz.addGUICanvas(scene = viz.Scene2)
+		vizinfo.InfoPanel.__init__(self, '', title = title, fontSize = fontSize, parent = self.canvas, align = viz.ALIGN_CENTER_CENTER, icon = False)
 		
-		#init variables
-		self.percentLoaded = '0'
 		
+		#hide system mouse
+		viz.mouse.setVisible(False)
+		viz.mouse.setTrap(True)
+
+		#individual menu parameters
+		self.name = name
+		self.setScale(*[i*config.menuScale[self.name] for i in [1,1,1]])
 		
-		#add another panel to the loading screen
-		centerPanel = vizdlg.Panel(align = viz.ALIGN_CENTER_CENTER, fontSize = 200)
-		self.addItem(centerPanel, align = viz.ALIGN_LEFT_CENTER)
+		self.percentLoaded = 0
 		
-		#add message box
-		self.percentMsg = viz.addText('', parent = canvas)
-		self.percentMsg.color(0,1,0)
-		self.percentMsg.fontSize(200)
-		self.percentMsg.message(self.percentLoaded)
-		centerPanel.addItem(self.percentMsg, align = viz.ALIGN_CENTER_CENTER)
+		self.progress = viz.addProgressBar('Loading...')
+		self.getPanel().fontSize(100)
+		self.addItem(self.progress, align = viz.ALIGN_CENTER_CENTER)
 		
 class InGameMenu(MenuBase):
 	"""In-game menu to be shown when games are running"""

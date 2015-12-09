@@ -364,10 +364,10 @@ def pointerInput(mode, pointer, arena):
 	proxy = vizproximity.Manager()
 	proxy.setDebug(viz.TOGGLE)
 	
-	theSensor = vizproximity.addBoundingBoxSensor(arena, scale = [0.95, 0.95, 0.95])
+#	theSensor = vizproximity.addBoundingBoxSensor(arena, scale = [0.95, 0.95, 0.95])
 	theTarget = vizproximity.Target(pointer)
 	
-	proxy.addSensor(theSensor)
+#	proxy.addSensor(theSensor)
 	proxy.addTarget(theTarget)
 		
 	vizact.onkeydown('l',pointer.setPosition,[0,1,0])

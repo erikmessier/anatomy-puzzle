@@ -56,7 +56,6 @@ def start():
 	
 	# Initialize pointer controls
 	device = init.pointerInput(config.pointerMode, pointer, sky)
-
 	### Initialize display
 	model.display = init.DisplayInstance(config.dispMode,config.camMode,device,pointer)
 	
