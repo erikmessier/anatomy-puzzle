@@ -107,7 +107,7 @@ class OntologicalGroups:
 	_key_value_Layers = [\
 	('Bone',		['bone organ', 'tooth']), \
 	('Cartilage',	['costal cartilage', 'cartilage organ component', 'nasal cartilage', 'cartilage organ']), \
-	('Muscle',		['costal cartilage']), \
+	('Muscle',		['muscle organ']), \
 	('Organs',		['brain', 'left lung', 'right lung', 'gastrointestinal tract', 'urinary system', 'heart'])]
 	layers = collections.OrderedDict(_key_value_Layers)
 
